@@ -24,10 +24,10 @@ produces evidence, the evidence is normalised into an inventory, and the
 inventory is compared with the platform you declared in Git. The CLI, the JSON
 API and the web UI are all consumers of that model, and other tools can be too.
 
-> **Project status.** Early development. `v0.1.0-rc.1` is the first release
-> candidate. The resource schema is `v1alpha1` and will change. Everything
-> described as *current* below is in this repository today; everything else is
-> marked as roadmap.
+> **Project status.** Early development. `v0.1.0` is the first release. The
+> resource schema is `v1alpha1` and will change. Everything described as
+> *current* below is in this repository today; everything else is marked as
+> roadmap.
 
 ## Contents
 

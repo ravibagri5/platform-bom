@@ -66,3 +66,7 @@ updates:
       day: monday
     labels:
       - dependencies
+    ignore:
+      # Only even-numbered Node releases become LTS; move to them by hand.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

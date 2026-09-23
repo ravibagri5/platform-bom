@@ -56,7 +56,7 @@ in [docs/community.md](docs/community.md).
 
 ## Development setup
 
-You need Go 1.24 or newer and Node 20 or newer. A cluster is optional: the
+You need Go 1.26 or newer and Node 24 or newer. A cluster is optional: the
 example platform in [examples/acme](examples/acme) uses exported inventories.
 
 ```shell

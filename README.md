@@ -108,7 +108,7 @@ cluster is needed:
 ```shell
 git clone https://github.com/ravibagri5/platform-bom
 cd platform-bom
-make ui build                       # needs Go 1.24+ and Node 20+
+make ui build                       # needs Go 1.26+ and Node 24+
 ./bin/pbom serve -c examples/acme/pbom.yaml
 ```
 
@@ -545,7 +545,7 @@ with oauth2-proxy or your identity-aware proxy.
 
 ## Development
 
-You need Go 1.24+ and Node 20+.
+You need Go 1.26+ and Node 24+.
 
 ```shell
 make ui build      # build the UI and the binary

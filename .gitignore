@@ -1,6 +1,7 @@
-bin/
-dist/
-coverage.out
+/bin/
+# GoReleaser output. Anchored, so internal/ui/dist is not caught by it.
+/dist/
+/coverage.out
 web/node_modules/
 internal/ui/dist/*
 !internal/ui/dist/.gitkeep

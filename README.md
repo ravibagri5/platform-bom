@@ -24,10 +24,10 @@ produces evidence, the evidence is normalised into an inventory, and the
 inventory is compared with the platform you declared in Git. The CLI, the JSON
 API and the web UI are all consumers of that model, and other tools can be too.
 
-> **Project status.** Early development toward a first `v0.1` release; no
-> version has been tagged yet. The resource schema is `v1alpha1` and will
-> change. Everything described as *current* below is in this repository today;
-> everything else is marked as roadmap.
+> **Project status.** Early development. `v0.1.0-rc.1` is the first release
+> candidate. The resource schema is `v1alpha1` and will change. Everything
+> described as *current* below is in this repository today; everything else is
+> marked as roadmap.
 
 ## Contents
 
@@ -138,7 +138,7 @@ offering users depend on.
 Today, only components that can be observed through Kubernetes can be verified
 by discovery. An offering implemented through Terraform or Pulumi can be
 declared, but `pbom` has no evidence source for it yet (see
-[Milestone 5](#roadmap)). Binding offerings to different implementations per
+[M5](#roadmap)). Binding offerings to different implementations per
 environment is also a roadmap item.
 
 ## PBOM: a Platform Bill of Materials
@@ -339,7 +339,7 @@ offerings:
 
 > **Conceptual.** The document below is not implemented and is not a stable
 > schema. It illustrates the direction of
-> [Milestone 3 and Milestone 11](#roadmap): one portable document combining the
+> [M3 and M11](#roadmap): one portable document combining the
 > declared release, its offerings, and optionally the observed state of each
 > environment with evidence.
 
@@ -477,17 +477,20 @@ feed the inventory, and **consumers** that read from it.
 None of these exist yet. They are listed to show the intended shape of the
 ecosystem, not as commitments.
 
-| Integration | Direction | What it would do |
-| --- | --- | --- |
-| Argo CD, Flux | Evidence | Compare Git's intended state with the declared release and the observed version |
-| Kargo | Evidence | Relate promotion stages to environments and platform releases |
-| Terraform / OpenTofu, Pulumi | Evidence | Recognise components and offerings implemented outside Kubernetes from state or stack outputs |
-| AWS, Azure, GCP | Evidence | Correlate managed services with the offerings they implement, without becoming a cloud inventory |
-| GitHub, GitLab | Evidence and consumer | Read platform repositories; report drift on pull requests |
-| Backstage plugin | Consumer | Show the platform's offerings, releases and inventory inside a developer portal. Backstage is an integration, never a requirement. |
-| MCP server | Consumer | Let AI assistants query the inventory through a standard interface, e.g. *"What version of Argo CD runs in production?"*, *"What changed between 1.7 and 1.8?"*, *"Which offerings depend on Crossplane?"*. The inventory stays the source of truth. |
-| Crossplane provider, Kubernetes CRDs | Consumer | Expose platforms and releases through Kubernetes-native APIs. Crossplane is one implementation technology among many, not the core of the model. |
-| Helm chart | Distribution | An alternative to the kustomize base |
+| Integration | Direction | What it would do | Milestone |
+| --- | --- | --- | --- |
+| Argo CD, Flux | Evidence | Compare Git's intended state with the declared release and the observed version | M5 |
+| Terraform / OpenTofu, Pulumi | Evidence | Recognise components and offerings implemented outside Kubernetes from state or stack outputs | M5 |
+| AWS, Azure, GCP | Evidence | Correlate managed services with the offerings they implement, without becoming a cloud inventory | M6 |
+| Backstage plugin | Consumer | Show the platform's offerings, releases and inventory inside a developer portal. Backstage is an integration, never a requirement. | M7 |
+| Headlamp plugin | Consumer | A Platform view in Headlamp for the current cluster, read through the Kubernetes service proxy so the user's own RBAC applies | M7 |
+| k9s plugin | Consumer | Shortcuts that run discovery, drift and update checks for the current context without leaving k9s | M7 |
+| GitHub Action, GitLab CI component | Consumer | Drift checks with a Markdown job summary; release diffs on pull requests | M7 |
+| Argo CD UI extension, Kargo | Consumer | Platform release status next to the applications and promotion stages that deliver it | M7 |
+| Crossplane function or provider | Consumer | Let compositions use platform information, such as the declared release. Crossplane is one implementation technology among many, not the core of the model. | M8 |
+| Kubernetes custom resources, Helm chart | Consumer, distribution | Platforms and releases as Kubernetes APIs; an alternative to the kustomize base | M8 |
+| Prometheus metrics, kubectl plugin, Go client | Consumer | Alert on drift, run `kubectl pbom`, build on a typed client | M9 |
+| MCP server | Consumer | Let AI assistants query the inventory through a standard interface, e.g. *"What version of Argo CD runs in production?"*, *"What changed between 1.7 and 1.8?"*, *"Which offerings depend on Crossplane?"*. The inventory stays the source of truth. | M10 |
 
 ## Community-maintained component definitions
 
@@ -521,79 +524,80 @@ sources are added, the same file is where their signals will go.
 ## Roadmap
 
 A direction, not a schedule. Milestones overlap and may change as we learn
-from users. Near-term work is scheduled into release milestones on GitHub and
-tracked on the
-[project board](https://github.com/users/ravibagri5/projects/2); details
-are in [ROADMAP.md](ROADMAP.md).
+from users. Each milestone below is a GitHub milestone with its issues, and
+every issue is on the
+[project board](https://github.com/users/ravibagri5/projects/2). Releases are
+cut from `main` whenever enough has landed; see [ROADMAP.md](ROADMAP.md) for
+what is next.
 
-| Milestone | Status | Tracked in |
-| --- | --- | --- |
-| 0. Project foundation | Done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1) |
-| 1. Kubernetes discovery | Done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1) |
-| 2. Platform inventory | Mostly done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1), [v0.4](https://github.com/ravibagri5/platform-bom/milestone/4) |
-| 3. Platform releases and PBOM | In progress | [v0.2](https://github.com/ravibagri5/platform-bom/milestone/2), [v0.4](https://github.com/ravibagri5/platform-bom/milestone/4) |
-| 4. Upstream intelligence | In progress | [v0.3](https://github.com/ravibagri5/platform-bom/milestone/3) |
-| 5. GitOps and IaC discovery | Planned | [v0.2](https://github.com/ravibagri5/platform-bom/milestone/2) |
-| 6. Cloud evidence | Exploring | |
-| 7. Ecosystem integrations | Exploring | |
-| 8. Kubernetes-native integrations | Exploring | |
-| 9. Developer interfaces | In progress | |
-| 10. MCP | Exploring | |
-| 11. PBOM ecosystem | Exploring | |
+| Milestone | Status |
+| --- | --- |
+| [M0 — Project foundation](https://github.com/ravibagri5/platform-bom/milestone/1) | Done |
+| [M1 — Kubernetes discovery](https://github.com/ravibagri5/platform-bom/milestone/5) | Done |
+| [M2 — Platform inventory](https://github.com/ravibagri5/platform-bom/milestone/4) | Mostly done |
+| [M3 — Platform releases and PBOM](https://github.com/ravibagri5/platform-bom/milestone/6) | In progress |
+| [M4 — Upstream intelligence](https://github.com/ravibagri5/platform-bom/milestone/3) | In progress |
+| [M5 — GitOps and IaC discovery](https://github.com/ravibagri5/platform-bom/milestone/2) | Planned |
+| [M6 — Cloud evidence](https://github.com/ravibagri5/platform-bom/milestone/7) | Exploring |
+| [M7 — Ecosystem integrations](https://github.com/ravibagri5/platform-bom/milestone/8) | Planned |
+| [M8 — Kubernetes-native integrations](https://github.com/ravibagri5/platform-bom/milestone/9) | Exploring |
+| [M9 — Developer interfaces](https://github.com/ravibagri5/platform-bom/milestone/10) | In progress |
+| [M10 — MCP server](https://github.com/ravibagri5/platform-bom/milestone/11) | Planned |
+| [M11 — PBOM specification](https://github.com/ravibagri5/platform-bom/milestone/12) | Exploring |
 
-**Milestone 0 — Project foundation.** Repository and release tooling; the
+**M0 — Project foundation.** Repository and release tooling; the
 resource model for platforms, components, offerings, environments and platform
 releases; the JSON API. *Done.*
 
-**Milestone 1 — Kubernetes discovery.** Cluster version and distribution;
+**M1 — Kubernetes discovery.** Cluster version and distribution;
 components from container images, Helm releases, served API groups (including
 CRDs) and Crossplane packages; an evidence record for every observation.
 *Done.*
 
-**Milestone 2 — Platform inventory.** Normalization through the component
+**M2 — Platform inventory.** Normalization through the component
 catalog; per-environment inventories; environment comparison; drift; the
 platform overview. *Done.* Remaining: inventory history and *what changed this
-week* (v0.4); an in-cluster agent that pushes inventories to a central server
-for clusters it cannot reach.
+week*; an in-cluster agent that pushes inventories to a central server for
+clusters it cannot reach.
 
-**Milestone 3 — Platform releases and PBOM.** Declared platform, releases cut
+**M3 — Platform releases and PBOM.** Declared platform, releases cut
 from a live environment, release diffs and the newest release each environment
-satisfies are *done*. Remaining: `pbom release lint` (v0.2); CycloneDX export of
-a release (v0.4); binding offerings to implementations per environment; a
-consolidated PBOM document.
+satisfies are *done*. Remaining: `pbom release lint`; CycloneDX export of a
+release; binding offerings to implementations per environment.
 
-**Milestone 4 — Upstream intelligence.** Upstream releases, release notes,
-support windows and explainable recommendations are *done*. Remaining (v0.3):
+**M4 — Upstream intelligence.** Upstream releases, release notes,
+support windows and explainable recommendations are *done*. Remaining:
 end-of-life data from [endoflife.date](https://endoflife.date) and managed
 Kubernetes providers; security advisories; compatibility metadata between
 components; upgrade paths.
 
-**Milestone 5 — GitOps and IaC discovery.** Argo CD `Application` and Flux
-`HelmRelease`/`Kustomization` evidence (v0.2); Terraform/OpenTofu state and
-Pulumi stacks; Git repositories as a source of declared intent. Helm is already
-covered by Milestone 1.
+**M5 — GitOps and IaC discovery.** Argo CD `Application` and Flux
+`HelmRelease`/`Kustomization` evidence; Terraform/OpenTofu state and Pulumi
+stacks; environments that are not only Kubernetes clusters. Helm is already
+covered by M1.
 
-**Milestone 6 — Cloud evidence.** AWS, Azure and GCP evidence, correlated with
+**M6 — Cloud evidence.** AWS, Azure and GCP evidence, correlated with
 the offerings they implement. Deliberately narrow: this is about recognising
 platform capabilities, not listing every cloud resource.
 
-**Milestone 7 — Ecosystem integrations.** A Backstage plugin; deeper Argo CD,
-Flux and Kargo integrations; GitHub and GitLab checks; Terraform/OpenTofu and
-Pulumi integrations.
+**M7 — Ecosystem integrations.** Plugins for Backstage, Headlamp and k9s; a
+GitHub Action and a GitLab CI component for drift checks; an Argo CD UI
+extension and Kargo, if they prove worth maintaining.
 
-**Milestone 8 — Kubernetes-native integrations.** Platforms and releases as
-Kubernetes APIs; a Crossplane provider; an operator only if a controller is
-genuinely needed.
+**M8 — Kubernetes-native integrations.** A Crossplane composition function or
+provider; platforms and releases as Kubernetes custom resources, with an
+operator only if a controller is genuinely needed; a Helm chart.
 
-**Milestone 9 — Developer interfaces.** The CLI and a read-only JSON API exist.
-Remaining: a versioned, documented REST API; a Go SDK; webhooks or events when
-drift or upstream state changes.
+**M9 — Developer interfaces.** The CLI and a read-only JSON API exist.
+Remaining: a versioned REST API with an OpenAPI document, which the plugins and
+the MCP server build on; Prometheus metrics; a kubectl plugin through krew; a
+Go client; webhooks or events when drift or upstream state changes.
 
-**Milestone 10 — MCP.** A read-only MCP server exposing the inventory: query
-component versions, offerings and releases, compare environments and releases,
-and query upstream information.
+**M10 — MCP server.** A read-only MCP server exposing the inventory, over stdio
+and HTTP: query component versions, offerings and releases, compare
+environments and releases, and query upstream information.
 
-**Milestone 11 — PBOM ecosystem.** If the concept proves useful beyond this
+**M11 — PBOM specification.** If the concept proves useful beyond this
 project: a versioned PBOM schema with validation, examples, import and export,
 publishing releases as OCI artifacts, and a community process for evolving it.
 

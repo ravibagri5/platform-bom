@@ -61,8 +61,8 @@ the UI: labels created by hand are removed on the next sync.
 
 | Where | What it holds |
 | --- | --- |
-| [ROADMAP.md](../ROADMAP.md) | The direction, in prose. Changed by pull request. |
-| Milestones | One per roadmap release: `v0.1 — Foundations`, `v0.2 — The Git side of GitOps`, `v0.3 — Lifecycle intelligence`, `v0.4 — History`. |
+| [ROADMAP.md](../ROADMAP.md) | The direction and the next priorities, linked to issues. Changed by pull request. |
+| Milestones | One per roadmap theme, `M0 — Project foundation` to `M11 — PBOM specification`, matching the README. Releases are cut from `main` and are not tied to a milestone. |
 | **platform-bom Roadmap** project | The board. Every accepted issue is on it, grouped by milestone and theme. |
 
 The project board is owned by the maintainer's GitHub account and linked to
@@ -71,8 +71,8 @@ this repository, the same way the crossplane-mcp-server board is. Its fields:
 | Field | Values |
 | --- | --- |
 | Status | Todo, In Progress, Done, Blocked |
-| Theme | Discover, Version, Advise, History, Present |
-| Area | api, catalog, discovery, upstream, analysis, release, server, cli, ui, deploy, build, ci |
+| Theme | Discover, Version, Advise, History, Present, Integrate |
+| Area | api, catalog, discovery, upstream, analysis, release, server, cli, ui, deploy, build, ci, integrations |
 | Priority | Critical, High, Medium, Low |
 | Size | XS, S, M, L |
 

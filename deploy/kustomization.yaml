@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: platform-bom
+
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - deployment.yaml
+  - service.yaml
+
+# The platform definition and releases become ConfigMaps. Their names get a
+# content hash, so editing either file rolls the Deployment automatically.
+configMapGenerator:
+  - name: pbom-platform
+    files:
+      - platform/pbom.yaml
+      - platform/PLATFORM.md
+  - name: pbom-releases
+    files: []
+    # Add release files here, for example:
+    #   - releases/1.0.0.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: platform-bom
+    includeSelectors: false
+
+images:
+  - name: ghcr.io/ravibagri5/platform-bom
+    newTag: latest

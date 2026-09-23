@@ -1,0 +1,62 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - misspell
+    - nolintlint
+    - prealloc
+    - revive
+    - unconvert
+    - unparam
+    - whitespace
+
+  settings:
+    errcheck:
+      # CLI output goes to stdout; a failed write there is not recoverable.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: indent-error-flow
+        - name: errorf
+        - name: error-strings
+        - name: context-as-argument
+        - name: unexported-return
+
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+
+  exclusions:
+    rules:
+      # Tests are allowed to be repetitive and to skip the doc comments.
+      - path: _test\.go
+        linters:
+          - revive
+          - unparam
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ravibagri5/platform-bom

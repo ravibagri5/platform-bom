@@ -1,0 +1,70 @@
+name: Component request
+description: Ask for pbom to recognise a component
+labels: ["area/catalog", "enhancement", "good first issue", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Component definitions are small YAML documents, so a pull request is
+        often quicker than an issue. See
+        [Adding a component to the catalog](https://github.com/ravibagri5/platform-bom/blob/main/CONTRIBUTING.md#adding-a-component-to-the-catalog).
+
+  - type: input
+    id: name
+    attributes:
+      label: Component
+      placeholder: Envoy Gateway
+    validations:
+      required: true
+
+  - type: input
+    id: upstream
+    attributes:
+      label: Upstream repository
+      description: Where releases are published.
+      placeholder: https://github.com/envoyproxy/gateway
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Capability
+      options:
+        - runtime
+        - compute
+        - delivery
+        - infrastructure
+        - composition
+        - platform-api
+        - networking
+        - security
+        - observability
+        - data
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How is it installed?
+      description: >
+        The container images, Helm chart name, Crossplane package or API groups
+        it brings. The `evidence` list from `pbom discover -o yaml` is ideal.
+      render: yaml
+      placeholder: |
+        - source: image
+          object: Deployment/envoy-gateway
+          detail: docker.io/envoyproxy/gateway:v1.5.0
+        - source: helm
+          detail: chart gateway-helm-1.5.0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to add it?
+      options:
+        - label: I am willing to open a pull request for this

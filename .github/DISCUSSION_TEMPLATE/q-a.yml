@@ -1,0 +1,41 @@
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask anything about running, configuring or extending platform-bom. If it
+        turns out to be a bug, a maintainer will convert this into an issue, so
+        please do not file one first.
+
+        If this is about a specific vulnerability, use
+        [private reporting](https://github.com/ravibagri5/platform-bom/security/advisories/new)
+        instead.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: >
+        Describe the outcome you want, not only the command that failed. There
+        is often an easier route to the same answer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Commands, configuration, docs you have already read.
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Please redact cluster names, registry hostnames and account identifiers.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: pbom version and Kubernetes distribution
+      placeholder: v0.1.0, AKS 1.34

@@ -1,0 +1,28 @@
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas do not need to be fully formed. Describe the problem and we will
+        work out together whether it belongs in platform-bom and what shape it
+        should take. When it is ready, a maintainer will turn it into an issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Who has the problem, and what do they do about it today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What are you thinking?
+      description: A command, a field in pbom.yaml, a view in the UI, an evidence source.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Links to similar tools, screenshots, prior art.

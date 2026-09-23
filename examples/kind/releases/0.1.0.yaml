@@ -1,0 +1,20 @@
+apiVersion: pbom.dev/v1alpha1
+kind: PlatformRelease
+metadata:
+  name: 0.1.0
+spec:
+  components:
+    argocd: 3.5.3
+    crossplane: 2.2.0
+    external-secrets: 2.7.0
+    function-go-templating: 0.11.1
+    kubernetes: 1.34.0
+    metrics-server: 0.8.0
+    provider-kubernetes: 1.2.1
+  date: "2026-09-23"
+  offerings:
+  - app-delivery
+  - certificates
+  - self-service-infra
+  summary: First local platform release
+  version: 0.1.0

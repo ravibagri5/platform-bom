@@ -1,0 +1,210 @@
+# Label catalogue.
+#
+# This file is the source of truth. Edit it in a pull request; the labels
+# workflow applies it to the repository when it merges to main. Labels created
+# by hand in the UI will be removed.
+#
+# Colours are quoted because YAML reads unquoted hex such as 5319e7 as a number.
+#
+# Colour convention:
+#   d73a4a red      type: bug
+#   0e8a16 green    type: everything else
+#   1d76db blue     area
+#   5319e7 purple   theme (matches the roadmap themes)
+#   b60205 crimson  priority and blockers
+#   fbca04 yellow   status, needs something from someone
+#   c5def5 pale     meta, community
+
+# --- Type -------------------------------------------------------------------
+
+- name: bug
+  color: "d73a4a"
+  description: Something does not work the way it should
+
+- name: regression
+  color: "d73a4a"
+  description: Worked in an earlier release and no longer does
+
+- name: enhancement
+  color: "0e8a16"
+  description: A new capability or an improvement to an existing one
+
+- name: proposal
+  color: "0e8a16"
+  description: Needs a design agreed before it is built
+
+- name: documentation
+  color: "0e8a16"
+  description: Docs, README or examples
+
+- name: refactor
+  color: "0e8a16"
+  description: Internal change with no user-visible behaviour
+
+- name: test
+  color: "0e8a16"
+  description: Test coverage or test infrastructure
+
+- name: chore
+  color: "0e8a16"
+  description: Build, tooling, CI or repository maintenance
+
+- name: dependencies
+  color: "0e8a16"
+  description: Dependency updates
+
+- name: release
+  color: "0e8a16"
+  description: Release coordination
+
+- name: "breaking change"
+  color: "b60205"
+  description: Changes the resource model or the CLI in a way that breaks users
+
+# --- Area -------------------------------------------------------------------
+#
+# One label per package, so triage does not need a judgement call.
+
+- name: "area/api"
+  color: "1d76db"
+  description: "internal/api: Platform, PlatformRelease, Component, Inventory"
+
+- name: "area/catalog"
+  color: "1d76db"
+  description: "internal/catalog: component definitions and matching"
+
+- name: "area/discovery"
+  color: "1d76db"
+  description: "internal/discovery: evidence collection from clusters"
+
+- name: "area/upstream"
+  color: "1d76db"
+  description: "internal/upstream: GitHub releases and caching"
+
+- name: "area/analysis"
+  color: "1d76db"
+  description: "internal/analysis: matrix, drift, freshness and recommendations"
+
+- name: "area/release"
+  color: "1d76db"
+  description: "internal/release: release load, create and diff"
+
+- name: "area/server"
+  color: "1d76db"
+  description: "internal/server and internal/service: HTTP API and wiring"
+
+- name: "area/cli"
+  color: "1d76db"
+  description: "cmd and internal/cli: commands and flags"
+
+- name: "area/ui"
+  color: "1d76db"
+  description: "web: the React UI"
+
+- name: "area/deploy"
+  color: "1d76db"
+  description: "deploy: in-cluster manifests"
+
+- name: "area/build"
+  color: "1d76db"
+  description: Makefile, GoReleaser, container images
+
+- name: "area/ci"
+  color: "1d76db"
+  description: GitHub Actions workflows
+
+# --- Theme (see ROADMAP.md) -------------------------------------------------
+
+- name: "theme/discover"
+  color: "5319e7"
+  description: New evidence sources and better recognition
+
+- name: "theme/version"
+  color: "5319e7"
+  description: Platform releases, drift and promotion
+
+- name: "theme/advise"
+  color: "5319e7"
+  description: Upstream releases, end-of-life, advisories and compatibility
+
+- name: "theme/history"
+  color: "5319e7"
+  description: Snapshots over time and what changed
+
+- name: "theme/present"
+  color: "5319e7"
+  description: The platform as a product in the UI
+
+# --- Priority ---------------------------------------------------------------
+
+- name: "priority/critical"
+  color: "b60205"
+  description: Security issue, wrong data shown as right, or unusable
+
+- name: "priority/high"
+  color: "b60205"
+  description: Should be in the next release
+
+- name: "priority/medium"
+  color: "e99695"
+  description: Worth doing, not urgent
+
+- name: "priority/low"
+  color: "f9d0c4"
+  description: Nice to have
+
+# --- Status -----------------------------------------------------------------
+
+- name: "needs triage"
+  color: "fbca04"
+  description: Not yet looked at by a maintainer
+
+- name: "needs information"
+  color: "fbca04"
+  description: Waiting on the reporter; closed after 30 days of silence
+
+- name: "needs design"
+  color: "fbca04"
+  description: Agreed as a problem, but the solution is not settled
+
+- name: "needs reproduction"
+  color: "fbca04"
+  description: We cannot reproduce this yet
+
+- name: blocked
+  color: "b60205"
+  description: Waiting on an upstream change or another issue
+
+- name: "in progress"
+  color: "fbca04"
+  description: Somebody is actively working on this
+
+- name: stale
+  color: "fbca04"
+  description: No activity for a long time; will be closed
+
+# --- Community --------------------------------------------------------------
+
+- name: "good first issue"
+  color: "7057ff"
+  description: Scoped so a first contribution does not need deep knowledge
+
+- name: "help wanted"
+  color: "008672"
+  description: Ready for a contributor to pick up
+
+- name: question
+  color: "c5def5"
+  description: A question rather than a defect
+
+- name: idea
+  color: "c5def5"
+  description: Raised in Discussions, not yet an issue
+
+- name: "show and tell"
+  color: "c5def5"
+  description: Shared in Discussions
+
+- name: ui
+  color: "c5def5"
+  description: Dependabot updates to the web UI

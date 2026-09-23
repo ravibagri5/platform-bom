@@ -1,0 +1,38 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: kind-platform
+  displayName: Local Kind Platform
+spec:
+  tagline: A local platform discovered live from a kind cluster.
+  description: GitOps delivery, certificates and self-service infrastructure running on kind.
+  guarantees:
+    - Every change delivered through GitOps
+    - TLS certificates managed automatically
+  releasesDir: releases
+  offerings:
+    - name: app-delivery
+      displayName: Application delivery
+      category: delivery
+      status: ga
+      description: GitOps with Argo CD.
+      components: [argocd]
+    - name: certificates
+      displayName: Certificates
+      category: security
+      status: ga
+      description: Automatic TLS certificates with cert-manager.
+      components: [cert-manager]
+    - name: self-service-infra
+      displayName: Self-service infrastructure
+      category: infrastructure
+      status: beta
+      description: Kubernetes APIs for infrastructure, backed by Crossplane.
+      components: [crossplane, provider-kubernetes, function-patch-and-transform]
+  environments:
+    - name: local
+      displayName: Local (kind)
+      tier: development
+      kubeContext: kind-local
+      # Set after cutting a release: pbom release create 0.1.0 --from-env local -c examples/kind/pbom.yaml
+      # targetRelease: "0.1.0"

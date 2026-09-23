@@ -1,0 +1,94 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: cert-manager
+spec:
+  displayName: cert-manager
+  category: security
+  description: X.509 certificate management.
+  homepage: https://cert-manager.io
+  discovery:
+    images: ["jetstack/cert-manager-controller"]
+    helmCharts: ["cert-manager"]
+    apiGroups: ["cert-manager.io"]
+  upstream:
+    github: cert-manager/cert-manager
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kyverno
+spec:
+  displayName: Kyverno
+  category: security
+  description: Kubernetes-native policy engine.
+  homepage: https://kyverno.io
+  discovery:
+    images: ["kyverno/kyverno"]
+    helmCharts: ["kyverno"]
+    apiGroups: ["kyverno.io"]
+  upstream:
+    github: kyverno/kyverno
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: gatekeeper
+spec:
+  displayName: OPA Gatekeeper
+  category: security
+  description: Policy controller built on Open Policy Agent.
+  homepage: https://open-policy-agent.github.io/gatekeeper
+  discovery:
+    images: ["openpolicyagent/gatekeeper"]
+    helmCharts: ["gatekeeper"]
+    apiGroups: ["templates.gatekeeper.sh"]
+  upstream:
+    github: open-policy-agent/gatekeeper
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: external-secrets
+spec:
+  displayName: External Secrets
+  category: security
+  description: Sync secrets from external secret stores.
+  homepage: https://external-secrets.io
+  discovery:
+    images: ["external-secrets/external-secrets"]
+    helmCharts: ["external-secrets"]
+    apiGroups: ["external-secrets.io"]
+  upstream:
+    github: external-secrets/external-secrets
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vault
+spec:
+  displayName: HashiCorp Vault
+  category: security
+  description: Secrets management.
+  homepage: https://www.vaultproject.io
+  discovery:
+    images: ["hashicorp/vault"]
+    helmCharts: ["vault"]
+  upstream:
+    github: hashicorp/vault
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vault-secrets-operator
+spec:
+  displayName: Vault Secrets Operator
+  category: security
+  description: Sync secrets from HashiCorp Vault into Kubernetes.
+  homepage: https://developer.hashicorp.com/vault/docs/platform/k8s/vso
+  discovery:
+    images: ["hashicorp/vault-secrets-operator"]
+    helmCharts: ["vault-secrets-operator"]
+    apiGroups: ["secrets.hashicorp.com"]
+  upstream:
+    github: hashicorp/vault-secrets-operator

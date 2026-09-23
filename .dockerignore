@@ -1,0 +1,8 @@
+**/node_modules
+bin
+dist
+coverage.out
+.git
+.github
+# Personal platform files may name real clusters; never bake them into an image.
+local

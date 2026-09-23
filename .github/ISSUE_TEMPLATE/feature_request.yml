@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a capability
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The best feature requests describe a question about your platform you
+        could not get answered, rather than a specific implementation. Tell us
+        the problem and we will work out the shape together.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: What did you want to know or show, and what happened instead?
+      placeholder: |
+        I want to show application teams which platform release introduced the
+        PostgreSQL offering, but release diffs only list component versions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+      description: If you have an idea for the command, field or view, describe it here.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Existing commands that nearly worked, or what you do by hand today.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This does not require `pbom` to write to a cluster. (See GOVERNANCE.md.)
+        - label: This does not require hard-coded knowledge of a specific tool. (Tool knowledge belongs in catalog definitions.)
+        - label: I have checked ROADMAP.md and this is not already planned.
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on this?
+      options:
+        - label: I am willing to open a pull request for this

@@ -1,0 +1,76 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: argocd
+spec:
+  displayName: Argo CD
+  category: delivery
+  description: Declarative GitOps continuous delivery.
+  homepage: https://argo-cd.readthedocs.io
+  discovery:
+    images: ["argoproj/argocd"]
+    helmCharts: ["argo-cd"]
+  upstream:
+    github: argoproj/argo-cd
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: argo-rollouts
+spec:
+  displayName: Argo Rollouts
+  category: delivery
+  description: Progressive delivery with canary and blue-green strategies.
+  homepage: https://argoproj.github.io/rollouts
+  discovery:
+    images: ["argoproj/argo-rollouts"]
+    helmCharts: ["argo-rollouts"]
+  upstream:
+    github: argoproj/argo-rollouts
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: argo-workflows
+spec:
+  displayName: Argo Workflows
+  category: delivery
+  description: Container-native workflow engine.
+  homepage: https://argoproj.github.io/workflows
+  discovery:
+    images: ["argoproj/workflow-controller"]
+    helmCharts: ["argo-workflows"]
+  upstream:
+    github: argoproj/argo-workflows
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kargo
+spec:
+  displayName: Kargo
+  category: delivery
+  description: Multi-stage GitOps promotion.
+  homepage: https://kargo.io
+  discovery:
+    images: ["akuity/kargo"]
+    helmCharts: ["kargo"]
+    apiGroups: ["kargo.akuity.io"]
+  upstream:
+    github: akuity/kargo
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: flux
+spec:
+  displayName: Flux
+  category: delivery
+  description: GitOps toolkit for keeping clusters in sync with Git.
+  homepage: https://fluxcd.io
+  discovery:
+    # Controller images are versioned separately from Flux, so the chart appVersion is used.
+    helmCharts: ["flux2"]
+    apiGroups: ["source.toolkit.fluxcd.io"]
+  upstream:
+    github: fluxcd/flux2

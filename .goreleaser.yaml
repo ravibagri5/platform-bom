@@ -1,0 +1,123 @@
+version: 2
+
+project_name: platform-bom
+
+before:
+  hooks:
+    - go mod tidy
+    # The UI is embedded into the binary, so it must be built first.
+    - sh -c "cd web && npm ci && npm run build"
+
+builds:
+  - id: pbom
+    main: ./cmd/pbom
+    binary: pbom
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/ravibagri5/platform-bom/internal/cli.Version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - NOTICE
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+dockers:
+  - image_templates:
+      - ghcr.io/ravibagri5/platform-bom:{{ .Version }}-amd64
+      # Release candidates publish :rc, never :latest.
+      - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-amd64
+    # GoReleaser's build context holds only compiled binaries, so the root
+    # Dockerfile, which builds from source, cannot be used here.
+    dockerfile: Dockerfile.release
+    use: buildx
+    goarch: amd64
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+  - image_templates:
+      - ghcr.io/ravibagri5/platform-bom:{{ .Version }}-arm64
+      - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-arm64
+    dockerfile: Dockerfile.release
+    use: buildx
+    goarch: arm64
+    build_flag_templates:
+      - --platform=linux/arm64
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.created={{ .Date }}
+
+docker_manifests:
+  - name_template: ghcr.io/ravibagri5/platform-bom:{{ .Version }}
+    image_templates:
+      - ghcr.io/ravibagri5/platform-bom:{{ .Version }}-amd64
+      - ghcr.io/ravibagri5/platform-bom:{{ .Version }}-arm64
+  - name_template: ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}
+    image_templates:
+      - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-amd64
+      - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-arm64
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Added
+      regexp: '^.*?(feat|add)(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Fixed
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+release:
+  draft: true
+  prerelease: auto
+  footer: |
+    **Full changelog**: https://github.com/ravibagri5/platform-bom/compare/{{ .PreviousTag }}...{{ .Tag }}

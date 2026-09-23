@@ -1,0 +1,10 @@
+platform-bom
+Copyright 2026 The platform-bom Authors
+
+This product includes software developed at
+The platform-bom project (https://github.com/ravibagri5/platform-bom).
+
+Kubernetes, Helm, Argo, Flux, Crossplane and other project names referenced in
+the component catalog are trademarks of their respective owners. This project
+is not endorsed by, affiliated with, or an official part of any of them or of
+the Cloud Native Computing Foundation.

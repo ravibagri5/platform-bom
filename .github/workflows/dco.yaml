@@ -1,0 +1,38 @@
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: Check sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verify every commit is signed off
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          # Merge commits introduce no authored change and carry no trailer.
+          while read -r sha; do
+            author="$(git show -s --format='%an <%ae>' "$sha")"
+            if ! git show -s --format=%B "$sha" | grep -qiF "Signed-off-by: $author"; then
+              echo "::error::commit $sha is not signed off by $author"
+              missing=1
+            fi
+          done < <(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA")
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Sign off your commits with 'git commit --signoff'."
+            echo "To fix existing commits: git rebase --signoff $BASE_SHA"
+            exit 1
+          fi

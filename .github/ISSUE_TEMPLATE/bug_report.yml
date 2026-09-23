@@ -1,0 +1,83 @@
+name: Bug report
+description: Something does not work the way it should
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        If this is a security issue, please do not file it here. See
+        [SECURITY.md](https://github.com/ravibagri5/platform-bom/blob/main/SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect to see instead?
+      placeholder: |
+        `pbom matrix` shows Argo CD 3.0.0 in prod, but the argocd-server image
+        is quay.io/argoproj/argocd:v3.1.5.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How can we reproduce it?
+      description: >
+        The command you ran and, if it is about discovery, the relevant part of
+        `pbom discover --env ENV -o yaml` (the evidence list is the most useful
+        thing you can give us).
+      placeholder: |
+        1. Install Argo CD with the argo-cd chart 8.x and an image override
+        2. Run `pbom discover --context my-cluster -o yaml`
+        3. The argocd component shows version 3.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: >
+        Paste the command output or inventory excerpt. Please redact anything
+        sensitive, such as cluster names or registry hostnames.
+      render: shell
+
+  - type: input
+    id: pbom-version
+    attributes:
+      label: pbom version
+      description: Output of `pbom version`
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: kubernetes
+    attributes:
+      label: Kubernetes version and distribution
+      placeholder: v1.34.8, AKS
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did you see it?
+      options:
+        - CLI
+        - Web UI
+        - JSON API
+        - Container image
+    validations:
+      required: true
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: >
+        Anything unusual about your platform is worth mentioning: mirrored
+        registries, a custom distribution, a mid-upgrade cluster, and so on.

@@ -1,0 +1,91 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: prometheus-operator
+spec:
+  displayName: Prometheus Operator
+  category: observability
+  description: Kubernetes-native Prometheus management.
+  homepage: https://prometheus-operator.dev
+  discovery:
+    images: ["prometheus-operator/prometheus-operator"]
+    helmCharts: ["kube-prometheus-stack"]
+    apiGroups: ["monitoring.coreos.com"]
+  upstream:
+    github: prometheus-operator/prometheus-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: prometheus
+spec:
+  displayName: Prometheus
+  category: observability
+  description: Metrics collection and alerting.
+  homepage: https://prometheus.io
+  discovery:
+    images: ["prometheus/prometheus"]
+    helmCharts: ["prometheus"]
+  upstream:
+    github: prometheus/prometheus
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: grafana
+spec:
+  displayName: Grafana
+  category: observability
+  description: Dashboards and visualisation.
+  homepage: https://grafana.com
+  discovery:
+    images: ["grafana/grafana"]
+    helmCharts: ["grafana"]
+  upstream:
+    github: grafana/grafana
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: opentelemetry-operator
+spec:
+  displayName: OpenTelemetry Operator
+  category: observability
+  description: Manage OpenTelemetry collectors and auto-instrumentation.
+  homepage: https://opentelemetry.io
+  discovery:
+    images: ["opentelemetry-operator/opentelemetry-operator"]
+    helmCharts: ["opentelemetry-operator"]
+    apiGroups: ["opentelemetry.io"]
+  upstream:
+    github: open-telemetry/opentelemetry-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: loki
+spec:
+  displayName: Loki
+  category: observability
+  description: Log aggregation.
+  homepage: https://grafana.com/oss/loki
+  discovery:
+    images: ["grafana/loki"]
+    helmCharts: ["loki"]
+  upstream:
+    github: grafana/loki
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: alloy
+spec:
+  displayName: Grafana Alloy
+  category: observability
+  description: OpenTelemetry collector distribution for metrics, logs and traces.
+  homepage: https://grafana.com/oss/alloy
+  discovery:
+    images: ["grafana/alloy"]
+    helmCharts: ["alloy"]
+  upstream:
+    github: grafana/alloy

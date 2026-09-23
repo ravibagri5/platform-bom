@@ -1,0 +1,79 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: istio
+spec:
+  displayName: Istio
+  category: networking
+  description: Service mesh for traffic management, security and telemetry.
+  homepage: https://istio.io
+  discovery:
+    images: ["istio/pilot"]
+    helmCharts: ["istiod"]
+    apiGroups: ["networking.istio.io"]
+  upstream:
+    github: istio/istio
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: ingress-nginx
+spec:
+  displayName: Ingress NGINX
+  category: networking
+  description: NGINX based ingress controller.
+  homepage: https://kubernetes.github.io/ingress-nginx
+  discovery:
+    images: ["ingress-nginx/controller"]
+    helmCharts: ["ingress-nginx"]
+  upstream:
+    github: kubernetes/ingress-nginx
+    tagPrefix: controller-v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: envoy-gateway
+spec:
+  displayName: Envoy Gateway
+  category: networking
+  description: Gateway API implementation built on Envoy.
+  homepage: https://gateway.envoyproxy.io
+  discovery:
+    images: ["envoyproxy/gateway"]
+    helmCharts: ["gateway-helm"]
+    apiGroups: ["gateway.envoyproxy.io"]
+  upstream:
+    github: envoyproxy/gateway
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: external-dns
+spec:
+  displayName: ExternalDNS
+  category: networking
+  description: Synchronise Services and Ingresses with DNS providers.
+  homepage: https://kubernetes-sigs.github.io/external-dns
+  discovery:
+    images: ["external-dns/external-dns"]
+    helmCharts: ["external-dns"]
+  upstream:
+    github: kubernetes-sigs/external-dns
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: cilium
+spec:
+  displayName: Cilium
+  category: networking
+  description: eBPF-based networking, security and observability.
+  homepage: https://cilium.io
+  discovery:
+    images: ["cilium/cilium"]
+    helmCharts: ["cilium"]
+    apiGroups: ["cilium.io"]
+  upstream:
+    github: cilium/cilium

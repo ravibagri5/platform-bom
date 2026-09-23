@@ -1,0 +1,127 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: acme-platform
+  displayName: Acme Internal Platform
+spec:
+  tagline: The paved road for shipping services at Acme.
+  description: >-
+    A Kubernetes-based internal developer platform. Application teams get GitOps
+    delivery, self-service cloud infrastructure, secure networking and
+    observability out of the box, so they can focus on their product.
+  owners:
+    - name: Platform Engineering
+      email: platform@acme.example
+      channel: "#platform-help"
+  links:
+    - title: Getting started
+      url: https://docs.acme.example/platform/getting-started
+    - title: Roadmap
+      url: https://docs.acme.example/platform/roadmap
+  guarantees:
+    - Kubernetes versions within upstream support
+    - Every change delivered through GitOps
+    - Secrets never stored in Git
+    - Policy-enforced security baseline on every namespace
+    - Metrics, logs and traces without extra setup
+  readmeFile: PLATFORM.md
+  releasesDir: releases
+  # Offerings are grouped by category in the UI, in the order they first appear.
+  offerings:
+    - name: kubernetes-workloads
+      displayName: Kubernetes workloads
+      category: compute
+      status: ga
+      description: Run containers on managed Kubernetes with namespaces, quotas and RBAC set up for your team.
+      components: [kubernetes]
+    - name: autoscaling
+      displayName: Node autoscaling
+      category: compute
+      status: beta
+      description: Nodes appear when workloads need them and disappear when they don't.
+      components: [karpenter]
+    - name: ingress
+      displayName: Ingress and service mesh
+      category: networking
+      status: ga
+      description: Expose services with mTLS between them and traffic management built in.
+      components: [istio, cert-manager]
+    - name: dns
+      displayName: DNS
+      category: networking
+      status: planned
+      description: DNS records created automatically from ingress hostnames.
+      components: [external-dns]
+    - name: metrics
+      displayName: Metrics
+      category: observability
+      status: ga
+      description: Prometheus metrics and alerting wired up for every namespace.
+      components: [prometheus-operator]
+    - name: logs
+      displayName: Logs
+      category: observability
+      status: planned
+      description: Centralised, searchable logs for every workload.
+    - name: traces
+      displayName: Traces
+      category: observability
+      status: planned
+      description: Distributed tracing with OpenTelemetry.
+    - name: secrets
+      displayName: Secrets
+      category: security
+      status: ga
+      description: Secrets synced from the vault into your namespace; never stored in Git.
+      components: [external-secrets]
+    - name: policy
+      displayName: Policy
+      category: security
+      status: ga
+      description: Admission policies applied to every workload.
+      components: [kyverno]
+    - name: postgresql
+      displayName: PostgreSQL
+      category: data
+      status: ga
+      description: Request a managed PostgreSQL database with a Kubernetes claim.
+      components: [crossplane, provider-upjet-aws]
+    - name: object-storage
+      displayName: Object storage
+      category: data
+      status: ga
+      description: S3 or Azure Blob buckets on demand, with credentials synced to your namespace.
+      components: [crossplane, provider-upjet-aws, provider-upjet-azure]
+    - name: gitops
+      displayName: GitOps deployment
+      category: developer-experience
+      status: ga
+      description: Commit to Git and Argo CD reconciles every environment.
+      components: [argocd]
+      docs: https://docs.acme.example/platform/delivery
+    - name: app-templates
+      displayName: Application templates
+      category: developer-experience
+      status: beta
+      description: One claim creates a service, its database and its DNS, composed by the platform.
+      components: [crossplane, function-patch-and-transform, function-auto-ready]
+  environments:
+    - name: dev
+      displayName: Development
+      tier: non-production
+      inventoryFile: inventories/dev.yaml
+      targetRelease: "1.2.0"
+    - name: staging
+      displayName: Staging
+      tier: non-production
+      inventoryFile: inventories/staging.yaml
+      targetRelease: "1.2.0"
+    - name: prod
+      displayName: Production
+      tier: production
+      inventoryFile: inventories/prod.yaml
+      targetRelease: "1.1.0"
+    # A live cluster instead of an exported inventory:
+    # - name: sandbox
+    #   kubeContext: kind-sandbox
+    #   targetRelease: "1.2.0"

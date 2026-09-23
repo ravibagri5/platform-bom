@@ -1,0 +1,30 @@
+apiVersion: pbom.dev/v1alpha1
+kind: PlatformRelease
+metadata:
+  name: "1.1.0"
+spec:
+  version: "1.1.0"
+  date: "2026-06-15"
+  summary: Kubernetes 1.33, Argo CD 3 and Crossplane 2.
+  highlights:
+    - Kubernetes upgraded to 1.33
+    - Argo CD 3.0 with faster reconciliation
+    - Crossplane 2.0 with namespaced composite resources
+    - New elastic compute offering with Karpenter (beta)
+  notes: |
+    ### Upgrade notes for application teams
+
+    - Argo CD 3 removes legacy repository credentials. Nothing to do if you use the platform `AppProject`.
+    - Crossplane claims keep working; new namespaced XRs are available for new services.
+  components:
+    kubernetes: "1.33"
+    argocd: "3.0.6"
+    crossplane: "2.0.0"
+    provider-upjet-aws: "1.23.0"
+    karpenter: "1.5.0"
+    cert-manager: "1.18.0"
+    external-secrets: "0.18.0"
+    kyverno: "1.14.2"
+    istio: "1.26.2"
+    prometheus-operator: "0.83.0"
+  offerings: [kubernetes-workloads, autoscaling, ingress, metrics, secrets, policy, postgresql, object-storage, gitops]

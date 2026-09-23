@@ -1,0 +1,9 @@
+bin/
+dist/
+coverage.out
+web/node_modules/
+internal/ui/dist/*
+!internal/ui/dist/.gitkeep
+.DS_Store
+# Personal platform files for trying pbom against real clusters.
+local/

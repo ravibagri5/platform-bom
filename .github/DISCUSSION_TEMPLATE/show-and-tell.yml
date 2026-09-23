@@ -1,0 +1,27 @@
+labels: ["show and tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share how you use platform-bom: your platform page, how you cut and
+        promote releases, a CI drift check, a catalog you maintain. Please
+        remove anything confidential from screenshots.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you build or set up?
+    validations:
+      required: true
+
+  - type: textarea
+    id: how
+    attributes:
+      label: How does it work?
+      description: Configuration, workflow files or screenshots.
+
+  - type: textarea
+    id: learned
+    attributes:
+      label: What would you change in platform-bom?
+      description: Rough edges you hit along the way are very welcome here.

@@ -1,0 +1,37 @@
+name: Labels
+
+# .github/labels.yml is the source of truth for repository labels. Changes are
+# reviewed in a pull request, dry-run against the repository, and applied when
+# they land on main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/labels.yaml"
+  pull_request:
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/labels.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync labels
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: crazy-max/ghaction-github-labeler@v5
+        with:
+          yaml-file: .github/labels.yml
+          # Labels removed from the file are removed from the repository, so
+          # the file stays the source of truth. Pull requests only report.
+          skip-delete: false
+          dry-run: ${{ github.event_name == 'pull_request' }}

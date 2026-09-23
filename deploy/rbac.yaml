@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pbom
+---
+# Read-only access to everything discovery looks at. Nothing here can change
+# the cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: platform-bom-reader
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list]
+  # Helm stores release metadata in Secrets, and RBAC cannot restrict by label.
+  # Remove this rule to skip Helm discovery; everything else keeps working.
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [get, list]
+  - apiGroups: [pkg.crossplane.io]
+    resources: [providers, functions, configurations]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: platform-bom-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: platform-bom-reader
+subjects:
+  - kind: ServiceAccount
+    name: pbom
+    namespace: platform-bom

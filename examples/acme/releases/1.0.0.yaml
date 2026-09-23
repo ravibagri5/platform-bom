@@ -1,0 +1,23 @@
+apiVersion: pbom.dev/v1alpha1
+kind: PlatformRelease
+metadata:
+  name: "1.0.0"
+spec:
+  version: "1.0.0"
+  date: "2026-03-10"
+  summary: First versioned release of the Acme platform.
+  highlights:
+    - GitOps delivery with Argo CD
+    - Self-service AWS infrastructure with Crossplane
+    - Service mesh and certificates for every service
+  components:
+    kubernetes: "1.32"
+    argocd: "2.14.9"
+    crossplane: "1.19.1"
+    provider-upjet-aws: "1.21.0"
+    cert-manager: "1.17.1"
+    external-secrets: "0.14.4"
+    kyverno: "1.13.4"
+    istio: "1.25.1"
+    prometheus-operator: "0.81.0"
+  offerings: [kubernetes-workloads, ingress, metrics, secrets, policy, postgresql, gitops]

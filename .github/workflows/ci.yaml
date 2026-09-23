@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: &docs
+      - "**.md"
+      - "LICENSE"
+      - "NOTICE"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/DISCUSSION_TEMPLATE/**"
+  pull_request:
+    paths-ignore: *docs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Build with the current Go release; go.mod only sets the minimum.
+  GO_VERSION: stable
+  NODE_VERSION: "22"
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Check go.mod is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum \
+            || (echo "::error::go.mod or go.sum is not tidy, run 'make tidy'" && exit 1)
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l cmd internal)
+          if [ -n "$unformatted" ]; then
+            echo "::error::these files are not formatted, run 'make fmt':"
+            echo "$unformatted"
+            exit 1
+          fi
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.13.2
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The race detector is slow, so it guards Linux, which is what the
+          # image and most deployments run. The others catch path assumptions.
+          - os: ubuntu-latest
+            flags: -race -coverprofile=coverage.out -covermode=atomic
+          - os: macos-latest
+            flags: ""
+          - os: windows-latest
+            flags: ""
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Test
+        # PowerShell mangles -coverprofile=coverage.out, so use bash everywhere.
+        run: go test -count=1 ${{ matrix.flags }} ./...
+        shell: bash
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+          fail_ci_if_error: false
+
+  ui:
+    name: Web UI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Type-check and build
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-dist
+          path: internal/ui/dist
+          retention-days: 1
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: ui
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ui-dist
+          path: internal/ui/dist
+
+      - name: Build
+        run: make build
+
+      - name: Smoke test
+        # The example platform uses exported inventories, so this exercises the
+        # whole pipeline without a cluster or network access.
+        run: |
+          ./bin/pbom version
+          ./bin/pbom catalog > /dev/null
+          ./bin/pbom matrix -c examples/acme/pbom.yaml --no-upstream
+          ./bin/pbom release diff 1.1.0 1.2.0 -c examples/acme/pbom.yaml
+          ./bin/pbom drift -c examples/acme/pbom.yaml --no-upstream
+
+  vulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64
+          tags: platform-bom:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=min,ignore-error=true

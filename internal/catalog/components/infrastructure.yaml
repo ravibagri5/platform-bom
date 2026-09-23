@@ -1,0 +1,230 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: crossplane
+spec:
+  displayName: Crossplane
+  category: infrastructure
+  description: Control plane framework for self-service infrastructure.
+  homepage: https://crossplane.io
+  discovery:
+    images: ["crossplane/crossplane"]
+    helmCharts: ["crossplane"]
+    apiGroups: ["apiextensions.crossplane.io", "pkg.crossplane.io"]
+  upstream:
+    github: crossplane/crossplane
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-upjet-aws
+spec:
+  displayName: Crossplane Provider AWS
+  category: infrastructure
+  description: Crossplane provider family for AWS.
+  partOf: crossplane
+  homepage: https://marketplace.upbound.io/providers/upbound/provider-family-aws
+  discovery:
+    crossplanePackages: ["upbound/provider-aws-*", "upbound/provider-family-aws", "crossplane-contrib/provider-aws-*", "crossplane-contrib/provider-family-aws"]
+  upstream:
+    github: crossplane-contrib/provider-upjet-aws
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-upjet-azure
+spec:
+  displayName: Crossplane Provider Azure
+  category: infrastructure
+  description: Crossplane provider family for Azure.
+  partOf: crossplane
+  homepage: https://marketplace.upbound.io/providers/upbound/provider-family-azure
+  discovery:
+    crossplanePackages: ["upbound/provider-azure-*", "upbound/provider-family-azure", "crossplane-contrib/provider-azure-*", "crossplane-contrib/provider-family-azure"]
+  upstream:
+    github: crossplane-contrib/provider-upjet-azure
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-upjet-gcp
+spec:
+  displayName: Crossplane Provider GCP
+  category: infrastructure
+  description: Crossplane provider family for Google Cloud.
+  partOf: crossplane
+  homepage: https://marketplace.upbound.io/providers/upbound/provider-family-gcp
+  discovery:
+    crossplanePackages: ["upbound/provider-gcp-*", "upbound/provider-family-gcp", "crossplane-contrib/provider-gcp-*", "crossplane-contrib/provider-family-gcp"]
+  upstream:
+    github: crossplane-contrib/provider-upjet-gcp
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-kubernetes
+spec:
+  displayName: Crossplane Provider Kubernetes
+  category: infrastructure
+  description: Manage Kubernetes objects from Crossplane.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/provider-kubernetes"]
+  upstream:
+    github: crossplane-contrib/provider-kubernetes
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-helm
+spec:
+  displayName: Crossplane Provider Helm
+  category: infrastructure
+  description: Manage Helm releases from Crossplane.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/provider-helm"]
+  upstream:
+    github: crossplane-contrib/provider-helm
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-patch-and-transform
+spec:
+  displayName: Function Patch and Transform
+  category: composition
+  description: Classic patch-and-transform composition.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-patch-and-transform"]
+  upstream:
+    github: crossplane-contrib/function-patch-and-transform
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-go-templating
+spec:
+  displayName: Function Go Templating
+  category: composition
+  description: Compose resources with Go templates.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-go-templating"]
+  upstream:
+    github: crossplane-contrib/function-go-templating
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-auto-ready
+spec:
+  displayName: Function Auto Ready
+  category: composition
+  description: Automatically detect composed resource readiness.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-auto-ready"]
+  upstream:
+    github: crossplane-contrib/function-auto-ready
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-environment-configs
+spec:
+  displayName: Function Environment Configs
+  category: composition
+  description: Load EnvironmentConfigs into the composition pipeline.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-environment-configs"]
+  upstream:
+    github: crossplane-contrib/function-environment-configs
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-extra-resources
+spec:
+  displayName: Function Extra Resources
+  category: composition
+  description: Fetch existing cluster resources for use in compositions.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-extra-resources"]
+  upstream:
+    github: crossplane-contrib/function-extra-resources
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-upjet-azuread
+spec:
+  displayName: Crossplane Provider Azure AD
+  category: infrastructure
+  description: Manage Entra ID (Azure AD) applications, groups and service principals.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["upbound/provider-azuread", "crossplane-contrib/provider-azuread"]
+  upstream:
+    github: crossplane-contrib/provider-upjet-azuread
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-vault
+spec:
+  displayName: Crossplane Provider Vault
+  category: infrastructure
+  description: Manage HashiCorp Vault configuration from Crossplane.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["upbound/provider-vault"]
+  upstream:
+    github: upbound/provider-vault
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-grafana
+spec:
+  displayName: Crossplane Provider Grafana
+  category: infrastructure
+  description: Manage Grafana resources from Crossplane.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["grafana/provider-grafana"]
+  upstream:
+    github: grafana/crossplane-provider-grafana
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: provider-http
+spec:
+  displayName: Crossplane Provider HTTP
+  category: infrastructure
+  description: Call HTTP APIs from Crossplane.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/provider-http"]
+  upstream:
+    github: crossplane-contrib/provider-http
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: velero
+spec:
+  displayName: Velero
+  category: data
+  description: Backup and restore of cluster resources and volumes.
+  homepage: https://velero.io
+  discovery:
+    images: ["velero/velero"]
+    helmCharts: ["velero"]
+    apiGroups: ["velero.io"]
+  upstream:
+    github: vmware-tanzu/velero

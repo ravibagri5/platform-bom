@@ -1,0 +1,43 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Inventory
+metadata:
+  name: dev
+environment: dev
+collectedAt: "2026-09-23T08:00:00Z"
+cluster:
+  context: acme-dev
+  version: 1.34.1
+  gitVersion: v1.34.1-eks-3025e55
+  distribution: eks
+  nodes: 6
+components:
+  - {name: kubernetes, displayName: Kubernetes, category: runtime, version: 1.34.1, known: true,
+     evidence: [{source: kubernetes, object: cluster, detail: v1.34.1-eks-3025e55 eks, version: 1.34.1}]}
+  - {name: argocd, displayName: Argo CD, category: delivery, version: 3.1.5, known: true,
+     evidence: [{source: image, namespace: argocd, object: Deployment/argocd-server, detail: "quay.io/argoproj/argocd:v3.1.5", version: v3.1.5},
+                {source: helm, namespace: argocd, object: HelmRelease/argocd, detail: chart argo-cd-8.3.0, version: v3.1.5}]}
+  - {name: kargo, displayName: Kargo, category: delivery, version: 1.7.0, known: true,
+     evidence: [{source: image, namespace: kargo, object: Deployment/kargo-api, detail: "ghcr.io/akuity/kargo:v1.7.0", version: v1.7.0}]}
+  - {name: crossplane, displayName: Crossplane, category: infrastructure, version: 2.0.2, known: true,
+     evidence: [{source: image, namespace: crossplane-system, object: Deployment/crossplane, detail: "xpkg.crossplane.io/crossplane/crossplane:v2.0.2", version: v2.0.2}]}
+  - {name: provider-upjet-aws, displayName: Crossplane Provider AWS, category: infrastructure, version: 2.0.0, known: true,
+     evidence: [{source: crossplane-package, object: Provider/provider-aws-s3, detail: "xpkg.upbound.io/upbound/provider-aws-s3:v2.0.0", version: v2.0.0},
+                {source: crossplane-package, object: Provider/provider-aws-rds, detail: "xpkg.upbound.io/upbound/provider-aws-rds:v2.0.0", version: v2.0.0}]}
+  - {name: provider-upjet-azure, displayName: Crossplane Provider Azure, category: infrastructure, version: 2.0.0, known: true,
+     evidence: [{source: crossplane-package, object: Provider/provider-azure-storage, detail: "xpkg.upbound.io/upbound/provider-azure-storage:v2.0.0", version: v2.0.0}]}
+  - {name: function-patch-and-transform, displayName: Function Patch and Transform, category: composition, version: 0.9.0, known: true,
+     evidence: [{source: crossplane-package, object: Function/function-patch-and-transform, detail: "xpkg.crossplane.io/crossplane-contrib/function-patch-and-transform:v0.9.0", version: v0.9.0}]}
+  - {name: function-auto-ready, displayName: Function Auto Ready, category: composition, version: 0.5.0, known: true,
+     evidence: [{source: crossplane-package, object: Function/function-auto-ready, detail: "xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.5.0", version: v0.5.0}]}
+  - {name: karpenter, displayName: Karpenter, category: compute, version: 1.6.2, known: true,
+     evidence: [{source: image, namespace: kube-system, object: Deployment/karpenter, detail: "public.ecr.aws/karpenter/controller:1.6.2", version: 1.6.2}]}
+  - {name: cert-manager, displayName: cert-manager, category: security, version: 1.18.2, known: true,
+     evidence: [{source: image, namespace: cert-manager, object: Deployment/cert-manager, detail: "quay.io/jetstack/cert-manager-controller:v1.18.2", version: v1.18.2}]}
+  - {name: external-secrets, displayName: External Secrets, category: security, version: 0.19.2, known: true,
+     evidence: [{source: image, namespace: external-secrets, object: Deployment/external-secrets, detail: "ghcr.io/external-secrets/external-secrets:v0.19.2", version: v0.19.2}]}
+  - {name: kyverno, displayName: Kyverno, category: security, version: 1.15.1, known: true,
+     evidence: [{source: image, namespace: kyverno, object: Deployment/kyverno-admission-controller, detail: "reg.kyverno.io/kyverno/kyverno:v1.15.1", version: v1.15.1}]}
+  - {name: istio, displayName: Istio, category: networking, version: 1.27.1, known: true,
+     evidence: [{source: image, namespace: istio-system, object: Deployment/istiod, detail: "docker.io/istio/pilot:1.27.1", version: 1.27.1}]}
+  - {name: prometheus-operator, displayName: Prometheus Operator, category: observability, version: 0.85.0, known: true,
+     evidence: [{source: image, namespace: monitoring, object: Deployment/prometheus-operator, detail: "quay.io/prometheus-operator/prometheus-operator:v0.85.0", version: v0.85.0}]}

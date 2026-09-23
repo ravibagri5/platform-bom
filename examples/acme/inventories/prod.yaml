@@ -1,0 +1,33 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Inventory
+metadata:
+  name: prod
+environment: prod
+collectedAt: "2026-09-23T08:00:00Z"
+cluster:
+  context: acme-prod
+  version: 1.33.5
+  gitVersion: v1.33.5-eks-113cf36
+  distribution: eks
+  nodes: 48
+components:
+  - {name: kubernetes, displayName: Kubernetes, category: runtime, version: 1.33.5, known: true,
+     evidence: [{source: kubernetes, object: cluster, detail: v1.33.5-eks-113cf36 eks, version: 1.33.5}]}
+  - {name: argocd, displayName: Argo CD, category: delivery, version: 3.0.6, known: true,
+     evidence: [{source: image, namespace: argocd, object: Deployment/argocd-server, detail: "quay.io/argoproj/argocd:v3.0.6", version: v3.0.6}]}
+  - {name: crossplane, displayName: Crossplane, category: infrastructure, version: 2.0.0, known: true,
+     evidence: [{source: image, namespace: crossplane-system, object: Deployment/crossplane, detail: "xpkg.crossplane.io/crossplane/crossplane:v2.0.0", version: v2.0.0}]}
+  - {name: provider-upjet-aws, displayName: Crossplane Provider AWS, category: infrastructure, version: 1.23.0, known: true,
+     evidence: [{source: crossplane-package, object: Provider/provider-aws-s3, detail: "xpkg.upbound.io/upbound/provider-aws-s3:v1.23.0", version: v1.23.0}]}
+  - {name: karpenter, displayName: Karpenter, category: compute, version: 1.5.0, known: true,
+     evidence: [{source: image, namespace: kube-system, object: Deployment/karpenter, detail: "public.ecr.aws/karpenter/controller:1.5.0", version: 1.5.0}]}
+  - {name: cert-manager, displayName: cert-manager, category: security, version: 1.18.0, known: true,
+     evidence: [{source: image, namespace: cert-manager, object: Deployment/cert-manager, detail: "quay.io/jetstack/cert-manager-controller:v1.18.0", version: v1.18.0}]}
+  - {name: external-secrets, displayName: External Secrets, category: security, version: 0.18.0, known: true,
+     evidence: [{source: image, namespace: external-secrets, object: Deployment/external-secrets, detail: "ghcr.io/external-secrets/external-secrets:v0.18.0", version: v0.18.0}]}
+  - {name: kyverno, displayName: Kyverno, category: security, version: 1.14.2, known: true,
+     evidence: [{source: image, namespace: kyverno, object: Deployment/kyverno-admission-controller, detail: "reg.kyverno.io/kyverno/kyverno:v1.14.2", version: v1.14.2}]}
+  - {name: istio, displayName: Istio, category: networking, version: 1.26.2, known: true,
+     evidence: [{source: image, namespace: istio-system, object: Deployment/istiod, detail: "docker.io/istio/pilot:1.26.2", version: 1.26.2}]}
+  - {name: prometheus-operator, displayName: Prometheus Operator, category: observability, version: 0.83.0, known: true,
+     evidence: [{source: image, namespace: monitoring, object: Deployment/prometheus-operator, detail: "quay.io/prometheus-operator/prometheus-operator:v0.83.0", version: v0.83.0}]}

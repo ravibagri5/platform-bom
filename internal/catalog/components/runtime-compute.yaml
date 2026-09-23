@@ -1,0 +1,62 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kubernetes
+spec:
+  displayName: Kubernetes
+  category: runtime
+  description: Container orchestration control plane.
+  homepage: https://kubernetes.io
+  discovery:
+    kubernetes: true
+  upstream:
+    github: kubernetes/kubernetes
+    supportedMinors: 3
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: karpenter
+spec:
+  displayName: Karpenter
+  category: compute
+  description: Just-in-time node provisioning.
+  homepage: https://karpenter.sh
+  discovery:
+    images: ["karpenter/controller", "karpenter/karpenter"]
+    helmCharts: ["karpenter"]
+    apiGroups: ["karpenter.sh"]
+  upstream:
+    github: aws/karpenter-provider-aws
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: keda
+spec:
+  displayName: KEDA
+  category: compute
+  description: Event-driven workload autoscaling.
+  homepage: https://keda.sh
+  discovery:
+    images: ["kedacore/keda"]
+    helmCharts: ["keda"]
+    apiGroups: ["keda.sh"]
+  upstream:
+    github: kedacore/keda
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: metrics-server
+spec:
+  displayName: Metrics Server
+  category: compute
+  description: Resource metrics for autoscaling.
+  homepage: https://github.com/kubernetes-sigs/metrics-server
+  discovery:
+    images: ["metrics-server/metrics-server"]
+    helmCharts: ["metrics-server"]
+  upstream:
+    github: kubernetes-sigs/metrics-server
+    tagPrefix: v

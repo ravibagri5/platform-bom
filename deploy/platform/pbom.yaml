@@ -1,0 +1,20 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: my-platform
+  displayName: My Platform
+spec:
+  tagline: Replace this with what your platform offers.
+  readmeFile: PLATFORM.md
+  # Mounted from the pbom-releases ConfigMap.
+  releasesDir: /releases
+  environments:
+    - name: this-cluster
+      displayName: This cluster
+      inCluster: true
+      # targetRelease: "1.0.0"
+
+    # Other clusters, through a kubeconfig mounted from the pbom-kubeconfig Secret:
+    # - name: prod
+    #   kubeconfig: /kubeconfig/config
+    #   kubeContext: prod

@@ -113,6 +113,10 @@
   color: "1d76db"
   description: GitHub Actions workflows
 
+- name: "area/integrations"
+  color: "1d76db"
+  description: "Integrations with other tools: Backstage, Headlamp, k9s, MCP, Crossplane, CI"
+
 # --- Theme (see ROADMAP.md) -------------------------------------------------
 
 - name: "theme/discover"
@@ -134,6 +138,10 @@
 - name: "theme/present"
   color: "5319e7"
   description: The platform as a product in the UI
+
+- name: "theme/integrate"
+  color: "5319e7"
+  description: Use the platform inventory from the tools platform engineers already use
 
 # --- Priority ---------------------------------------------------------------
 

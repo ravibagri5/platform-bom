@@ -28,4 +28,4 @@ labels:
 
 images:
   - name: ghcr.io/ravibagri5/platform-bom
-    newTag: latest
+    newTag: "0.1.0"

@@ -11,6 +11,10 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-23
+
+The first release. Release candidate: `v0.1.0-rc.1`.
+
 ### Added
 
 - The resource model, under `apiVersion: pbom.dev/v1alpha1`: `Platform` with
@@ -48,3 +52,11 @@ change it; every such change is listed under **Changed** with a migration note.
 - `deploy/`, a kustomize base for running `pbom serve` in a cluster with a
   read-only ClusterRole, a hardened pod and the platform and releases as
   ConfigMaps.
+- Release archives for Linux, macOS and Windows with SBOMs and a cosign-signed
+  checksum file, and multi-arch images at `ghcr.io/ravibagri5/platform-bom`.
+- Documentation: the platform model and the proposed PBOM concept in the
+  README, usage and deployment guides in `docs/`, and a roadmap organised as
+  milestones M0 to M11.
+
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.1.0

@@ -20,12 +20,12 @@ build the UI. For the complete binary, clone the repository and run
 
 ### Release binaries and images
 
-Releases are built with GoReleaser. From the first tagged release, archives for
-Linux, macOS and Windows on amd64 and arm64, with SBOMs and a cosign-signed
-checksum file, are published on the
+Each release publishes archives for Linux, macOS and Windows on amd64 and
+arm64, with SBOMs and a cosign-signed checksum file, on the
 [releases page](https://github.com/ravibagri5/platform-bom/releases), and
-images at `ghcr.io/ravibagri5/platform-bom`. Until then, build the image
-locally with `docker build -t ghcr.io/ravibagri5/platform-bom:dev .`.
+multi-arch images at `ghcr.io/ravibagri5/platform-bom`: `:<version>` for every
+release, `:latest` for the newest release and `:rc` for the newest release
+candidate. The release notes show how to verify the signature.
 
 ## Required RBAC
 
@@ -137,11 +137,18 @@ the cluster and use the result as an `inventoryFile`.
 
 ### Trying it on kind
 
-Until a release is published, build the image locally and load it into kind:
+The base uses the published image, so it works on kind as is:
+
+```shell
+kind create cluster --name pbom
+kubectl apply -k deploy
+```
+
+To test local changes, build the image and load it into kind instead:
 
 ```shell
 docker build -t ghcr.io/ravibagri5/platform-bom:dev .
-kind load docker-image ghcr.io/ravibagri5/platform-bom:dev --name <cluster>
+kind load docker-image ghcr.io/ravibagri5/platform-bom:dev --name pbom
 (cd deploy && kustomize edit set image ghcr.io/ravibagri5/platform-bom:dev)
 kubectl apply -k deploy
 ```

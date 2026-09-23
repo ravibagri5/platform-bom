@@ -7,14 +7,264 @@
 [![golangci-lint](https://img.shields.io/badge/lint-golangci--lint-00ADD8?logo=go&logoColor=white)](https://golangci-lint.run/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-**Your internal platform, as a versioned product.**
+**Know what your platform is made of.**
 
-Application teams have SBOMs, release trains and changelogs. Platform teams
-mostly have a wiki page and a spreadsheet of versions that was accurate once.
-Platform BOM (`pbom`) treats the platform itself as the product: it discovers
-what every environment is actually running, groups it into the capabilities
-you offer, lets you publish numbered platform releases, and tells you how far
-each building block is behind upstream, and why that matters.
+Platform BOM (`pbom`) is an open source platform inventory: a machine-readable,
+continuously discovered description of an internal platform. It answers the
+questions a platform team is asked every week and rarely has a reliable answer
+to:
+
+- What is our platform made of, and what does it provide to its users?
+- Which versions are running in each environment?
+- How does production differ from staging, and from what we said we would run?
+- What has changed upstream, and which of it matters to us?
+
+The core of the project is a **platform model**, not a user interface. Discovery
+produces evidence, the evidence is normalised into an inventory, and the
+inventory is compared with the platform you declared in Git. The CLI, the JSON
+API and the web UI are all consumers of that model, and other tools can be too.
+
+> **Project status.** Early development toward a first `v0.1` release; no
+> version has been tagged yet. The resource schema is `v1alpha1` and will
+> change. Everything described as *current* below is in this repository today;
+> everything else is marked as roadmap.
+
+## Contents
+
+- [The problem](#the-problem)
+- [Why existing tools are not enough](#why-existing-tools-are-not-enough)
+- [Core concepts](#core-concepts)
+- [PBOM: a Platform Bill of Materials](#pbom-a-platform-bill-of-materials)
+- [How it works](#how-it-works)
+- [Architecture](#architecture)
+- [Example platform inventory](#example-platform-inventory)
+- [Example PBOM](#example-pbom)
+- [Declared vs observed platform](#declared-vs-observed-platform)
+- [Upstream intelligence](#upstream-intelligence)
+- [The UI](#the-ui)
+- [Integrations](#integrations)
+- [Community-maintained component definitions](#community-maintained-component-definitions)
+- [Roadmap](#roadmap)
+- [Principles and non-goals](#principles-and-non-goals)
+- [Why this is different](#why-this-is-different)
+- [Getting started](#getting-started)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+
+## The problem
+
+An internal platform is a product. Application teams build on it, depend on its
+guarantees and plan around its changes. Yet most platforms are described by a
+wiki page, a spreadsheet of versions that was accurate once, and the collective
+memory of the team that runs it.
+
+A platform is also much more than Kubernetes. A typical one combines a cluster
+distribution with GitOps (Argo CD, Flux), infrastructure composition
+(Crossplane and its providers and functions, Terraform, Pulumi), node
+provisioning (Karpenter), networking (Istio, ExternalDNS, cert-manager),
+secrets (External Secrets), observability (Prometheus, Grafana, Thanos,
+OpenTelemetry), policy (Kyverno), backup (Velero), managed cloud services and
+the developer-facing offerings built on top of all of them. These components
+are spread across repositories, installed by different mechanisms, and upgraded
+at different times in different environments.
+
+The result is a set of questions that are surprisingly hard to answer:
+
+| Question | Typical answer today |
+| --- | --- |
+| What does our platform offer, and what is it built on? | A wiki page, if someone kept it current |
+| Which version of the platform is production running? | "Mostly the same as staging" |
+| What changed between platform 1.1 and 1.2? | Git archaeology across a dozen repositories |
+| Is staging what we said it would be? | Nobody knows until something breaks |
+| How far behind upstream are we, and does it matter? | A quarterly spreadsheet |
+| Which offerings are affected if we upgrade this component? | Tribal knowledge |
+
+## Why existing tools are not enough
+
+Each of the tools platform teams already use answers a different question. None
+of them treats the platform itself as the object being described.
+
+| Tool | Answers | Platform BOM answers |
+| --- | --- | --- |
+| Kubernetes dashboard | *What resources are running in this cluster?* | *What is our platform, what does it provide, what is it made of, and which version of it are we operating?* |
+| Developer portal, e.g. Backstage | *What software and services exist, and who owns them?* | *What is the platform those services run on made of?* |
+| Cloud inventory, e.g. CloudQuery, Steampipe | *What cloud resources exist?* | *Which platform capabilities exist, and which technologies implement them?* |
+| Version dashboard | *Which versions are installed?* | *What constitutes the platform, how is it versioned, how does it differ between environments, and what is changing?* |
+| SBOM, e.g. CycloneDX, SPDX | *Which packages is this software artifact built from?* | *Which components and capabilities is this running platform built from?* |
+
+Platform BOM is intended to sit above and between these systems as a platform
+description layer. It reads from them as evidence sources and can feed them as
+consumers; it does not try to replace them.
+
+## Core concepts
+
+```text
+                      PLATFORM
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+     COMPONENTS      OFFERINGS       RELEASES
+    what it is     what it provides  versioned snapshots
+     made of                             │
+         │               │               │
+         └───────────────┼───────────────┘
+                         │
+                    ENVIRONMENTS
+              where it runs, and what was
+              observed running there
+```
+
+| Concept | What it is | Example |
+| --- | --- | --- |
+| **Platform** | The internal platform operated by a platform engineering team, described as a product: purpose, owners, guarantees, offerings and environments. | *Acme Internal Platform* |
+| **Component** | A technology the platform is made of. Recognised during discovery through a catalog definition. | Kubernetes 1.34, Argo CD 3.1.5, Istio 1.27, Crossplane 2.0.2 |
+| **Offering** | A capability the platform provides to its users, with a maturity status. It describes *what* is provided, not *how*. | GitOps deployment, Metrics, Secrets, PostgreSQL, Object storage |
+| **Environment** | A place the platform runs, and the release it is expected to run. | `dev`, `staging`, `prod` targeting `1.2.0` |
+| **Platform release** | A versioned snapshot of the platform: component versions and the offerings available. | Platform `1.2.0` |
+| **Inventory** | What discovery actually found in one environment, with the evidence for every component. | `prod`: Argo CD 3.0.6, from the image of `Deployment/argocd-server` |
+
+### Offerings are separate from implementations
+
+An offering is defined by what users get, not by the technology behind it.
+*Managed PostgreSQL* might be implemented with Crossplane and AWS RDS on one
+platform, with Terraform and Azure Database for PostgreSQL on another, and with
+Pulumi and Cloud SQL on a third. In Platform BOM the offering is the stable
+name, and its `components` list records which technologies implement it on
+*this* platform. Replacing the implementation changes that list, not the
+offering users depend on.
+
+Today, only components that can be observed through Kubernetes can be verified
+by discovery. An offering implemented through Terraform or Pulumi can be
+declared, but `pbom` has no evidence source for it yet (see
+[Milestone 5](#roadmap)). Binding offerings to different implementations per
+environment is also a roadmap item.
+
+## PBOM: a Platform Bill of Materials
+
+A **Software Bill of Materials (SBOM)** describes what a software artifact is
+made of. It is an established practice with established specifications, notably
+[CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.dev/).
+
+A **Platform Bill of Materials (PBOM)** applies the same idea one level up: a
+machine-readable description of the components, capabilities, versions and
+relationships that make up an internal platform, per release and per
+environment.
+
+| | SBOM | PBOM |
+| --- | --- | --- |
+| Describes | A software artifact | A running internal platform |
+| Granularity | Packages and libraries | Platform components and offerings |
+| Scope | One build | A release, and each environment it runs in |
+| Captures drift | No, it describes one artifact | Yes, declared release vs observed environment |
+| Status | Established, with CycloneDX and SPDX | **A term proposed by this project** |
+
+To be explicit: PBOM is **not** an industry standard, has no industry adoption,
+and is not endorsed by the CNCF or any other foundation. It is a concept this
+project proposes and uses to structure its model. Where an established format
+fits, Platform BOM should interoperate with it rather than compete; exporting a
+platform release as a CycloneDX document is on the [roadmap](#roadmap), and a
+PBOM can reference component SBOMs rather than duplicate them.
+
+In the current implementation, a PBOM is expressed through three documents:
+
+| Document | Role |
+| --- | --- |
+| `Platform` | The declared product: offerings, environments and their target releases |
+| `PlatformRelease` | The declared bill of materials for one platform version |
+| `Inventory` | The observed bill of materials for one environment, with evidence |
+
+A single consolidated PBOM document is a roadmap item; see
+[Example PBOM](#example-pbom).
+
+## How it works
+
+```mermaid
+flowchart TB
+    subgraph sources["Evidence sources"]
+        k8s["Kubernetes API<br/>version, nodes, API groups"]
+        img["Container images"]
+        helm["Helm release metadata"]
+        xp["Crossplane packages"]
+        more["Argo CD, Flux, IaC state,<br/>cloud APIs (roadmap)"]
+    end
+
+    sources --> evidence["Evidence<br/>one observation per source"]
+    evidence --> normalize["Normalization<br/>matched against the component catalog"]
+    normalize --> inventory["Inventory per environment<br/>the observed platform"]
+
+    declared["Platform and PlatformRelease<br/>files in Git<br/>the declared platform"] --> model
+    inventory --> model["Platform model<br/>matrix, drift, diffs, freshness"]
+    upstream["Upstream releases<br/>GitHub"] --> model
+
+    model --> api["CLI and JSON API"]
+    api --> ui["Web UI"]
+    api --> ci["CI and scheduled drift checks"]
+    api --> ext["Backstage, MCP, GitOps tooling,<br/>policy systems (roadmap)"]
+
+    classDef roadmap stroke-dasharray: 5 5
+    class more,ext roadmap
+```
+
+1. **Discovery** reads each environment. Today that means the Kubernetes API:
+   the server version and nodes (to identify EKS, AKS, GKE, kind, k3s and
+   RKE2), container images of Deployments, StatefulSets and DaemonSets, Helm
+   release metadata, Crossplane Providers, Functions and Configurations, and
+   served API groups, which include those of CRDs. Discovery only uses `get`
+   and `list`.
+2. **Evidence** is recorded per observation: where it came from, which object,
+   and which version it reported.
+3. **Normalization** matches evidence against the component catalog. Image
+   patterns ignore registry and mirror prefixes, so a mirrored Argo CD image is
+   still Argo CD. When sources disagree, the most trustworthy version wins:
+   cluster version, then Crossplane package tag, then image tag, then Helm
+   `appVersion`. Nothing is discarded: uncatalogued Crossplane packages and
+   Helm releases are still reported and placed in the tree.
+4. **The inventory** is the observed platform for one environment. It can be
+   produced live or exported to a file, so clusters that the `pbom` server
+   cannot reach can still be included.
+5. **The platform model** compares inventories with the declared platform and
+   its releases, and with upstream release data.
+6. **Consumers** read the model through the CLI or the JSON API.
+
+## Architecture
+
+The UI is one consumer of the platform model. The model, the evidence, the
+inventory and the interfaces to them are the product.
+
+| Stage | Package | Current state |
+| --- | --- | --- |
+| Resource model | [internal/api](internal/api) | `Platform`, `PlatformRelease`, `Component`, `Inventory` |
+| Discovery and evidence | [internal/discovery](internal/discovery) | Kubernetes evidence sources |
+| Normalization | [internal/catalog](internal/catalog) | Builtin and user-supplied component definitions |
+| Upstream data | [internal/upstream](internal/upstream) | GitHub releases, cached on disk |
+| Analysis | [internal/analysis](internal/analysis) | Matrix, drift, freshness, recommendations |
+| Releases | [internal/release](internal/release) | Load, create from an environment, diff |
+| Interfaces | [internal/cli](internal/cli), [internal/server](internal/server) | CLI, JSON API, embedded web UI |
+
+Architectural choices that matter for where the project goes:
+
+- **Kubernetes is the first discovery environment, not the definition of a
+  platform.** The resource model and analysis packages have no dependency on
+  the Kubernetes client libraries; Kubernetes-specific code is confined to
+  discovery. An environment can already be backed by an exported inventory file
+  instead of a live cluster. Environment connection settings are still
+  Kubernetes-shaped (`kubeContext`, `inCluster`), and generalising them is part
+  of adding non-Kubernetes evidence sources.
+- **Evidence sources are inputs, never the source of truth.** Crossplane,
+  Helm, Terraform or Argo CD tell `pbom` that a component is present at some
+  version. The platform, as declared by its team, is the abstraction.
+- **Declared state lives in Git.** Platform and release definitions are plain
+  YAML, reviewed in pull requests. `git log releases/` is the platform
+  changelog.
+- **Read-only by design.** `pbom` observes; it never writes to the systems it
+  discovers.
+
+## Example platform inventory
+
+Illustrative output for the bundled [example platform](examples/acme), which
+uses exported inventories so it runs without a cluster:
 
 ```text
 $ pbom matrix
@@ -32,245 +282,17 @@ infrastructure  Crossplane Provider Azure  2.0.0 ✓   - ✗       -          2.
 security        Kyverno                    1.15.1 ✓  1.15.0 ≠  1.14.2 ✓ ↑ 1.15.1   1.19.1
 ```
 
-Everything `pbom` does against a cluster is **read-only**: it lists workloads,
-Helm release metadata and Crossplane packages, and never writes. Your platform
-definition and releases are plain YAML that you keep in Git.
+`TARGET` is the release an environment is expected to run; `RUNNING` is the
+newest release it fully satisfies. Production targets `1.1.0` and satisfies it,
+so it is compliant even though it is behind dev. Staging targets `1.2.0` but
+runs a different Kyverno patch (`≠`) and lacks the Azure provider (`✗`), so it
+satisfies no release.
 
-## Contents
+## Example PBOM
 
-- [Why Platform BOM?](#why-platform-bom)
-- [The model](#the-model)
-- [Quick start](#quick-start)
-- [Installation](#installation)
-- [Using it with your clusters](#using-it-with-your-clusters)
-- [The web UI](#the-web-ui)
-- [CLI](#cli)
-- [Configuration](#configuration)
-- [How discovery works](#how-discovery-works)
-- [Upstream updates](#upstream-updates)
-- [Releases, drift and CI](#releases-drift-and-ci)
-- [Required RBAC](#required-rbac)
-- [Running in a container](#running-in-a-container)
-- [Running in a cluster](#running-in-a-cluster)
-- [HTTP API](#http-api)
-- [Development](#development)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [Security](#security)
-- [License](#license)
+### Current: a platform release
 
-## Why Platform BOM?
-
-There is no shortage of tools that show you Kubernetes objects, and plenty that
-track application versions across environments. What is missing is the view
-from the platform team's side of the table:
-
-| Question | Typical answer today | With `pbom` |
-| --- | --- | --- |
-| *What does our platform offer, and what is it built on?* | A wiki page, if someone kept it current | A product page generated from `pbom.yaml` and live discovery |
-| *Which version of the platform is production on?* | "Mostly the same as staging" | Each environment reports the newest release it fully satisfies |
-| *What changed between platform 1.1 and 1.2?* | Git archaeology across a dozen repos | `pbom release diff 1.1.0 1.2.0` |
-| *Is staging what we said it would be?* | Nobody knows until something breaks | Drift against the environment's target release, component by component |
-| *How far behind upstream are we, and does it matter?* | A quarterly spreadsheet | Explainable recommendations: minors behind, support windows, the release notes in between |
-
-The primary object is the **Platform**, not the cluster. Clusters, Helm,
-container images and Crossplane packages are only *evidence* that a component
-is present.
-
-## The model
-
-Four concepts, all plain YAML under `apiVersion: pbom.dev/v1alpha1`:
-
-```text
-                 PLATFORM
-                    │
-        ┌───────────┼───────────┐
-        │           │           │
-    COMPONENTS   OFFERINGS   RELEASES
-        │           │           │
-        └───────────┼───────────┘
-                    │
-              ENVIRONMENTS
-```
-
-| Concept | What it is | Example |
-| --- | --- | --- |
-| **Component** | A building block, recognised by a catalog definition | Kubernetes, Argo CD, Crossplane, provider-upjet-azure |
-| **Offering** | A capability you promise to users, backed by components | *Self-service databases*, *GitOps deployment*, *Secrets* |
-| **Release** | A numbered bundle of component versions and offerings | Platform `1.2.0`: Kubernetes 1.34, Crossplane 2.0.2, … |
-| **Environment** | Where the platform runs, and which release it should be on | `prod` targets `1.1.0` |
-
-## Quick start
-
-Try it on the bundled example platform. It uses exported inventories, so no
-cluster is needed:
-
-```shell
-git clone https://github.com/ravibagri5/platform-bom
-cd platform-bom
-make ui build                       # needs Go 1.26+ and Node 24+
-./bin/pbom serve -c examples/acme/pbom.yaml
-```
-
-Open <http://127.0.0.1:8080>.
-
-Then point it at a real cluster. With no platform file, `pbom` uses the builtin
-catalog only:
-
-```shell
-./bin/pbom discover --context my-cluster
-```
-
-No cluster handy? `make kind-demo` creates a kind cluster with Argo CD,
-cert-manager and Crossplane, and [examples/kind](examples/kind) describes it.
-
-Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit when fetching
-upstream releases, or pass `--no-upstream` to work offline.
-
-## Installation
-
-### From source
-
-```shell
-go install github.com/ravibagri5/platform-bom/cmd/pbom@latest
-```
-
-`go install` builds without the web UI, since the UI is compiled separately.
-The CLI works fully; `pbom serve` answers the JSON API and explains how to
-build the UI. For the complete binary, use `make ui build` or a release.
-
-### Release binaries
-
-Download an archive for your platform from the
-[releases page](https://github.com/ravibagri5/platform-bom/releases). Archives
-are published for Linux, macOS and Windows on amd64 and arm64, with SBOMs and a
-cosign-signed checksum file.
-
-### Container image
-
-```shell
-docker run --rm -p 8080:8080 \
-  -v "$PWD:/config:ro" \
-  ghcr.io/ravibagri5/platform-bom:latest
-```
-
-See [Running in a container](#running-in-a-container) for credentials.
-
-## Using it with your clusters
-
-1. **Check each cluster is reachable.**
-
-   ```shell
-   pbom discover --context prod-cluster
-   ```
-
-2. **Describe your platform** in a `pbom.yaml`, one environment per cluster:
-
-   ```yaml
-   apiVersion: pbom.dev/v1alpha1
-   kind: Platform
-   metadata:
-     name: acme
-     displayName: Acme Platform
-   spec:
-     tagline: The paved road for shipping services at Acme.
-     environments:
-       - name: dev
-         kubeContext: dev-cluster
-       - name: prod
-         kubeContext: prod-cluster
-   ```
-
-3. **Cut your first release** from what production runs today:
-
-   ```shell
-   pbom release create 1.0.0 --from-env prod --summary "Baseline"
-   ```
-
-4. **Set `targetRelease: "1.0.0"`** on each environment, then look at
-   `pbom drift` or open the UI with `pbom serve`.
-
-5. **Commit `pbom.yaml` and `releases/` to Git.** Releases are reviewed like any
-   other change, and `git log releases/` is your platform changelog.
-
-## The web UI
-
-`pbom serve` embeds a single-page UI with five views:
-
-| View | Shows |
-| --- | --- |
-| **Platform** | The product page: tagline, current release, offerings, guarantees, where it runs and your README |
-| **Components** | Everything the platform is made of, grouped by capability, with providers and functions nested under Crossplane and embedded functions under their configuration. Links to **Updates**, the upgrade recommendations with upstream release notes |
-| **Offerings** | The capabilities you promise, their maturity and the components behind them |
-| **Releases** | A timeline of platform releases with notes, bill of materials and diffs |
-| **Environments** | Component × environment matrix with drift, colour-coded kinds and collapsible groups |
-
-The UI never changes a cluster. **Rediscover** re-reads the clusters on demand;
-otherwise the server rediscovers on `--refresh-interval` (default 10 minutes).
-
-## CLI
-
-| Command | What it does |
-| --- | --- |
-| `pbom discover [--env E \| --context C] [-o yaml\|json]` | Discover components. `-o yaml` output can be saved and used as an `inventoryFile`. |
-| `pbom matrix [-o json]` | Component × environment versions, with drift and upstream markers. |
-| `pbom drift [--exit-code]` | Components that differ from each environment's target release. Exits 2 on drift with `--exit-code`. |
-| `pbom updates [--why] [-o json]` | Upgrade recommendations from upstream releases, with the reasoning. |
-| `pbom release list \| show NAME` | Browse platform releases. |
-| `pbom release create NAME --from-env ENV` | Cut a release from what an environment is running. |
-| `pbom release diff FROM TO [--all]` | Compare two releases. |
-| `pbom catalog` | Known component definitions. |
-| `pbom serve [--addr] [--refresh-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default. |
-| `pbom version` | Print the version. |
-
-Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`) and
-`--no-upstream`.
-
-## Configuration
-
-### Platform
-
-```yaml
-apiVersion: pbom.dev/v1alpha1
-kind: Platform
-metadata:
-  name: acme-platform
-  displayName: Acme Internal Platform
-spec:
-  tagline: The paved road for shipping services at Acme.
-  description: A Kubernetes platform with GitOps delivery and self-service infrastructure.
-  owners:
-    - name: Platform Engineering
-      channel: "#platform-help"
-  links:
-    - title: Getting started
-      url: https://docs.acme.example/platform
-  guarantees:
-    - Every change delivered through GitOps
-  readmeFile: PLATFORM.md             # rendered on the Platform page
-  offerings:
-    - name: self-service-infra
-      displayName: Self-service infrastructure
-      category: data
-      status: ga                      # planned, alpha, beta, ga or deprecated
-      description: Databases and storage through Crossplane APIs.
-      components: [crossplane, provider-upjet-azure]
-  environments:
-    - name: prod
-      displayName: Production
-      tier: production
-      kubeContext: prod-aks           # or inventoryFile: inventories/prod.yaml
-      kubeconfig: /path/to/kubeconfig # optional
-      inCluster: false                # true: discover the cluster pbom runs in
-      targetRelease: "1.1.0"
-  releasesDir: releases               # default
-  componentsDir: components           # optional extra or overriding Component definitions
-  discovery:
-    hideUnclassified: false           # skip Helm releases that match no catalog component
-    ignoreNamespaces: [team-a]
-```
-
-### PlatformRelease
+This is a `PlatformRelease` as it exists today, from the example platform:
 
 ```yaml
 apiVersion: pbom.dev/v1alpha1
@@ -280,86 +302,118 @@ metadata:
 spec:
   version: "1.2.0"
   date: "2026-09-15"
-  summary: Azure infrastructure and Kubernetes 1.34.
+  summary: Azure infrastructure, Kubernetes 1.34 and composition functions.
   highlights:
     - Kubernetes upgraded to 1.34
-  notes: |
-    Markdown release notes.
+    - Self-service Azure infrastructure alongside AWS
   components:
-    kubernetes: "1.34"     # matches any 1.34.x
-    crossplane: "2.0.2"    # matches exactly 2.0.2
-    postgres: "2.0.1-rc.3" # prereleases must match exactly
-  offerings: [app-delivery, self-service-infra]
+    kubernetes: "1.34"          # any 1.34.x
+    argocd: "3.1.5"             # exactly 3.1.5
+    crossplane: "2.0.2"
+    provider-upjet-aws: "2.0.0"
+    provider-upjet-azure: "2.0.0"
+    istio: "1.27.1"
+    prometheus-operator: "0.85.0"
+  offerings: [kubernetes-workloads, ingress, metrics, postgresql, object-storage, gitops]
 ```
 
-Versions match on the parts you write, so `"1.34"` accepts any patch release
-while `"1.34.2"` pins one.
+Offerings, and the components that implement them, are declared once in the
+`Platform` document:
 
-### Component
+```yaml
+offerings:
+  - name: postgresql
+    displayName: PostgreSQL
+    category: data
+    status: ga
+    description: Request a managed PostgreSQL database with a Kubernetes claim.
+    components: [crossplane, provider-upjet-aws]
+  - name: gitops
+    displayName: GitOps deployment
+    category: developer-experience
+    status: ga
+    components: [argocd]
+```
 
-Component definitions teach discovery how to recognise a building block and
-where its releases are published. The builtin catalog lives in
-[internal/catalog/components](internal/catalog/components); add or override
-definitions with `componentsDir`.
+### Conceptual: a consolidated PBOM document
+
+> **Conceptual.** The document below is not implemented and is not a stable
+> schema. It illustrates the direction of
+> [Milestone 3 and Milestone 11](#roadmap): one portable document combining the
+> declared release, its offerings, and optionally the observed state of each
+> environment with evidence.
 
 ```yaml
 apiVersion: pbom.dev/v1alpha1
-kind: Component
+kind: PlatformBillOfMaterials
 metadata:
-  name: karpenter
-spec:
-  displayName: Karpenter
-  category: compute
-  description: Just-in-time node provisioning.
-  homepage: https://karpenter.sh
-  partOf: ""                        # nest under another component, e.g. crossplane
-  discovery:
-    images: ["karpenter/controller"] # matches any registry or mirror prefix
-    helmCharts: ["karpenter"]
-    apiGroups: ["karpenter.sh"]
-    crossplanePackages: []
-  upstream:
-    github: aws/karpenter-provider-aws
-    tagPrefix: ""                   # e.g. "controller-v" for ingress-nginx
-    supportedMinors: 0              # e.g. 3 for Kubernetes
+  name: example-platform
+  version: 1.8.0
+components:
+  - name: kubernetes
+    version: "1.34"
+  - name: argocd
+    version: 3.5.5
+  - name: istio
+    version: "1.27"
+  - name: prometheus
+    version: "3.5"
+  - name: grafana
+    version: "12.1"
+offerings:
+  - name: gitops
+    components: [argocd]
+  - name: observability
+    components: [prometheus, grafana]
+observed:
+  - environment: prod
+    collectedAt: "2026-09-23T06:00:00Z"
+    components:
+      - name: argocd
+        version: 3.4.4
+        evidence:
+          - source: image
+            namespace: argocd
+            object: Deployment/argocd-server
+            version: v3.4.4
 ```
 
-## How discovery works
+## Declared vs observed platform
 
-For each environment, `pbom` reads:
+The distinction between what a platform team *says* the platform contains and
+what is *actually running* is central to the project.
 
-| Source | What it looks at |
+- **Declared platform:** the `Platform` document, its `PlatformRelease`s, and
+  the `targetRelease` of each environment. Written by the platform team and
+  kept in Git.
+- **Observed platform:** the `Inventory` of each environment, produced by
+  discovery with evidence for every component.
+
+Comparing them is implemented today. For each component in each environment:
+
+| Status | Meaning |
 | --- | --- |
-| Cluster | Server version and nodes, to identify EKS, AKS, GKE, kind, k3s and RKE2 |
-| Workloads | Container images in Deployments, StatefulSets and DaemonSets |
-| Helm | Release metadata in Secrets labelled `owner=helm,status=deployed` |
-| Crossplane | Providers, Functions and Configurations in `pkg.crossplane.io` |
-| API groups | Served groups, to spot components whose version cannot be read |
+| aligned | Declared in the target release and running at a matching version |
+| drift | Declared, but running a different version |
+| missing | Declared, but not found |
+| untracked | Running with a known version, but not part of the target release: an undocumented component |
+| present | Found, but either the environment has no target release or the version cannot be read |
 
-Evidence is matched against the catalog. Image patterns ignore registry and
-mirror prefixes, so `argoproj/argocd` matches
-`registry.corp.example/mirror/argoproj/argocd`. When several sources report a
-version, the most trustworthy wins: cluster version, then Crossplane package
-tag, then container image tag, then Helm `appVersion`. Prerelease suffixes such
-as `-rc.3` are kept.
+For example, if release `1.8.0` declares Argo CD `3.5.5` and production is
+observed running `3.4.4`, production reports drift for Argo CD and does not
+satisfy `1.8.0`, whatever its `targetRelease` says. `pbom drift --exit-code`
+turns this into a failing check for CI or a scheduled job.
 
-Nothing that is discovered is thrown away. Components with no catalog
-definition are still reported and placed in the tree:
+A third view, what Git *intends* to deploy according to Argo CD or Flux, is on
+the roadmap. It would allow a component to be shown as *declared 3.5.5, Git
+3.5.5, running 3.4.4, OutOfSync*.
 
-| Found | Shown as |
-| --- | --- |
-| A Crossplane Configuration | A **Platform API** |
-| A Function named `<configuration>_<function>` | Nested under that configuration |
-| Any other Provider or Function | Nested under Crossplane |
-| A Helm release | Under *Other*, unless `hideUnclassified` is set |
+## Upstream intelligence
 
-Adding a definition for one of these gives it a proper name, category and
-upstream update checks.
-
-## Upstream updates
-
-For every component with an `upstream`, `pbom` fetches GitHub releases (cached
-on disk for six hours) and compares them with what each environment runs:
+For every component with an upstream source, `pbom` compares the versions you
+run with published releases and explains why a component may need attention.
+It does not tell you to upgrade without a reason, and it does not use a model
+to decide: the rules are deterministic and the evidence is shown.
 
 ```text
 $ pbom updates --why
@@ -371,221 +425,278 @@ Kubernetes 1.33.5
   - Environments run different versions: dev 1.34.1, prod 1.33.5, staging 1.34.1.
 ```
 
-Recommendations are rule-based and explained, never a bare "upgrade". The UI
-shows the release notes for every version between yours and the latest.
-
-## Releases, drift and CI
-
-A typical flow:
-
-1. Upgrade components in dev and staging as you normally would.
-2. `pbom release create 1.3.0 --from-env staging`, edit the notes, open a pull
-   request.
-3. Point dev and staging at `1.3.0`. Promote production by changing its
-   `targetRelease` in a one-line pull request.
-4. Run drift checks on a schedule:
-
-```yaml
-# .github/workflows/platform-drift.yaml
-on:
-  schedule: [{ cron: "0 6 * * *" }]
-jobs:
-  drift:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      # Authenticate to your clusters here.
-      - run: pbom drift --exit-code
-```
-
-For clusters that the machine running `pbom` cannot reach, export inventories
-where you do have access and commit them:
-
-```shell
-pbom discover --env prod -o yaml > inventories/prod.yaml
-```
-
-## Required RBAC
-
-Discovery only uses `get` and `list`. A least-privilege ClusterRole:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: platform-bom-reader
-rules:
-  - apiGroups: [""]
-    resources: [nodes, secrets]   # secrets: Helm release metadata; drop to skip Helm
-    verbs: [get, list]
-  - apiGroups: [apps]
-    resources: [deployments, statefulsets, daemonsets]
-    verbs: [get, list]
-  - apiGroups: [pkg.crossplane.io]
-    resources: [providers, functions, configurations]
-    verbs: [get, list]
-```
-
-Helm stores release values in Secrets, and Kubernetes RBAC cannot restrict
-access by label, so reading Helm metadata requires cluster-wide `list secrets`.
-`pbom` requests only Secrets labelled `owner=helm` and reads nothing but the
-chart name and versions from them, but the permission is broad. Leave it out if
-that is not acceptable; Helm discovery is then skipped with a warning. See
-[SECURITY.md](SECURITY.md) for the full threat model.
-
-## Running in a container
-
-```shell
-docker run --rm -p 8080:8080 \
-  -v "$PWD:/config:ro" \
-  -v "$HOME/.kube/config:/home/nonroot/.kube/config:ro" \
-  -e GITHUB_TOKEN \
-  ghcr.io/ravibagri5/platform-bom:latest
-```
-
-The image runs as a non-root user and expects the platform file at
-`/config/pbom.yaml`. Kubeconfigs that use exec plugins such as `kubelogin` or
-`aws eks get-token` need those binaries, so for those, run the binary directly
-or use exported inventories.
-
-The UI has no authentication of its own. It binds to `127.0.0.1` by default;
-put it behind your organisation's authenticating proxy before exposing it.
-
-## Running in a cluster
-
-[deploy/](deploy) is a kustomize base that runs `pbom serve` in its own
-namespace with a read-only ClusterRole. The pod runs as non-root with a
-read-only root filesystem and no capabilities, and the namespace enforces the
-`restricted` Pod Security Standard.
-
-1. **Describe the platform** in [deploy/platform/pbom.yaml](deploy/platform/pbom.yaml).
-   The cluster `pbom` runs in is an environment with `inCluster: true`:
-
-   ```yaml
-   environments:
-     - name: prod
-       inCluster: true
-       targetRelease: "1.0.0"
-   ```
-
-2. **Add releases** by copying them into `deploy/releases/` and listing them
-   under the `pbom-releases` generator in
-   [deploy/kustomization.yaml](deploy/kustomization.yaml). Both files become
-   ConfigMaps whose names carry a content hash, so changing either rolls the
-   Deployment.
-
-3. **Optionally add a GitHub token** for upstream release checks:
-
-   ```shell
-   kubectl create namespace platform-bom
-   kubectl -n platform-bom create secret generic pbom-github --from-literal=token="$GITHUB_TOKEN"
-   ```
-
-4. **Apply and open it:**
-
-   ```shell
-   kubectl apply -k deploy
-   kubectl -n platform-bom port-forward svc/pbom 8080:80
-   ```
-
-   Then browse to <http://127.0.0.1:8080>.
-
-### Discovering other clusters from inside one
-
-A single in-cluster `pbom` can discover other clusters through a kubeconfig.
-Create a Secret holding a kubeconfig with one context per cluster, uncomment
-the `kubeconfig` volume in [deploy/deployment.yaml](deploy/deployment.yaml),
-and reference it from each environment:
-
-```shell
-kubectl -n platform-bom create secret generic pbom-kubeconfig --from-file=config=./pbom-kubeconfig
-```
-
-```yaml
-    - name: staging
-      kubeconfig: /kubeconfig/config
-      kubeContext: staging
-```
-
-The image contains no credential plugins such as `kubelogin` or
-`aws eks get-token`, so the kubeconfig must carry a token, typically for a
-service account bound to the same read-only ClusterRole in each target cluster.
-Where that is not possible, run `pbom discover -o yaml` in a job that can reach
-the cluster and use the result as an `inventoryFile`.
-
-### Trying it on kind
-
-Until a release is published, build the image locally and load it into kind:
-
-```shell
-docker build -t ghcr.io/ravibagri5/platform-bom:dev .
-kind load docker-image ghcr.io/ravibagri5/platform-bom:dev --name <cluster>
-(cd deploy && kustomize edit set image ghcr.io/ravibagri5/platform-bom:dev)
-kubectl apply -k deploy
-```
-
-### Exposing it
-
-The Service is `ClusterIP` on purpose: the UI has no authentication. To share
-it, put it behind an Ingress or Gateway that authenticates users, for example
-with oauth2-proxy or your identity-aware proxy.
-
-## HTTP API
-
-| Endpoint | Returns |
+| Signal | Status |
 | --- | --- |
-| `GET /api/platform` | Platform definition, README and current release |
-| `GET /api/matrix[?refresh=true]` | Environment matrix and summary |
-| `GET /api/inventory` | Raw inventories with evidence |
-| `GET /api/updates` | Upgrade recommendations |
-| `GET /api/releases`, `/api/releases/{name}` | Platform releases |
-| `GET /api/diff?from=A&to=B` | Release diff |
-| `GET /api/catalog` | Component definitions |
-| `GET /healthz` | Liveness |
+| Latest upstream version, from GitHub releases | Current |
+| Release dates and release notes between your version and the latest | Current |
+| Patch, minor and major distance; upstream support window where declared | Current |
+| Version skew between environments | Current |
+| End-of-life dates, including managed Kubernetes support windows | Roadmap |
+| Security advisories for running versions (GitHub Security Advisories, OSV) | Roadmap |
+| Compatibility rules between components | Roadmap |
+| Upgrade paths to a supported version | Roadmap |
 
-## Development
+## The UI
 
-You need Go 1.26+ and Node 24+.
+The web UI, served by `pbom serve`, presents the platform model as a product
+rather than as cluster resources:
 
-```shell
-make ui build      # build the UI and the binary
-make test          # unit tests
-make lint          # golangci-lint
-make check         # everything CI runs
-make run           # serve the example platform
-make dev-ui        # Vite dev server on :5173, proxying /api to :8080
+| View | Shows |
+| --- | --- |
+| **Platform** | The product page: purpose, current release, offerings, guarantees, where it runs, and the platform's own README |
+| **Components** | What the platform is made of, grouped by category, with Crossplane providers and functions nested under Crossplane, and upstream update recommendations |
+| **Offerings** | What the platform provides, the maturity of each offering, and the components behind it |
+| **Releases** | Platform releases with notes, bill of materials and release-to-release diffs |
+| **Environments** | Components × environments, with drift, versions and evidence |
+
+It deliberately does **not** show pods, logs, events, ReplicaSets, ConfigMaps or
+a generic resource browser. Those are implementation details, and existing
+Kubernetes tools serve them well. The UI never changes anything; it rediscovers
+on demand or on a schedule.
+
+## Integrations
+
+The platform inventory should be consumable from the tools platform engineers
+already use. Integrations fall into two directions: **evidence sources** that
+feed the inventory, and **consumers** that read from it.
+
+### Current
+
+| Interface | Direction | Notes |
+| --- | --- | --- |
+| Kubernetes API | Evidence | Cluster, workloads, Helm metadata, Crossplane packages, API groups |
+| GitHub releases | Evidence | Upstream versions and release notes |
+| CLI | Consumer | `discover`, `matrix`, `drift`, `updates`, `release`, `catalog` |
+| JSON HTTP API | Consumer | Read-only, not yet versioned |
+| Web UI | Consumer | Embedded in the binary |
+| CI | Consumer | `pbom drift --exit-code` fails a job on drift |
+| Kubernetes deployment | Distribution | A hardened kustomize base in [deploy/](deploy) |
+
+### Roadmap
+
+None of these exist yet. They are listed to show the intended shape of the
+ecosystem, not as commitments.
+
+| Integration | Direction | What it would do |
+| --- | --- | --- |
+| Argo CD, Flux | Evidence | Compare Git's intended state with the declared release and the observed version |
+| Kargo | Evidence | Relate promotion stages to environments and platform releases |
+| Terraform / OpenTofu, Pulumi | Evidence | Recognise components and offerings implemented outside Kubernetes from state or stack outputs |
+| AWS, Azure, GCP | Evidence | Correlate managed services with the offerings they implement, without becoming a cloud inventory |
+| GitHub, GitLab | Evidence and consumer | Read platform repositories; report drift on pull requests |
+| Backstage plugin | Consumer | Show the platform's offerings, releases and inventory inside a developer portal. Backstage is an integration, never a requirement. |
+| MCP server | Consumer | Let AI assistants query the inventory through a standard interface, e.g. *"What version of Argo CD runs in production?"*, *"What changed between 1.7 and 1.8?"*, *"Which offerings depend on Crossplane?"*. The inventory stays the source of truth. |
+| Crossplane provider, Kubernetes CRDs | Consumer | Expose platforms and releases through Kubernetes-native APIs. Crossplane is one implementation technology among many, not the core of the model. |
+| Helm chart | Distribution | An alternative to the kustomize base |
+
+## Community-maintained component definitions
+
+Supporting a new technology should not require changing the core engine. This
+already works: a component is one YAML file that says how to recognise it and
+where its releases are published.
+
+```yaml
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: argocd
+spec:
+  displayName: Argo CD
+  category: delivery
+  description: Declarative GitOps continuous delivery.
+  homepage: https://argo-cd.readthedocs.io
+  discovery:
+    images: ["argoproj/argocd"]    # any registry or mirror prefix
+    helmCharts: ["argo-cd"]
+  upstream:
+    github: argoproj/argo-cd
 ```
 
-```text
-cmd/pbom             CLI entry point
-internal/api         resource model: Platform, PlatformRelease, Component, Inventory
-internal/catalog     component catalog, builtin definitions and matching
-internal/discovery   Kubernetes evidence collection
-internal/upstream    GitHub releases client with disk cache
-internal/analysis    matrix, drift, freshness and recommendations
-internal/release     release load, create and diff
-internal/service     wiring shared by the CLI and the server
-internal/server      HTTP API and embedded UI
-web/                 React UI, built into internal/ui/dist
-examples/            an example platform and a kind demo
-```
+The builtin catalog in [internal/catalog/components](internal/catalog/components)
+covers common CNCF and cloud native components. Platform teams can add or
+override definitions with `componentsDir`, and contributing a definition
+upstream teaches `pbom` about that technology for everyone. As more evidence
+sources are added, the same file is where their signals will go.
 
 ## Roadmap
 
-Highlights from [ROADMAP.md](ROADMAP.md):
+A direction, not a schedule. Milestones overlap and may change as we learn
+from users. Near-term work is scheduled into release milestones on GitHub and
+tracked on the
+[project board](https://github.com/users/ravibagri5/projects/2); details
+are in [ROADMAP.md](ROADMAP.md).
 
-- Argo CD and Flux as evidence sources, to compare Git's desired state with the
-  running version
-- End-of-life data and security advisories alongside upstream releases
-- Compatibility rules between components, for example Karpenter and Kubernetes
-- Inventory history and a "what changed this week" view
-- An in-cluster agent that pushes inventories to a central `pbom`
+| Milestone | Status | Tracked in |
+| --- | --- | --- |
+| 0. Project foundation | Done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1) |
+| 1. Kubernetes discovery | Done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1) |
+| 2. Platform inventory | Mostly done | [v0.1](https://github.com/ravibagri5/platform-bom/milestone/1), [v0.4](https://github.com/ravibagri5/platform-bom/milestone/4) |
+| 3. Platform releases and PBOM | In progress | [v0.2](https://github.com/ravibagri5/platform-bom/milestone/2), [v0.4](https://github.com/ravibagri5/platform-bom/milestone/4) |
+| 4. Upstream intelligence | In progress | [v0.3](https://github.com/ravibagri5/platform-bom/milestone/3) |
+| 5. GitOps and IaC discovery | Planned | [v0.2](https://github.com/ravibagri5/platform-bom/milestone/2) |
+| 6. Cloud evidence | Exploring | |
+| 7. Ecosystem integrations | Exploring | |
+| 8. Kubernetes-native integrations | Exploring | |
+| 9. Developer interfaces | In progress | |
+| 10. MCP | Exploring | |
+| 11. PBOM ecosystem | Exploring | |
+
+**Milestone 0 — Project foundation.** Repository and release tooling; the
+resource model for platforms, components, offerings, environments and platform
+releases; the JSON API. *Done.*
+
+**Milestone 1 — Kubernetes discovery.** Cluster version and distribution;
+components from container images, Helm releases, served API groups (including
+CRDs) and Crossplane packages; an evidence record for every observation.
+*Done.*
+
+**Milestone 2 — Platform inventory.** Normalization through the component
+catalog; per-environment inventories; environment comparison; drift; the
+platform overview. *Done.* Remaining: inventory history and *what changed this
+week* (v0.4); an in-cluster agent that pushes inventories to a central server
+for clusters it cannot reach.
+
+**Milestone 3 — Platform releases and PBOM.** Declared platform, releases cut
+from a live environment, release diffs and the newest release each environment
+satisfies are *done*. Remaining: `pbom release lint` (v0.2); CycloneDX export of
+a release (v0.4); binding offerings to implementations per environment; a
+consolidated PBOM document.
+
+**Milestone 4 — Upstream intelligence.** Upstream releases, release notes,
+support windows and explainable recommendations are *done*. Remaining (v0.3):
+end-of-life data from [endoflife.date](https://endoflife.date) and managed
+Kubernetes providers; security advisories; compatibility metadata between
+components; upgrade paths.
+
+**Milestone 5 — GitOps and IaC discovery.** Argo CD `Application` and Flux
+`HelmRelease`/`Kustomization` evidence (v0.2); Terraform/OpenTofu state and
+Pulumi stacks; Git repositories as a source of declared intent. Helm is already
+covered by Milestone 1.
+
+**Milestone 6 — Cloud evidence.** AWS, Azure and GCP evidence, correlated with
+the offerings they implement. Deliberately narrow: this is about recognising
+platform capabilities, not listing every cloud resource.
+
+**Milestone 7 — Ecosystem integrations.** A Backstage plugin; deeper Argo CD,
+Flux and Kargo integrations; GitHub and GitLab checks; Terraform/OpenTofu and
+Pulumi integrations.
+
+**Milestone 8 — Kubernetes-native integrations.** Platforms and releases as
+Kubernetes APIs; a Crossplane provider; an operator only if a controller is
+genuinely needed.
+
+**Milestone 9 — Developer interfaces.** The CLI and a read-only JSON API exist.
+Remaining: a versioned, documented REST API; a Go SDK; webhooks or events when
+drift or upstream state changes.
+
+**Milestone 10 — MCP.** A read-only MCP server exposing the inventory: query
+component versions, offerings and releases, compare environments and releases,
+and query upstream information.
+
+**Milestone 11 — PBOM ecosystem.** If the concept proves useful beyond this
+project: a versioned PBOM schema with validation, examples, import and export,
+publishing releases as OCI artifacts, and a community process for evolving it.
+
+## Principles and non-goals
+
+### Principles
+
+- **The platform is the primary object.** Clusters, Helm, Crossplane, Terraform
+  and cloud APIs are evidence that a component is present, not the model.
+- **Evidence over assertion.** Every observed version can be traced to where it
+  was seen.
+- **Declared state is code.** Platform definitions and releases are files in
+  Git, reviewed like any other change.
+- **Read-only.** Discovery never writes to the systems it observes.
+- **Explainable.** Recommendations state their reasons; there is no opaque
+  score.
+- **Implementation-agnostic offerings.** What the platform provides is modelled
+  separately from how it is built.
+- **Interoperate with established formats** such as CycloneDX instead of
+  inventing parallel ones where they already fit.
+- **The UI is a consumer.** Anything the UI shows must be available through the
+  API.
+
+### Non-goals
+
+Platform BOM is not intended to become:
+
+- another Kubernetes dashboard or resource browser;
+- a generic cloud inventory;
+- a replacement for Backstage or other developer portals;
+- a deployment or promotion engine;
+- a GitOps engine;
+- an infrastructure-as-code engine;
+- an observability platform.
+
+Each of these can integrate with Platform BOM. It observes and describes the
+platform they form; it does not deploy, upgrade or reconcile anything.
+
+## Why this is different
+
+- It describes **the platform**, not a cluster, a service catalog or a cloud
+  account.
+- It separates **what the platform provides** (offerings) from **what it is
+  made of** (components) and **where it runs** (environments).
+- It treats the platform as a **versioned product**, with releases, diffs and a
+  changelog in Git.
+- It compares the **declared** platform with the **observed** one, per
+  environment, with evidence.
+- It explains **why** a component needs attention instead of listing versions.
+- It is a **model with interfaces**, so CI, portals, assistants and other tools
+  can use the same answers as the UI.
+
+## Getting started
+
+You need Go 1.26+ and Node 24+ to build from source. No tagged release exists
+yet.
+
+**Try the example platform**, which needs no cluster:
+
+```shell
+git clone https://github.com/ravibagri5/platform-bom
+cd platform-bom
+make ui build
+./bin/pbom serve -c examples/acme/pbom.yaml
+```
+
+Open <http://127.0.0.1:8080>.
+
+**Discover a real cluster** with the builtin catalog only:
+
+```shell
+./bin/pbom discover --context my-cluster
+```
+
+**Try it on kind:** `make kind-demo` creates a kind cluster with Argo CD,
+cert-manager and Crossplane; [examples/kind](examples/kind) describes it.
+
+**Describe your own platform** and cut a first release from production:
+[Describing your platform](docs/usage.md#describing-your-platform).
+
+**Run it in a cluster** with the read-only kustomize base:
+[Running in a cluster](docs/deployment.md#running-in-a-cluster).
+
+Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit for upstream checks,
+or pass `--no-upstream` to work offline.
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [docs/usage.md](docs/usage.md) | CLI, configuration reference, discovery, upstream updates, drift in CI, web UI, HTTP API |
+| [docs/deployment.md](docs/deployment.md) | Installation, required RBAC, containers, running in a cluster |
+| [ROADMAP.md](ROADMAP.md) | Near-term plans per release |
+| [docs/community.md](docs/community.md) | Labels, planning and repository settings |
+| [SECURITY.md](SECURITY.md) | Threat model and vulnerability reporting |
 
 ## Contributing
 
-Contributions are very welcome, and the easiest place to start is the component
-catalog: one YAML file teaches `pbom` about a new tool for everyone. See
-[CONTRIBUTING.md](CONTRIBUTING.md). This project follows the
+Contributions are welcome. The easiest place to start is the component catalog:
+one YAML file teaches `pbom` about a new technology for everyone. Feedback on
+the model, and on whether the PBOM concept holds up for your platform, is just
+as valuable; open a discussion. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+development setup. This project follows the
 [CNCF Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security

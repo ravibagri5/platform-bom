@@ -53,8 +53,8 @@ change cluster state is a high severity bug and we want to hear about it.
 
 Discovery uses the kubeconfig and context you give it, and therefore has
 exactly those permissions. It does not escalate privilege. For a stronger
-guarantee, run it with a least-privilege identity; the
-[README](README.md#required-rbac) has a read-only ClusterRole.
+guarantee, run it with a least-privilege identity;
+[docs/deployment.md](docs/deployment.md#required-rbac) has a read-only ClusterRole.
 
 ### Helm release Secrets
 

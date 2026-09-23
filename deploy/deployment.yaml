@@ -73,7 +73,7 @@ spec:
               readOnly: true
             - name: cache
               mountPath: /cache
-            # For other clusters, mount a kubeconfig Secret (see README):
+            # For other clusters, mount a kubeconfig Secret (see docs/deployment.md):
             # - name: kubeconfig
             #   mountPath: /kubeconfig
             #   readOnly: true

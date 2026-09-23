@@ -7,8 +7,12 @@ the linked discussion or open an issue; that is how priorities move.
 The guiding question for every item: *does this help a platform team see,
 version or explain the platform they run?*
 
+This file covers the next few releases. The longer-term direction, from
+GitOps and cloud evidence to Backstage, MCP and a PBOM specification, is the
+milestone list in the [README](README.md#roadmap).
+
 Work is tracked as issues under a milestone per release and on the
-[platform-bom Roadmap](https://github.com/users/ravibagri5/projects) project
+[platform-bom Roadmap](https://github.com/users/ravibagri5/projects/2) project
 board. See [docs/community.md](docs/community.md#planning).
 
 ## Now: v0.1 — foundations

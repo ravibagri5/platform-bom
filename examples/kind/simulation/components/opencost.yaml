@@ -1,0 +1,13 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: opencost
+spec:
+  displayName: OpenCost
+  category: finops
+  description: Kubernetes cost allocation and visibility.
+  homepage: https://opencost.io
+  discovery:
+    images: ["opencost/opencost"]
+  upstream:
+    github: opencost/opencost

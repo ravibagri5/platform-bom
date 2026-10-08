@@ -127,6 +127,7 @@ const categoryGlyph: Record<string, string> = {
   security: 'S',
   observability: 'O',
   data: 'B',
+  finops: '$',
   'developer-experience': 'X',
   'platform-api': 'A',
 }
@@ -134,6 +135,7 @@ const categoryGlyph: Record<string, string> = {
 const categoryLabels: Record<string, string> = {
   'platform-api': 'Platform APIs',
   'developer-experience': 'Developer experience',
+  finops: 'FinOps',
 }
 
 export const categoryName = (c: string) => categoryLabels[c] ?? titleCase(c)
@@ -164,7 +166,7 @@ export function titleCase(s: string) {
 
 export const vname = (s: string) => (/^v\d/i.test(s) ? s : `v${s}`)
 
-export const humanize = (s: string) => s.split(/[-_ ]+/).map(titleCase).join(' ')
+export const humanize = (s: string) => categoryLabels[s] ?? s.split(/[-_ ]+/).map(titleCase).join(' ')
 
 export const offeringStatusTone: Record<string, string> = {
   ga: 'good',

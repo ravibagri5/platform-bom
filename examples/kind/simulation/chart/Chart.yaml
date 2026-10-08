@@ -1,0 +1,5 @@
+apiVersion: v2
+name: pbom-simulation
+description: Lightweight, non-running discovery fixtures for Platform BOM
+type: application
+version: 0.1.0

@@ -11,6 +11,20 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+### Added
+
+- Add a three-environment kind simulation with representative platform
+  components, version drift and release snapshots.
+- Add platform screenshots and expanded documentation for the problem,
+  platform model, GitOps deployment and simulation.
+
+### Changed
+
+- Improve the platform overview with clearer release alignment and offering
+  information.
+- Explain PBOM's relationship to SBOMs, the gap in existing tools and its
+  value proposition in the README.
+
 ## [0.1.0] - 2026-09-23
 
 The first release. Release candidate: `v0.1.0-rc.1`.

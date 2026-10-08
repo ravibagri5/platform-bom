@@ -90,20 +90,10 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
       )}
 
       <div className="two-col">
-        {p.spec.guarantees && p.spec.guarantees.length > 0 && (
-          <section className="section card">
-            <h2>Platform guarantees</h2>
-            <ul className="checklist">
-              {p.spec.guarantees.map((g) => (
-                <li key={g}>{g}</li>
-              ))}
-            </ul>
-          </section>
-        )}
         {currentRelease && (
           <section className="section card">
             <div className="row-between">
-              <h2>Current release · v{currentRelease.spec.version}</h2>
+              <h2>Latest release · v{currentRelease.spec.version}</h2>
               <a href="#/releases">All releases →</a>
             </div>
             {currentRelease.spec.summary && <p>{currentRelease.spec.summary}</p>}
@@ -118,6 +108,7 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
               <tbody>
                 {Object.entries(currentRelease.spec.components)
                   .sort(([a], [b]) => displayName(a).localeCompare(displayName(b)))
+                  .slice(0, 8)
                   .map(([name, v]) => (
                     <tr key={name}>
                       <td>{displayName(name)}</td>
@@ -126,14 +117,18 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
                   ))}
               </tbody>
             </table>
+            <a className="release-more" href={`#/releases/${currentRelease.metadata.name}`}>
+              View all {Object.keys(currentRelease.spec.components).length} components →
+            </a>
           </section>
         )}
-      </div>
-
-      {m && m.environments.length > 0 && (
-        <section className="section">
-          <h2>Where it runs</h2>
-          <div className="envs">
+        {m && m.environments.length > 0 && (
+          <section className="section environment-summary">
+            <div className="row-between">
+              <h2>Where it runs</h2>
+              <a href="#/environments">Compare environments →</a>
+            </div>
+            <div className="envs">
             {m.environments.map((e) => (
               <a key={e.name} href="#/environments" className="card env-card">
                 <div className="row-between">
@@ -161,7 +156,19 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
                 </div>
               </a>
             ))}
-          </div>
+            </div>
+          </section>
+        )}
+      </div>
+
+      {p.spec.guarantees && p.spec.guarantees.length > 0 && (
+        <section className="section">
+          <h2>Platform guarantees</h2>
+          <ul className="checklist">
+            {p.spec.guarantees.map((g) => (
+              <li key={g}>{g}</li>
+            ))}
+          </ul>
         </section>
       )}
 

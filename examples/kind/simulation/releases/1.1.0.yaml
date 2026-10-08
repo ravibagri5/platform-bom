@@ -1,0 +1,28 @@
+apiVersion: pbom.dev/v1alpha1
+kind: PlatformRelease
+metadata:
+  name: "1.1.0"
+spec:
+  version: "1.1.0"
+  summary: Updated platform release deployed to dev and QA.
+  components:
+    kubernetes: "1.36.1"
+    argocd: "2.14.20"
+    argo-rollouts: "1.8.3"
+    crossplane: "2.0.2"
+    velero: "1.18.4"
+    istio: "1.27.1"
+    ingress-nginx: "1.13.1"
+    external-dns: "0.18.0"
+    prometheus: "3.5.0"
+    grafana: "13.2.2"
+    loki: "3.5.3"
+    alloy: "1.10.0"
+    cert-manager: "1.18.2"
+    kyverno: "1.15.1"
+    external-secrets: "0.19.2"
+    vault: "1.20.2"
+    keda: "2.17.2"
+    metrics-server: "0.8.0"
+    opencost: "1.121.3"
+    gatekeeper: "3.20.1"

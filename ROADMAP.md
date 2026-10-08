@@ -10,7 +10,7 @@ version or explain the platform they run, from the tools they already use?*
 ## How planning works
 
 - **Milestones are themes**, M0 to M11, matching the roadmap in the
-  [README](README.md#roadmap). Each has a GitHub milestone with its issues.
+  [project overview](docs/overview.md#roadmap). Each has a GitHub milestone with its issues.
 - **Releases are cut from `main`** when enough has landed, not per milestone.
   A release usually contains work from several milestones.
 - **Priority labels decide the order.** `priority/high` issues are what the
@@ -113,6 +113,11 @@ catalog, the CLI, the JSON API and the web UI.
 
 - [#8](https://github.com/ravibagri5/platform-bom/issues/8) Versioned REST API
   with OpenAPI
+- OIDC authentication for UI and API users, including a documented
+  authenticating-proxy deployment option and authorization policy
+- Kubernetes service-account bearer-token authentication for API clients
+  using TokenReview and explicit access controls (separate from the service
+  account pbom uses to discover clusters)
 - [#9](https://github.com/ravibagri5/platform-bom/issues/9) Prometheus metrics
 - [#10](https://github.com/ravibagri5/platform-bom/issues/10) kubectl plugin
   through krew

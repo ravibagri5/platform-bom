@@ -3,7 +3,7 @@ LDFLAGS := -s -w -X github.com/ravibagri5/platform-bom/internal/cli.Version=$(VE
 EXAMPLE ?= examples/acme/pbom.yaml
 GOLANGCI_LINT_VERSION ?= v2.13.2
 
-.PHONY: all help ui build test test-coverage vet fmt tidy lint verify check run dev-ui kind-demo docker clean
+.PHONY: all help ui build test test-coverage vet fmt tidy lint verify check run dev-ui kind-demo kind-clusters kind-simulation docker clean
 
 all: ui build
 
@@ -50,6 +50,12 @@ dev-ui: ## Run the Vite dev server (proxies /api to :8080)
 
 kind-demo: ## Create a kind cluster with Argo CD, cert-manager and Crossplane
 	sh hack/kind-demo.sh
+
+kind-clusters: ## Create lightweight dev, QA and prod kind clusters
+	sh hack/kind-clusters.sh
+
+kind-simulation: ## Install PBOM discovery fixtures into the three kind clusters
+	sh examples/kind/simulation/install.sh
 
 docker: ## Build the container image
 	docker build -t platform-bom:$(VERSION) --build-arg VERSION=$(VERSION) .

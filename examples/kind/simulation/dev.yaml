@@ -1,0 +1,21 @@
+components:
+  argocd: quay.io/argoproj/argocd:v2.14.20
+  argo-rollouts: quay.io/argoproj/argo-rollouts:v1.8.3
+  crossplane: xpkg.crossplane.io/crossplane/crossplane:v2.0.2
+  velero: docker.io/velero/velero:v1.18.4
+  istio: docker.io/istio/pilot:1.27.1
+  ingress-nginx: registry.k8s.io/ingress-nginx/controller:v1.13.1
+  external-dns: registry.k8s.io/external-dns/external-dns:v0.18.0
+  prometheus: quay.io/prometheus/prometheus:v3.5.0
+  grafana: docker.io/grafana/grafana:13.2.2
+  loki: docker.io/grafana/loki:3.5.3
+  alloy: docker.io/grafana/alloy:v1.10.0
+  cert-manager: quay.io/jetstack/cert-manager-controller:v1.18.2
+  kyverno: ghcr.io/kyverno/kyverno:v1.15.1
+  external-secrets: ghcr.io/external-secrets/external-secrets:v0.19.2
+  vault: docker.io/hashicorp/vault:1.20.2
+  keda: ghcr.io/kedacore/keda:2.17.2
+  metrics-server: registry.k8s.io/metrics-server/metrics-server:v0.8.0
+  opencost: quay.io/opencost/opencost:1.121.3
+  gatekeeper: docker.io/openpolicyagent/gatekeeper:v3.20.1
+  opentelemetry-operator: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator:0.132.0

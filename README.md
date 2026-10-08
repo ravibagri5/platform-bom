@@ -14,6 +14,53 @@ and Crossplane, then compares versions across environments and with upstream.
 - **See release drift:** Compare what dev, QA and prod run with their target platform release.
 - **Plan updates:** See upstream versions and why a component may need upgrading.
 
+## What is a Platform BOM?
+
+A **Software Bill of Materials (SBOM)** describes what a software artifact is
+made of. It is an established practice with established specifications, notably
+[CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.dev/).
+
+A **Platform Bill of Materials (PBOM)** applies the same idea one level up: it
+is a machine-readable description of an internal platform's components,
+capabilities, versions and relationships across releases and environments.
+PBOM is a concept proposed by this project, not an established industry
+standard.
+
+## The problem
+
+An internal platform is a product assembled from Kubernetes, GitOps, networking,
+security, observability, infrastructure services and the capabilities exposed
+to application teams. These parts are defined and operated in different
+repositories and tools, and change at different times across development,
+testing and production environments.
+
+That fragmentation makes basic questions hard to answer reliably: What does the
+platform provide, and what implements each capability? Which versions are
+running in each environment? Does production match its declared release? What
+will an upgrade affect? Teams often reconstruct the answers from dashboards,
+Git history, spreadsheets and tribal knowledge, so drift and upgrade impact are
+easy to miss.
+
+## Why existing tools are not enough
+
+Existing tools provide important evidence, but each describes only part of the
+picture:
+
+| Tool | What it describes | What remains unanswered |
+| --- | --- | --- |
+| Kubernetes dashboards | Resources running in a cluster | Which resources make up the platform, what it offers, and how environments compare with the declared release |
+| Developer portals | Applications, services, teams and ownership | The platform components and versions those services depend on |
+| Cloud inventories | Cloud resources and configuration | How resources implement platform capabilities and fit into a versioned platform release |
+| Version dashboards | Installed versions | The intended platform baseline, release drift, and which offerings depend on a component |
+| SBOM tools such as CycloneDX and SPDX | Packages in a software artifact | The components, capabilities and versions of a running internal platform |
+
+Platform BOM connects those views at the platform level. It links declared
+offerings and versioned releases to discovered component evidence, compares
+environments with their targets, and highlights drift and upstream updates. The
+result is a shared, Git-reviewable account of what the platform provides, what
+is actually running, and where teams should focus next. PBOM complements these
+tools; it does not replace them.
+
 ## See it in action
 
 The [three-cluster kind simulation](examples/kind/simulation/README.md) shows

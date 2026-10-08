@@ -1,0 +1,74 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: kind-simulation
+  displayName: Platform BOM
+spec:
+  tagline: See what runs where, what drifted, and what to upgrade next.
+  description: One view of platform capabilities, release alignment and upstream health across dev, QA and prod.
+  componentsDir: components
+  releasesDir: releases
+  offerings:
+    - name: gitops
+      displayName: GitOps delivery
+      category: delivery
+      status: ga
+      description: Reconcile application changes from Git with Argo CD.
+      components: [argocd]
+    - name: traffic
+      displayName: Ingress and traffic
+      category: networking
+      status: ga
+      description: Route workloads through Ingress NGINX and Istio.
+      components: [ingress-nginx, istio]
+    - name: secrets
+      displayName: Secrets and certificates
+      category: security
+      status: ga
+      description: Manage application secrets and TLS certificates.
+      components: [external-secrets, cert-manager]
+    - name: policy
+      displayName: Policy enforcement
+      category: security
+      status: ga
+      description: Validate resources with Kyverno and Gatekeeper.
+      components: [kyverno, gatekeeper]
+    - name: monitoring
+      displayName: Metrics and dashboards
+      category: observability
+      status: ga
+      description: Monitor services using Prometheus and Grafana.
+      components: [prometheus, grafana]
+    - name: autoscaling
+      displayName: Event-driven scaling
+      category: compute
+      status: ga
+      description: Scale workloads based on demand with KEDA.
+      components: [keda]
+    - name: recovery
+      displayName: Backup and recovery
+      category: data
+      status: ga
+      description: Protect cluster resources with Velero.
+      components: [velero]
+    - name: costs
+      displayName: Cost visibility
+      category: finops
+      status: ga
+      description: Allocate Kubernetes costs with OpenCost.
+      components: [opencost]
+  discovery:
+    hideUnclassified: true
+  environments:
+    - name: dev
+      tier: development
+      kubeContext: kind-pbom-dev
+      targetRelease: "1.1.0"
+    - name: qa
+      tier: testing
+      kubeContext: kind-pbom-qa
+      targetRelease: "1.1.0"
+    - name: prod
+      tier: production
+      kubeContext: kind-pbom-prod
+      targetRelease: "1.1.0"

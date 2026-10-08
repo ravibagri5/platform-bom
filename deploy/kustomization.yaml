@@ -14,8 +14,8 @@ resources:
 configMapGenerator:
   - name: pbom-platform
     files:
-      - platform/pbom.yaml
-      - platform/PLATFORM.md
+      - pbom.yaml
+      - PLATFORM.md
   - name: pbom-releases
     files: []
     # Add release files here, for example:

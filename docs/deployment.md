@@ -80,7 +80,7 @@ namespace with a read-only ClusterRole. The pod runs as non-root with a
 read-only root filesystem and no capabilities, and the namespace enforces the
 `restricted` Pod Security Standard.
 
-1. **Describe the platform** in [deploy/platform/pbom.yaml](../deploy/platform/pbom.yaml).
+1. **Describe the platform** in [deploy/pbom.yaml](../deploy/pbom.yaml).
    The cluster `pbom` runs in is an environment with `inCluster: true`:
 
    ```yaml
@@ -143,6 +143,23 @@ The base uses the published image, so it works on kind as is:
 kind create cluster --name pbom
 kubectl apply -k deploy
 ```
+
+For three independent, single-node local environments without demo add-ons:
+
+```shell
+make kind-clusters
+kubectl --context kind-pbom-dev get nodes
+kubectl --context kind-pbom-qa get nodes
+kubectl --context kind-pbom-prod get nodes
+```
+
+Re-running `make kind-clusters` keeps existing clusters. To remove them, run
+`kind delete cluster --name pbom-dev` (and likewise for `pbom-qa` and
+`pbom-prod`). These are empty Kubernetes clusters; no platform components are
+installed by this command.
+
+To populate them with low-resource, version-drift fixtures for PBOM discovery,
+see the [three-cluster simulation](../examples/kind/simulation/README.md).
 
 To test local changes, build the image and load it into kind instead:
 

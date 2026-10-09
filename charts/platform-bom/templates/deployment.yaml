@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "platform-bom.fullname" . }}
+  labels:
+    {{- include "platform-bom.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-bom
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: platform-bom
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "platform-bom.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pbom
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - serve
+            - --addr=0.0.0.0:8080
+            - --config=/config/pbom.yaml
+            - {{ printf "--refresh-interval=%s" .Values.refreshInterval | quote }}
+          env:
+            - name: XDG_CACHE_HOME
+              value: /cache
+            {{- if .Values.githubTokenSecret.name }}
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.githubTokenSecret.name }}
+                  key: {{ .Values.githubTokenSecret.key }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: platform
+              mountPath: /config
+              readOnly: true
+            - name: releases
+              mountPath: /releases
+              readOnly: true
+            - name: cache
+              mountPath: /cache
+      volumes:
+        - name: platform
+          configMap:
+            name: {{ include "platform-bom.fullname" . }}-platform
+        - name: releases
+          configMap:
+            name: {{ include "platform-bom.fullname" . }}-releases
+        - name: cache
+          emptyDir:
+            sizeLimit: 64Mi

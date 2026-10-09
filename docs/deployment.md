@@ -1,5 +1,21 @@
 # Installing and deploying Platform BOM
 
+For the simplest real-cluster installation, use the
+[Helm getting-started runbook](getting-started.md). No user-written platform
+YAML is needed to see the first inventory. This page covers alternative
+distribution formats and advanced configuration.
+
+| Format | Best for | Workstation prerequisites |
+| --- | --- | --- |
+| Helm chart | Install the complete UI and discovery service in your cluster | Helm, `kubectl`, cluster access; Git only for an unpublished chart checkout |
+| Release binary | Run the CLI or UI against clusters from your workstation | OS/CPU-matching archive, kubeconfig and credential plugins; no Go/Node.js |
+| Container image | Run the complete service without compiling | Docker, config and usable cluster credentials; no Go/Node.js |
+| Source build | Develop or customize PBOM | Git, Go 1.26+, Node.js 24+, npm, Make |
+
+The Helm chart deploys the same published container image. Helm, the image
+and the binary are packaging options for the same application, not different
+products. Only source builds need the language toolchains.
+
 - [Installation](#installation)
 - [Required RBAC](#required-rbac)
 - [Running in a container](#running-in-a-container)
@@ -20,8 +36,8 @@ build the UI. For the complete binary, clone the repository and run
 
 ### Release binaries and images
 
-Each release publishes archives for Linux, macOS and Windows on amd64 and
-arm64, with SBOMs and a cosign-signed checksum file, on the
+Each release publishes archives for Linux and macOS on amd64 and arm64,
+and Windows on amd64, with SBOMs and a cosign-signed checksum file, on the
 [releases page](https://github.com/ravibagri5/platform-bom/releases), and
 multi-arch images at `ghcr.io/ravibagri5/platform-bom`: `:<version>` for every
 release, `:latest` for the newest release and `:rc` for the newest release

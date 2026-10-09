@@ -55,3 +55,18 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+
+      - name: Package and publish Helm chart
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          helm lint charts/platform-bom --strict
+          helm package charts/platform-bom --version "$version" --app-version "$version" --destination dist
+          printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          helm push "dist/platform-bom-$version.tgz" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER}/charts"
+          gh release upload "$GITHUB_REF_NAME" "dist/platform-bom-$version.tgz"

@@ -17,16 +17,30 @@ No images are pulled, services exposed, credentials created or controllers
 started. Image tags are illustrative and are not checked against registries.
 Use the upstream charts separately if you need operational products.
 
-From the repository root, with Docker, kind and Helm installed:
+## Prerequisites
+
+Install Git, Make, Go 1.26+, Node.js 24+, npm (included with Node.js), Docker,
+kind, `kubectl` and Helm 3.8+ or 4. Start the Docker daemon and allow enough
+memory for three single-node Kubernetes clusters. Check `docker info`,
+`kind version`, `kubectl version --client`, `helm version`, `go version`,
+`node --version` and `npm --version` before running the commands below.
+
+These tools are for the local source-build simulation, not for installing
+PBOM in a real cluster. For that, use the [Helm runbook](../../../docs/getting-started.md).
+
+## Build and run
+
+From the repository root:
 
 ```shell
 make kind-clusters
 make kind-simulation
-go run ./cmd/pbom -c examples/kind/simulation/pbom.yaml matrix
-go run ./cmd/pbom -c examples/kind/simulation/pbom.yaml serve
+make ui build
+./bin/pbom -c examples/kind/simulation/pbom.yaml matrix
+./bin/pbom -c examples/kind/simulation/pbom.yaml serve
 ```
 
-Open http://127.0.0.1:8080 to view the matrix. Upstream versions come from
+Open <http://127.0.0.1:8080> to view the matrix. Upstream versions come from
 GitHub releases: do not pass `--no-upstream` if you want the Latest column.
 Set `GITHUB_TOKEN` in your shell if GitHub's unauthenticated API rate limit is
 exhausted; components with no reachable or parseable releases remain blank.

@@ -89,19 +89,65 @@ alignment, upstream currency, and the capabilities teams receive.
 The simulation uses zero-replica discovery fixtures; it does not install or
 operate the real products. Upstream releases and percentages can change over time.
 
-## Deploy with GitOps
+## Getting started
 
-1. Fork and clone this repository. Set `inCluster: true` and `releasesDir: /releases` in `deploy/pbom.yaml`.
-2. Commit and push. Point an Argo CD Application at your fork's [Kustomize base](deploy/) (`path: deploy`).
-3. Run `kubectl -n platform-bom port-forward svc/pbom 8080:80` and open <http://127.0.0.1:8080>.
-4. Review discovery, then commit a release and target version. GitOps syncs subsequent changes automatically.
+Install the [Helm chart](charts/platform-bom/) in the cluster you want to
+inventory. No platform YAML, declared releases, GitOps controller, Go, Node.js
+or Docker installation is needed on your workstation.
 
-[Follow the step-by-step GitOps guide](docs/gitops.md) for copyable YAML,
-bootstrap commands, RBAC caveats and the first-release workflow.
+**Prerequisites:** Helm 3.8+ or 4, `kubectl`, a working cluster context, and
+permission to create a namespace, ClusterRole and ClusterRoleBinding. The
+cluster must be able to pull the image from GHCR. The default reader includes
+cluster-wide Secret access for Helm metadata; add `--set rbac.helmSecrets=false`
+to skip it.
+
+Until the chart is published, install it from a checkout (Git is needed for
+this route):
+
+```sh
+git clone https://github.com/ravibagri5/platform-bom.git
+cd platform-bom
+helm upgrade --install pbom ./charts/platform-bom \
+  --namespace platform-bom --create-namespace --wait --timeout 3m
+kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
+```
+
+Open <http://127.0.0.1:8080>. PBOM discovers this cluster using its read-only
+service account. Offerings and release drift are optional additions, not
+installation prerequisites. The UI has no built-in authentication; keep the
+Service private or use an authenticating proxy.
+
+The release workflow packages the chart for OCI distribution, so future chart
+releases can be installed without a checkout. See the
+[getting-started runbook](docs/getting-started.md) for that command, verification,
+troubleshooting, upgrades and uninstalling. [GitOps](docs/gitops.md) is optional.
 
 ## Try it locally
 
-Go 1.26+, Node 24+, Docker, kind and Helm are needed for the kind simulation:
+Choose the prerequisites for the local route you need:
+
+| Route | Prerequisites |
+| --- | --- |
+| Prebuilt `pbom` binary | Release archive for your OS/CPU; kubeconfig and any cluster credential plugin for live discovery |
+| Build the binary and UI | Git, Go 1.26+, Node.js 24+, npm (bundled with Node.js), Make |
+| Three-cluster kind simulation | All build prerequisites, Docker with its daemon running, kind, `kubectl`, Helm 3.8+ or 4; enough memory for three Kubernetes nodes |
+| Container | Docker with its daemon running, a platform config and a usable kubeconfig; no Go or Node.js |
+
+From the repository root, verify the simulation tools first:
+
+```sh
+git --version
+go version
+node --version
+npm --version
+make --version
+docker info
+kind version
+kubectl version --client
+helm version
+```
+
+Then build and run the kind simulation:
 
 ```sh
 make kind-clusters
@@ -120,8 +166,9 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | --- | --- |
 | [Overview and concepts](docs/overview.md) | The problem, platform model, evidence, architecture, integrations, principles and roadmap |
 | [Usage](docs/usage.md) | Configuration, discovery, CLI, drift checks, web UI and API |
-| [Deployment](docs/deployment.md) | Installation, RBAC, containers and cluster deployment |
-| [GitOps quick start](docs/gitops.md) | Fork, configure, sync with Argo CD, and cut a first release |
+| [Getting started](docs/getting-started.md) | Helm install, first inventory, prerequisites, troubleshooting, upgrades and uninstall |
+| [Deployment](docs/deployment.md) | Binary and container alternatives, RBAC and advanced cluster deployment |
+| [Optional GitOps](docs/gitops.md) | Manage Helm values with Argo CD and declare a first release |
 | [Kind simulation](examples/kind/simulation/README.md) | Recreate the screenshot environment and release drift |
 | [Roadmap](ROADMAP.md) | Upcoming work and milestones |
 | [Community](docs/community.md) | Planning, labels and participation |

@@ -105,4 +105,7 @@ GitHub release, and pushes it to
 `oci://ghcr.io/ravibagri5/charts/platform-bom` after image publication succeeds.
 The first GHCR chart package must be made public in its package settings for
 anonymous installation. Do not advertise an OCI version until its chart and
-image are available. The source chart currently uses image `0.1.0`.
+image are available. The chart in this repository targets image `0.3.0`; until
+that release is published, installing from a checkout needs a locally built
+image (`docker build -t ghcr.io/ravibagri5/platform-bom:0.3.0 .`, loaded into
+the cluster).

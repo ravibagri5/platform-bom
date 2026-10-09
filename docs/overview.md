@@ -544,6 +544,7 @@ what is next.
 | [M9 — Developer interfaces](https://github.com/ravibagri5/platform-bom/milestone/10) | In progress |
 | [M10 — MCP server](https://github.com/ravibagri5/platform-bom/milestone/11) | Planned |
 | [M11 — PBOM specification](https://github.com/ravibagri5/platform-bom/milestone/12) | Exploring |
+| M12 — Secure access and multi-cluster identity | Next (target: November 2026) |
 
 **M0 — Project foundation.** Repository and release tooling; the
 resource model for platforms, components, offerings, environments and platform
@@ -591,10 +592,7 @@ operator only if a controller is genuinely needed; a Helm chart.
 **M9 — Developer interfaces.** The CLI and a read-only JSON API exist.
 Remaining: a versioned REST API with an OpenAPI document, which the plugins and
 the MCP server build on; Prometheus metrics; a kubectl plugin through krew; a
-Go client; webhooks or events when drift or upstream state changes; OIDC
-authentication for UI/API users and Kubernetes service-account token
-authentication for API clients. Discovery credentials and inbound user access
-are separate concerns.
+Go client; webhooks or events when drift or upstream state changes.
 
 **M10 — MCP server.** A read-only MCP server exposing the inventory, over stdio
 and HTTP: query component versions, offerings and releases, compare
@@ -603,6 +601,13 @@ environments and releases, and query upstream information.
 **M11 — PBOM specification.** If the concept proves useful beyond this
 project: a versioned PBOM schema with validation, examples, import and export,
 publishing releases as OCI artifacts, and a community process for evolving it.
+
+**M12 — Secure access and multi-cluster identity.** OIDC sign-in and
+role-based, per-environment authorization for the UI and API, including
+service-account tokens for API clients; keyless discovery of AKS clusters with
+Azure Workload Identity; per-environment kubeconfig or service-account token
+credentials for other clusters; a dark theme. Discovery credentials and inbound
+user access are separate concerns.
 
 ## Principles and non-goals
 

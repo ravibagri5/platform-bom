@@ -21,11 +21,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "%s-%s" .Release.Namespace (include "platform-bom.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/* Releases installed by an older chart and upgraded with --reuse-values have no configMaps values. */}}
+{{- define "platform-bom.createConfigMaps" -}}
+{{- $cm := default dict .Values.configMaps -}}
+{{- if or (not (hasKey $cm "create")) $cm.create -}}true{{- end -}}
+{{- end -}}
+
 {{- define "platform-bom.configMapName" -}}
-{{- if .root.Values.configMaps.create -}}
+{{- if include "platform-bom.createConfigMaps" .root -}}
 {{- printf "%s-%s" (include "platform-bom.fullname" .root) .kind -}}
 {{- else -}}
-{{- required (printf "configMaps.%s is required when configMaps.create=false" .kind) (index .root.Values.configMaps .kind) -}}
+{{- $cm := default dict .root.Values.configMaps -}}
+{{- default (printf "pbom-%s" .kind) (index $cm .kind) -}}
 {{- end -}}
 {{- end -}}
 

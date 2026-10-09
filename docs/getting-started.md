@@ -17,7 +17,7 @@ never installs or changes anything.
 
 ## 1. Check prerequisites
 
-- Helm 3.8+ or Helm 4, and `kubectl`, pointing at the cluster to inventory.
+- Helm 3.14+ or Helm 4, and `kubectl`, pointing at the cluster to inventory.
 - Permission to create a namespace, a ClusterRole and a ClusterRoleBinding.
 - The cluster can pull images from `ghcr.io`.
 
@@ -128,7 +128,7 @@ only once:
 
 ```sh
 kubectl apply -k pbom-config
-helm upgrade pbom ./charts/platform-bom -n platform-bom --reuse-values --set configMaps.create=false --wait
+helm upgrade pbom ./charts/platform-bom -n platform-bom --reset-then-reuse-values --set configMaps.create=false --wait
 ```
 
 From now on, edit the files and run `kubectl apply -k pbom-config` again.
@@ -152,7 +152,7 @@ pull requests, and `git log` becomes the platform's changelog.
 | --- | --- |
 | Logs | `kubectl -n platform-bom logs deploy/pbom-platform-bom` |
 | Upgrade PBOM | Re-run the `helm upgrade` from step 2 or 5 with a newer chart |
-| Upstream checks without rate limits | `kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<token>`, then `helm upgrade ... --reuse-values --set githubTokenSecret.name=pbom-github` |
+| Upstream checks without rate limits | `kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<token>`, then `helm upgrade ... --reset-then-reuse-values --set githubTokenSecret.name=pbom-github` |
 | Share the UI | Enable the [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls) behind an authenticating proxy; PBOM has no login of its own |
 | More clusters | [Multi-cluster discovery](deployment.md#discovering-other-clusters-from-inside-one) or exported inventories |
 | Uninstall | `helm uninstall pbom -n platform-bom` and `kubectl delete -k pbom-config` |

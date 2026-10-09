@@ -95,7 +95,7 @@ Install the [Helm chart](charts/platform-bom/) in the cluster you want to
 inventory. No platform YAML, declared releases, GitOps controller, Go, Node.js
 or Docker installation is needed on your workstation.
 
-**Prerequisites:** Helm 3.8+ or 4, `kubectl`, a working cluster context, and
+**Prerequisites:** Helm 3.14+ or 4, `kubectl`, a working cluster context, and
 permission to create a namespace, ClusterRole and ClusterRoleBinding. The
 cluster must be able to pull the image from GHCR. The default reader includes
 cluster-wide Secret access for Helm metadata; add `--set rbac.helmSecrets=false`

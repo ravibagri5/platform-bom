@@ -56,6 +56,7 @@ jobs:
             echo "::error::values.schema.json must reject unknown keys"
             exit 1
           fi
+          helm template pbom charts/platform-bom --set configMaps.create=false | grep -q 'name: pbom-platform$'
           if helm template pbom charts/platform-bom --set ingress.enabled=true > /dev/null 2>&1; then
             echo "::error::Ingress must require a hostname when enabled"
             exit 1

@@ -1,4 +1,4 @@
-{{- if .Values.configMaps.create }}
+{{- if include "platform-bom.createConfigMaps" . }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

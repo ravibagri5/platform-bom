@@ -13,6 +13,12 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [0.3.0] - 2026-10-09
 
+### Security
+
+- Upgrade `golang.org/x/net` to v0.60.0 for HTTP/2 vulnerabilities
+  GO-2026-6603, GO-2026-6610 and GO-2026-6611, reachable through Kubernetes
+  and GitHub API clients.
+
 ### Added
 
 - Add a three-environment kind simulation with representative platform

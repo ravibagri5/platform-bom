@@ -52,6 +52,10 @@ jobs:
             echo "::error::components keys must be .yaml file names"
             exit 1
           fi
+          if helm template pbom charts/platform-bom --set ingres.enabled=true > /dev/null 2>&1; then
+            echo "::error::values.schema.json must reject unknown keys"
+            exit 1
+          fi
           if helm template pbom charts/platform-bom --set ingress.enabled=true > /dev/null 2>&1; then
             echo "::error::Ingress must require a hostname when enabled"
             exit 1

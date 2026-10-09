@@ -26,6 +26,10 @@ change it; every such change is listed under **Changed** with a migration note.
   files can be passed with `helm --set-file`.
 - Document what each kind (`Platform`, `Component`, `PlatformRelease`,
   `Inventory`) is for, and the steps after a Helm install.
+- The Helm chart ships `values.schema.json`, so typos and invalid values fail
+  at install time instead of producing a broken deployment.
+- Step-by-step instructions to download, verify and install the `pbom` binary,
+  and what to know before using it.
 
 ### Changed
 

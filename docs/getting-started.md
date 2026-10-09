@@ -212,7 +212,8 @@ in the built-in catalog; see [CONTRIBUTING.md](../CONTRIBUTING.md).
 ### Record your first release baseline
 
 A release says "this is the platform we support". Cut one from what the
-cluster runs today, from a workstation with the [`pbom` CLI](deployment.md)
+cluster runs today, from a workstation with the
+[`pbom` CLI](deployment.md#install-the-pbom-binary)
 and a kubeconfig context for the cluster. Use a small local platform file, for
 example `baseline/pbom.yaml`, that names the environment the same way:
 

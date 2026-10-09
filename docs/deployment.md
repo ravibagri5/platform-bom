@@ -23,6 +23,82 @@ products. Only source builds need the language toolchains.
 
 ## Installation
 
+### Install the `pbom` binary
+
+The binary is the CLI and the web UI in one file; there is no installer and
+nothing else to download. You need it to discover clusters from your
+workstation, cut releases with `pbom release create`, or check drift in CI.
+Running PBOM inside a cluster with the Helm chart does not need it.
+
+**macOS and Linux.** Pick a version from the
+[releases page](https://github.com/ravibagri5/platform-bom/releases), without
+the leading `v`, then download, check and install it:
+
+```sh
+VERSION=0.2.0
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')                 # darwin or linux
+ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64 ;; aarch64|arm64) ARCH=arm64 ;; esac
+ARCHIVE="platform-bom_${VERSION}_${OS}_${ARCH}.tar.gz"
+BASE="https://github.com/ravibagri5/platform-bom/releases/download/v$VERSION"
+
+curl -fsSLO "$BASE/$ARCHIVE"
+curl -fsSLO "$BASE/checksums.txt"
+grep " $ARCHIVE\$" checksums.txt | shasum -a 256 -c -       # must print: OK
+
+tar -xzf "$ARCHIVE" pbom
+sudo install -m 0755 pbom /usr/local/bin/pbom                # or any directory on your PATH
+pbom version
+```
+
+Without `sudo`, install into a directory you own, such as
+`mkdir -p ~/.local/bin && install -m 0755 pbom ~/.local/bin/`, and make sure it
+is on your `PATH`. On macOS, an archive downloaded with a browser instead of
+`curl` is quarantined; run `xattr -d com.apple.quarantine pbom` once before
+starting it.
+
+**Windows (amd64).** Download `platform-bom_<version>_windows_amd64.zip` and
+`checksums.txt` from the releases page, compare
+`Get-FileHash .\platform-bom_<version>_windows_amd64.zip` with the line in
+`checksums.txt`, extract `pbom.exe` into a folder on your `PATH`, and run
+`pbom version` in a new terminal.
+
+**Verify the signature (optional).** `checksums.txt` is signed in the release
+workflow with [cosign](https://docs.sigstore.dev/cosign/system_config/installation/)
+keyless signing. To prove the checksums came from this repository's release
+workflow, download `checksums.txt.sig` and `checksums.txt.pem` next to it and
+run:
+
+```sh
+cosign verify-blob checksums.txt \
+  --signature checksums.txt.sig --certificate checksums.txt.pem \
+  --certificate-identity "https://github.com/ravibagri5/platform-bom/.github/workflows/release.yaml@refs/tags/v$VERSION" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+**Upgrade or remove.** Repeat the steps with a newer `VERSION` to upgrade.
+Remove the binary to uninstall; the only other file it writes is the upstream
+release cache in `~/Library/Caches/pbom` on macOS or `~/.cache/pbom` on Linux.
+
+### Before you start using the binary
+
+- **Cluster access is your kubeconfig.** `pbom` uses the same contexts and
+  credentials as `kubectl`, including plugins such as `kubelogin` or
+  `aws eks get-token`, which must be on your `PATH`. It only reads: see
+  [Required RBAC](#required-rbac).
+- **No cluster needed to try it.** From a clone of this repository,
+  `pbom serve -c examples/acme/pbom.yaml` opens the example platform at
+  <http://127.0.0.1:8080>.
+- **First look at a real cluster:** `kubectl config get-contexts`, then
+  `pbom discover --context <context>`. No platform file is needed for this.
+- **A platform file comes next.** For more than one-off discovery, describe
+  your environments in a `pbom.yaml`; see
+  [describing your platform](usage.md#describing-your-platform). Commands read
+  `./pbom.yaml` by default, or the file given with `-c` or `$PBOM_CONFIG`.
+- **Upstream checks call GitHub.** Export `GITHUB_TOKEN` to avoid the anonymous
+  rate limit, or pass `--no-upstream` to work offline.
+- **The UI binds to `127.0.0.1`.** `pbom serve` has no authentication; keep it
+  local, or put it behind an authenticating proxy if you change `--addr`.
+
 ### From source
 
 ```shell
@@ -34,14 +110,12 @@ The CLI works fully; `pbom serve` answers the JSON API and explains how to
 build the UI. For the complete binary, clone the repository and run
 `make ui build` (Go 1.26+ and Node 24+).
 
-### Release binaries and images
+### Container images
 
-Each release publishes archives for Linux and macOS on amd64 and arm64,
-and Windows on amd64, with SBOMs and a cosign-signed checksum file, on the
-[releases page](https://github.com/ravibagri5/platform-bom/releases), and
-multi-arch images at `ghcr.io/ravibagri5/platform-bom`: `:<version>` for every
-release, `:latest` for the newest release and `:rc` for the newest release
-candidate. The release notes show how to verify the signature.
+Each release also publishes multi-arch images at
+`ghcr.io/ravibagri5/platform-bom`: `:<version>` for every release, `:latest`
+for the newest release and `:rc` for the newest release candidate. Archives for
+every platform come with SBOMs (`*.sbom.json`) on the releases page.
 
 ## Required RBAC
 

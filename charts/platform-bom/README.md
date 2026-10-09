@@ -48,6 +48,12 @@ File names in `releases` and `components` must end in `.yaml` or `.yml`. For
 what each document kind means and what to configure after installing, see
 [next steps](../../docs/getting-started.md#next-steps-from-inventory-to-a-managed-platform).
 
+`values.schema.json` validates values on every install, upgrade, `template` and
+`lint`: unknown keys (typos such as `ingres`), wrong types, invalid ingress
+paths, durations, environment names and file names fail before anything is
+applied. The `platform` document is checked loosely here and in full by `pbom`
+at startup.
+
 ## Optional Ingress and TLS
 
 Ingress is disabled by default. To enable it, put the following in your Helm

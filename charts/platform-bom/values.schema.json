@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "platform-bom chart values",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "fileMap": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.ya?ml$" },
+      "additionalProperties": {
+        "description": "A document, or raw file content such as from helm --set-file.",
+        "type": ["object", "string"]
+      }
+    },
+    "pbomDocument": {
+      "type": "object",
+      "required": ["apiVersion", "kind"],
+      "properties": {
+        "apiVersion": { "const": "pbom.dev/v1alpha1" },
+        "metadata": {
+          "type": "object",
+          "required": ["name"],
+          "properties": { "name": { "$ref": "#/definitions/nonEmptyString" } }
+        }
+      }
+    }
+  },
+  "properties": {
+    "global": { "type": "object" },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "$ref": "#/definitions/nonEmptyString" },
+        "tag": { "type": "string" },
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": { "name": { "$ref": "#/definitions/nonEmptyString" } }
+      }
+    },
+    "rbac": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "helmSecrets": { "type": "boolean" }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["host"],
+            "additionalProperties": false,
+            "properties": {
+              "host": { "$ref": "#/definitions/nonEmptyString" },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": { "type": "string", "pattern": "^/" },
+                    "pathType": { "enum": ["Prefix", "Exact", "ImplementationSpecific"] }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "secretName": { "type": "string" },
+              "hosts": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "refreshInterval": {
+      "description": "Go duration for background rediscovery; 0 disables it.",
+      "anyOf": [
+        { "const": 0 },
+        { "type": "string", "pattern": "^(0|([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+)$" }
+      ]
+    },
+    "githubTokenSecret": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "key": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "platform": {
+      "description": "The PBOM Platform document. Fields are checked in full by pbom at startup.",
+      "allOf": [{ "$ref": "#/definitions/pbomDocument" }],
+      "required": ["metadata", "spec"],
+      "properties": {
+        "kind": { "const": "Platform" },
+        "spec": {
+          "type": "object",
+          "properties": {
+            "environments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" },
+                  "inCluster": { "type": "boolean" },
+                  "targetRelease": { "type": "string" }
+                }
+              }
+            },
+            "offerings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": { "components": { "type": "array", "items": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "releases": { "$ref": "#/definitions/fileMap" },
+    "components": { "$ref": "#/definitions/fileMap" },
+    "resources": { "type": "object" }
+  }
+}

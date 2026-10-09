@@ -128,7 +128,7 @@ Choose the prerequisites for the local route you need:
 
 | Route | Prerequisites |
 | --- | --- |
-| Prebuilt `pbom` binary | Release archive for your OS/CPU; kubeconfig and any cluster credential plugin for live discovery |
+| Prebuilt `pbom` binary | Release archive for your OS/CPU; kubeconfig and any cluster credential plugin for live discovery. See [installing the binary](docs/deployment.md#install-the-pbom-binary) |
 | Build the binary and UI | Git, Go 1.26+, Node.js 24+, npm (bundled with Node.js), Make |
 | Three-cluster kind simulation | All build prerequisites, Docker with its daemon running, kind, `kubectl`, Helm 3.8+ or 4; enough memory for three Kubernetes nodes |
 | Container | Docker with its daemon running, a platform config and a usable kubeconfig; no Go or Node.js |

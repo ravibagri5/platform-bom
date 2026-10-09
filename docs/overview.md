@@ -544,7 +544,7 @@ what is next.
 | [M9 — Developer interfaces](https://github.com/ravibagri5/platform-bom/milestone/10) | In progress |
 | [M10 — MCP server](https://github.com/ravibagri5/platform-bom/milestone/11) | Planned |
 | [M11 — PBOM specification](https://github.com/ravibagri5/platform-bom/milestone/12) | Exploring |
-| M12 — Secure access and multi-cluster identity | Next (target: November 2026) |
+| [M12 — Secure access and multi-cluster identity](https://github.com/ravibagri5/platform-bom/milestone/13) | Next (target: November 2026) |
 
 **M0 — Project foundation.** Repository and release tooling; the
 resource model for platforms, components, offerings, environments and platform

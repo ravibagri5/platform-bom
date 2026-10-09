@@ -25,12 +25,16 @@ PBOM is moving from a private tool to something a whole organisation opens, so
 **M12 — Secure access and multi-cluster identity** comes first, targeted for
 end of November 2026:
 
-1. OIDC sign-in for the web UI and API
-2. Authorization: who can see which environments
-3. Azure Workload Identity (managed identity) for discovering AKS clusters
-4. Cross-cluster credentials per environment: service-account tokens and
-   kubeconfig Secrets
-5. Dark and light theme
+1. [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in
+   for the web UI and API
+2. [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
+   who can see which environments
+3. [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
+   Identity (managed identity) for discovering AKS clusters
+4. [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
+   credentials per environment: service-account tokens and kubeconfig Secrets
+5. [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
+   theme
 
 Every integration needs a stable contract, so the versioned API follows.
 In priority order:
@@ -146,16 +150,21 @@ catalog, the CLI, the JSON API and the web UI.
 
 Target: end of November 2026.
 
-- OIDC sign-in for the web UI and API (Entra ID, Okta, Keycloak, Dex), with
-  `none`, `header` (authenticating proxy) and `oidc` modes and no database
-- Authorization: roles and per-environment visibility from OIDC groups, and
-  Kubernetes service-account tokens (TokenReview) for API clients such as CI
-- Azure Workload Identity (user-assigned managed identity) for discovering
-  AKS clusters without kubelogin or stored secrets
-- Cross-cluster credentials per environment from kubeconfig or
-  service-account token Secrets, with a least-privilege reader for target
-  clusters and per-environment connection status
-- Dark and light theme, following the operating system by default
+- [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in for
+  the web UI and API (Entra ID, Okta, Keycloak, Dex), with `none`, `header`
+  (authenticating proxy) and `oidc` modes and no database
+- [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
+  roles and per-environment visibility from OIDC groups, and Kubernetes
+  service-account tokens (TokenReview) for API clients such as CI
+- [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
+  Identity (user-assigned managed identity) for discovering AKS clusters
+  without kubelogin or stored secrets
+- [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
+  credentials per environment from kubeconfig or service-account token
+  Secrets, with a least-privilege reader for target clusters and
+  per-environment connection status
+- [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
+  theme, following the operating system by default
 
 User access and the credentials pbom uses to discover clusters stay separate.
 

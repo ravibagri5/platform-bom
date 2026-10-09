@@ -62,7 +62,7 @@ upstream checks and the HTTP API. For the concepts behind them, start with the
 | `pbom release create NAME --from-env ENV` | Cut a release from what an environment is running. |
 | `pbom release diff FROM TO [--all]` | Compare two releases. |
 | `pbom catalog` | Known component definitions. |
-| `pbom serve [--addr] [--refresh-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default. |
+| `pbom serve [--addr] [--refresh-interval] [--config-check-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default and reloads configuration files when they change (checked every 15s). |
 | `pbom version` | Print the version. |
 
 Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`) and
@@ -88,9 +88,11 @@ Declared documents (`Platform`, `PlatformRelease`, `Component`) live in Git and
 are reviewed like code. An `Inventory` is observed output: editing it does not
 classify anything, so to name an unclassified tool write a `Component`.
 
-With the Helm chart, `Platform`, `Component` and `PlatformRelease` documents
-are the `platform`, `components` and `releases` values; see
-[getting started](getting-started.md#next-steps-from-inventory-to-a-managed-platform).
+With the Helm chart, these documents are files in ConfigMaps applied with
+`kubectl apply -k` or any CD tool, or the chart's `platform`, `components` and
+`releases` values; see
+[getting started](getting-started.md#4-describe-your-platform-in-yaml).
+`pbom serve` reloads them when they change.
 
 ### Platform
 

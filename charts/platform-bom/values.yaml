@@ -24,6 +24,15 @@ githubTokenSecret:
   name: ""
   key: token
 
+# false: mount ConfigMaps you apply yourself (kubectl apply -k, any CD tool)
+# instead of rendering them from platform, releases and components below.
+# Changes to them are picked up without a restart.
+configMaps:
+  create: true
+  platform: pbom-platform
+  releases: pbom-releases
+  components: pbom-components
+
 platform:
   apiVersion: pbom.dev/v1alpha1
   kind: Platform

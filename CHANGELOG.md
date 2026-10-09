@@ -28,6 +28,16 @@ change it; every such change is listed under **Changed** with a migration note.
   `Inventory`) is for, and the steps after a Helm install.
 - The Helm chart ships `values.schema.json`, so typos and invalid values fail
   at install time instead of producing a broken deployment.
+- `pbom serve` reloads the platform file, releases, components, readme and
+  inventory files when they change (`--config-check-interval`, default 15s).
+  An invalid change is logged and the previous configuration keeps serving.
+- The Helm chart can mount ConfigMaps you apply yourself
+  (`configMaps.create=false`), so each document can live in its own file and
+  be applied with `kubectl apply -k` or any CD tool.
+  `examples/getting-started` is a ready-to-copy directory.
+- The getting-started guide is restructured: install, open the inventory,
+  describe the platform in YAML, apply it, keep it in Git, with reference and
+  troubleshooting at the end. It replaces the Argo CD specific GitOps guide.
 - Step-by-step instructions to download, verify and install the `pbom` binary,
   and what to know before using it.
 

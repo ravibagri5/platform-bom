@@ -1,3 +1,4 @@
+{{- if .Values.configMaps.create }}
 {{- $platform := deepCopy .Values.platform }}
 {{- $spec := default dict $platform.spec }}
 {{- if not $spec.componentsDir }}
@@ -38,4 +39,5 @@ data:
   {{- include "platform-bom.files" (dict "files" .Values.components "value" "components") | nindent 2 }}
 {{- else }}
 data: {}
+{{- end }}
 {{- end }}

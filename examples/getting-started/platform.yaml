@@ -1,0 +1,24 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: my-platform
+  displayName: My Platform
+spec:
+  tagline: What our platform provides and where it runs.
+  # Where the chart mounts the other ConfigMaps. Keep these two lines.
+  releasesDir: /releases
+  componentsDir: /components
+  offerings:
+    - name: workloads
+      displayName: Kubernetes workloads
+      category: runtime
+      status: ga
+      components: [kubernetes]
+  environments:
+    - name: prod
+      displayName: Production
+      inCluster: true            # the cluster PBOM runs in
+      targetRelease: "1.0.0"     # remove until you have a release
+    # A cluster PBOM cannot reach, from an exported Inventory:
+    # - name: edge
+    #   inventoryFile: edge.yaml

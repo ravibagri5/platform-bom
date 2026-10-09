@@ -21,6 +21,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "%s-%s" .Release.Namespace (include "platform-bom.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "platform-bom.configMapName" -}}
+{{- if .root.Values.configMaps.create -}}
+{{- printf "%s-%s" (include "platform-bom.fullname" .root) .kind -}}
+{{- else -}}
+{{- required (printf "configMaps.%s is required when configMaps.create=false" .kind) (index .root.Values.configMaps .kind) -}}
+{{- end -}}
+{{- end -}}
+
 {{/* ConfigMap data from a map of file name to document (a map) or raw file content (a string). */}}
 {{- define "platform-bom.files" -}}
 {{- range $name, $doc := .files }}

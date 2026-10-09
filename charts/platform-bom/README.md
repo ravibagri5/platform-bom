@@ -1,7 +1,7 @@
 # Platform BOM Helm chart
 
-See the [getting-started runbook](../../docs/getting-started.md) for installation
-and the [optional GitOps guide](../../docs/gitops.md) for Argo CD.
+See the [getting-started guide](../../docs/getting-started.md) for installation
+and for managing the platform's YAML files with Git.
 
 ```sh
 helm upgrade --install pbom ./charts/platform-bom \
@@ -33,6 +33,8 @@ pod using a configuration checksum.
 | `refreshInterval` | `10m` | Discovery refresh interval |
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
+| `configMaps.create` | `true` | Render configuration from `platform`, `releases` and `components`; `false` mounts ConfigMaps you apply yourself |
+| `configMaps.platform` / `.releases` / `.components` | `pbom-platform` / `pbom-releases` / `pbom-components` | Names of your ConfigMaps when `configMaps.create=false`; releases and components may be absent |
 | `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; `componentsDir` is set to the mounted `components` |
 | `releases` | `{}` | Map of file names to `PlatformRelease` documents or raw file content (`--set-file`) |
 | `components` | `{}` | Map of file names to `Component` documents or raw file content; override or extend the built-in catalog |
@@ -44,9 +46,11 @@ set `rbac.create=false`, `serviceAccount.create=false` and
 `serviceAccount.name` to the existing account. Disabling RBAC creation alone
 does not grant discovery permissions.
 
-File names in `releases` and `components` must end in `.yaml` or `.yml`. For
-what each document kind means and what to configure after installing, see
-[next steps](../../docs/getting-started.md#next-steps-from-inventory-to-a-managed-platform).
+File names in `releases` and `components` must end in `.yaml` or `.yml`. To
+keep each document in its own file instead, apply them as ConfigMaps and set
+`configMaps.create=false`; see
+[getting started](../../docs/getting-started.md#4-describe-your-platform-in-yaml).
+Either way, PBOM reloads changed configuration without a restart.
 
 `values.schema.json` validates values on every install, upgrade, `template` and
 `lint`: unknown keys (typos such as `ingres`), wrong types, invalid ingress

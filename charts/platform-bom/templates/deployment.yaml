@@ -84,13 +84,15 @@ spec:
       volumes:
         - name: platform
           configMap:
-            name: {{ include "platform-bom.fullname" . }}-platform
+            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "platform") }}
         - name: releases
           configMap:
-            name: {{ include "platform-bom.fullname" . }}-releases
+            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "releases") }}
+            optional: true
         - name: components
           configMap:
-            name: {{ include "platform-bom.fullname" . }}-components
+            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "components") }}
+            optional: true
         - name: cache
           emptyDir:
             sizeLimit: 64Mi

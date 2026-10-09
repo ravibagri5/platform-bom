@@ -113,14 +113,14 @@ kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 ```
 
 Open <http://127.0.0.1:8080>. PBOM discovers this cluster using its read-only
-service account. Offerings and release drift are optional additions, not
-installation prerequisites. The UI has no built-in authentication; keep the
-Service private or use an authenticating proxy.
+service account. The UI has no built-in authentication; keep the Service
+private or use an authenticating proxy.
 
-The release workflow packages the chart for OCI distribution, so future chart
-releases can be installed without a checkout. See the
-[getting-started runbook](docs/getting-started.md) for that command, verification,
-troubleshooting, upgrades and uninstalling. [GitOps](docs/gitops.md) is optional.
+Next, [describe your platform in YAML](docs/getting-started.md#4-describe-your-platform-in-yaml):
+a `Platform` with offerings and environments, `Component` files for tools PBOM
+does not know, and `PlatformRelease` baselines. Apply them with
+`kubectl apply -k`, then keep them in Git and let any CD tool apply them. The
+[getting-started guide](docs/getting-started.md) walks through every step.
 
 ## Try it locally
 
@@ -166,9 +166,8 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | --- | --- |
 | [Overview and concepts](docs/overview.md) | The problem, platform model, evidence, architecture, integrations, principles and roadmap |
 | [Usage](docs/usage.md) | Configuration, discovery, CLI, drift checks, web UI and API |
-| [Getting started](docs/getting-started.md) | Helm install, first inventory, prerequisites, troubleshooting, upgrades and uninstall |
+| [Getting started](docs/getting-started.md) | Install with Helm, describe the platform in YAML, apply it, keep it in Git, troubleshooting |
 | [Deployment](docs/deployment.md) | Binary and container alternatives, RBAC and advanced cluster deployment |
-| [Optional GitOps](docs/gitops.md) | Manage Helm values with Argo CD and declare a first release |
 | [Kind simulation](examples/kind/simulation/README.md) | Recreate the screenshot environment and release drift |
 | [Roadmap](ROADMAP.md) | Upcoming work and milestones |
 | [Community](docs/community.md) | Planning, labels and participation |

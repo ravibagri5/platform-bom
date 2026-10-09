@@ -125,6 +125,16 @@
         "key": { "$ref": "#/definitions/nonEmptyString" }
       }
     },
+    "configMaps": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "platform": { "type": "string" },
+        "releases": { "type": "string" },
+        "components": { "type": "string" }
+      }
+    },
     "platform": {
       "description": "The PBOM Platform document. Fields are checked in full by pbom at startup.",
       "allOf": [{ "$ref": "#/definitions/pbomDocument" }],

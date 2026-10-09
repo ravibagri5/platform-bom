@@ -198,15 +198,29 @@ pull request is welcome.
 
 ## Releases
 
-Maintainers cut releases by tagging `main`:
+`main` is the only long-lived branch and must always be releasable. A release
+is a signed tag on `main`; there are no release or maintenance branches.
 
-```shell
-git tag -s v0.2.0 -m "v0.2.0"
-git push origin v0.2.0
-```
+1. In a pull request to `main`, rename the CHANGELOG `## [Unreleased]` heading
+   to `## [X.Y.Z] - YYYY-MM-DD` and add a new empty `## [Unreleased]` above it.
+   Merge it.
+2. Tag the merged commit and push the tag:
 
-The release workflow builds the UI, runs GoReleaser, publishes signed archives,
-SBOMs and multi-arch images to `ghcr.io/ravibagri5/platform-bom`, and creates a
-draft GitHub release. A maintainer reviews the notes against
-[CHANGELOG.md](CHANGELOG.md) and publishes it. Tags containing a hyphen, such as
-`v0.2.0-rc.1`, are published as pre-releases and never move `latest`.
+   ```shell
+   git switch main && git pull --ff-only
+   git tag -s v0.3.0 -m "v0.3.0"
+   git push origin v0.3.0
+   ```
+
+The release workflow refuses a tag that is not on `main` or that has no
+CHANGELOG section. It builds the UI, runs GoReleaser, and publishes the GitHub
+release with that CHANGELOG section as its notes, signed archives, SBOMs,
+multi-arch images at `ghcr.io/ravibagri5/platform-bom` and the Helm chart.
+
+To try a release first, tag `vX.Y.Z-rc.N` on `main`. It is published as a
+pre-release from its own CHANGELOG section, or `Unreleased` if it has none, and
+never moves `latest`. Fix problems on `main` and tag the next candidate.
+
+Fixes for a released version also land on `main` and ship as a patch release;
+only the latest release is supported. Never move or delete a pushed tag; tag a
+new version instead.

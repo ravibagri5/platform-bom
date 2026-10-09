@@ -79,7 +79,7 @@ func newReleaseShowCmd(g *globals) *cobra.Command {
 }
 
 func newReleaseCreateCmd(g *globals) *cobra.Command {
-	var fromEnv, summary string
+	var fromEnv, summary, kubeContext, kubeconfig string
 	var highlights []string
 	var force bool
 	cmd := &cobra.Command{
@@ -101,6 +101,13 @@ func newReleaseCreateCmd(g *globals) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if kubeContext != "" || kubeconfig != "" {
+				// Discover from here, e.g. an environment that is inCluster for the deployed pbom.
+				local := *env
+				local.InCluster, local.InventoryFile = false, ""
+				local.KubeContext, local.Kubeconfig = kubeContext, kubeconfig
+				env = &local
+			}
 			inv, err := svc.DiscoverEnvironment(cmd.Context(), env)
 			if err != nil {
 				return err
@@ -113,11 +120,18 @@ func newReleaseCreateCmd(g *globals) *cobra.Command {
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Created release %s with %d components from %s: %s\n",
 				args[0], len(rel.Spec.Components), fromEnv, path)
+			if k, err := syncKustomization(g.config); err != nil {
+				return err
+			} else if k != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "Updated %s\n", k)
+			}
 			fmt.Fprintln(cmd.OutOrStdout(), "Edit the file to add release notes, then commit it.")
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&fromEnv, "from-env", "", "environment to snapshot")
+	cmd.Flags().StringVar(&kubeContext, "context", "", "discover this kubeconfig context instead of the environment's own source")
+	cmd.Flags().StringVar(&kubeconfig, "kubeconfig", "", "kubeconfig file to use with --context")
 	cmd.Flags().StringVar(&summary, "summary", "", "one line release summary")
 	cmd.Flags().StringArrayVar(&highlights, "highlight", nil, "release highlight (repeatable)")
 	cmd.Flags().BoolVar(&force, "force", false, "overwrite an existing release")

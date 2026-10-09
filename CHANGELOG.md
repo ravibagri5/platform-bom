@@ -11,14 +11,58 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-09
+
+### Security
+
+- Upgrade `golang.org/x/net` to v0.60.0 for HTTP/2 vulnerabilities
+  GO-2026-6603, GO-2026-6610 and GO-2026-6611, reachable through Kubernetes
+  and GitHub API clients.
+
 ### Added
 
 - Add a three-environment kind simulation with representative platform
   components, version drift and release snapshots.
 - Add platform screenshots and expanded documentation for the problem,
   platform model, GitOps deployment and simulation.
+- Add a Helm chart that discovers the cluster it runs in without any platform
+  YAML, with an optional Ingress (cert-manager compatible) and a
+  getting-started runbook. Releases publish the chart to
+  `oci://ghcr.io/ravibagri5/charts/platform-bom`.
+- The Helm chart's `components` value adds or overrides catalog `Component`
+  definitions, and `releases` and `components` accept raw file content, so
+  files can be passed with `helm --set-file`.
+- Document what each kind (`Platform`, `Component`, `PlatformRelease`,
+  `Inventory`) is for, and the steps after a Helm install.
+- The Helm chart ships `values.schema.json`, so typos and invalid values fail
+  at install time instead of producing a broken deployment.
+- `pbom serve` reloads the platform file, releases, components, readme and
+  inventory files when they change (`--config-check-interval`, default 15s).
+  An invalid change is logged and the previous configuration keeps serving.
+- The Helm chart can mount ConfigMaps you apply yourself
+  (`configMaps.create=false`), so each document can live in its own file and
+  be applied with `kubectl apply -k` or any CD tool.
+- `pbom init DIR --context C` creates that directory from a live cluster:
+  `platform.yaml`, a first release of everything running, optional Component
+  drafts for unclassified Helm releases (`--components`) and a
+  `kustomization.yaml`. `pbom kustomize DIR` regenerates the kustomization,
+  and `pbom release create --context` snapshots an `inCluster` environment
+  from a workstation and keeps the kustomization in sync.
+- `--releases-dir` and `--components-dir` override the platform file, so the
+  same `platform.yaml` works locally and in the chart's pod. A missing
+  components directory is treated as empty.
+- The built-in catalog recognises Platform BOM itself.
+- The getting-started guide is restructured: install, open the inventory,
+  describe the platform in YAML, apply it, keep it in Git, with reference and
+  troubleshooting at the end. It replaces the Argo CD specific GitOps guide.
+- Step-by-step instructions to download, verify and install the `pbom` binary,
+  and what to know before using it.
 
 ### Changed
+
+- Releases publish automatically when a tag on `main` is pushed, with the
+  version's CHANGELOG section as the release notes, instead of as drafts with
+  notes generated from commits. Tags not on `main` are rejected.
 
 - Improve the platform overview with clearer release alignment and offering
   information.

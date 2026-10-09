@@ -53,6 +53,7 @@ milestones=(
   "M9 — Developer interfaces|open|Versioned REST API with OpenAPI, Prometheus metrics, kubectl plugin, Go client, webhooks."
   "M10 — MCP server|open|A read-only MCP server so AI assistants can query the platform inventory."
   "M11 — PBOM specification|open|A versioned PBOM schema with validation, examples, import and export, and OCI distribution."
+  "M12 — Secure access and multi-cluster identity|open|OIDC sign-in and authorization for the UI and API, keyless cloud identity and per-environment credentials for discovering many clusters, and a dark/light theme."
 )
 existing=$(gh api "repos/$SLUG/milestones?state=all&per_page=100" --jq '.[].title')
 for m in "${milestones[@]}"; do
@@ -90,7 +91,7 @@ else
   echo "exists: project #$number"
 fi
 run gh project edit "$number" --owner "$OWNER" --visibility PUBLIC \
-  --description "Roadmap and delivery board for platform-bom. Grouped by milestone (M0 to M11) and theme."
+  --description "Roadmap and delivery board for platform-bom. Grouped by milestone (M0 to M12) and theme."
 run gh project link "$number" --owner "$OWNER" --repo "$SLUG"
 
 if [[ "$SEED_ISSUES" == "1" ]]; then

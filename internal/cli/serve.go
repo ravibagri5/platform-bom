@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -16,12 +17,13 @@ import (
 
 	"github.com/ravibagri5/platform-bom/internal/catalog"
 	"github.com/ravibagri5/platform-bom/internal/server"
+	"github.com/ravibagri5/platform-bom/internal/service"
 	"github.com/ravibagri5/platform-bom/internal/ui"
 )
 
 func newServeCmd(g *globals) *cobra.Command {
 	var addr string
-	var interval time.Duration
+	var interval, configInterval time.Duration
 	var debug bool
 	cmd := &cobra.Command{
 		Use:   "serve",
@@ -40,6 +42,20 @@ func newServeCmd(g *globals) *cobra.Command {
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
+			var current atomic.Pointer[service.Service]
+			var handler atomic.Value
+			use := func(s *service.Service) {
+				current.Store(s)
+				handler.Store(server.New(s, ui.FS()))
+			}
+			use(svc)
+			if configInterval > 0 {
+				go watchConfig(ctx, g, configInterval, func(s *service.Service) {
+					use(s)
+					go func() { _, _ = s.Input(ctx, false) }()
+				})
+			}
+
 			go func() {
 				// Warm the caches so the first page load is fast.
 				_, _ = svc.Input(ctx, false)
@@ -53,14 +69,16 @@ func newServeCmd(g *globals) *cobra.Command {
 					case <-ctx.Done():
 						return
 					case <-tick.C:
-						_, _ = svc.Input(ctx, true)
+						_, _ = current.Load().Input(ctx, true)
 					}
 				}
 			}()
 
 			srv := &http.Server{
-				Addr:              addr,
-				Handler:           server.New(svc, ui.FS()),
+				Addr: addr,
+				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					handler.Load().(http.Handler).ServeHTTP(w, r)
+				}),
 				ReadHeaderTimeout: 10 * time.Second,
 				WriteTimeout:      5 * time.Minute,
 				IdleTimeout:       2 * time.Minute,
@@ -84,6 +102,7 @@ func newServeCmd(g *globals) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&addr, "addr", "127.0.0.1:8080", "listen address")
 	cmd.Flags().DurationVar(&interval, "refresh-interval", 10*time.Minute, "background rediscovery interval (0 disables)")
+	cmd.Flags().DurationVar(&configInterval, "config-check-interval", 15*time.Second, "how often to check configuration files for changes and reload (0 disables)")
 	cmd.Flags().BoolVar(&debug, "debug", false, "enable debug logging")
 	return cmd
 }

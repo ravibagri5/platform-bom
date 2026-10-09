@@ -1,0 +1,60 @@
+image:
+  repository: ghcr.io/ravibagri5/platform-bom
+  tag: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+rbac:
+  create: true
+  helmSecrets: true
+serviceAccount:
+  create: true
+  name: ""
+
+service:
+  port: 80
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+refreshInterval: 10m
+githubTokenSecret:
+  name: ""
+  key: token
+
+# false: mount ConfigMaps you apply yourself (kubectl apply -k, any CD tool)
+# instead of rendering them from platform, releases and components below.
+# Changes to them are picked up without a restart.
+configMaps:
+  create: true
+  platform: pbom-platform
+  releases: pbom-releases
+  components: pbom-components
+
+platform:
+  apiVersion: pbom.dev/v1alpha1
+  kind: Platform
+  metadata:
+    name: my-platform
+    displayName: My Platform
+  spec:
+    environments:
+      - name: this-cluster
+        displayName: This cluster
+        inCluster: true
+
+# File name -> PlatformRelease document, or raw file content (helm --set-file).
+releases: {}
+
+# File name -> Component document(s), or raw file content. Mounted as
+# componentsDir; definitions override built-in catalog entries with the same name.
+components: {}
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 512Mi

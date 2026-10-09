@@ -26,6 +26,42 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  helm:
+    name: Helm chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+
+      - name: Lint and render chart
+        run: |
+          helm lint charts/platform-bom --strict
+          helm lint charts/platform-bom --strict --set rbac.helmSecrets=false
+          helm lint charts/platform-bom --strict --set rbac.create=false,serviceAccount.create=false,serviceAccount.name=existing-reader
+          helm lint charts/platform-bom --strict --set 'ingress.enabled=true,ingress.hosts[0].host=pbom.example.com,ingress.className=nginx'
+          helm template pbom charts/platform-bom --namespace platform-bom > /dev/null
+          helm template pbom charts/platform-bom --namespace platform-bom --set githubTokenSecret.name=pbom-github > /dev/null
+          helm template pbom charts/platform-bom --namespace platform-bom --set-json 'ingress={"enabled":true,"className":"nginx","annotations":{"cert-manager.io/cluster-issuer":"letsencrypt-prod"},"hosts":[{"host":"pbom.example.com"}],"tls":[{"secretName":"pbom-tls","hosts":["pbom.example.com"]}]}' > /dev/null
+          helm template pbom charts/platform-bom --namespace platform-bom \
+            --set-file 'releases.1\.0\.0\.yaml=examples/acme/releases/1.0.0.yaml' \
+            --set-json 'components={"ci.yaml":{"apiVersion":"pbom.dev/v1alpha1","kind":"Component","metadata":{"name":"ci"},"spec":{"displayName":"CI","category":"other"}}}' > /dev/null
+          if helm template pbom charts/platform-bom --set components.bad=x > /dev/null 2>&1; then
+            echo "::error::components keys must be .yaml file names"
+            exit 1
+          fi
+          if helm template pbom charts/platform-bom --set ingres.enabled=true > /dev/null 2>&1; then
+            echo "::error::values.schema.json must reject unknown keys"
+            exit 1
+          fi
+          helm template pbom charts/platform-bom --set configMaps.create=false | grep -q 'name: pbom-platform$'
+          if helm template pbom charts/platform-bom --set ingress.enabled=true > /dev/null 2>&1; then
+            echo "::error::Ingress must require a hostname when enabled"
+            exit 1
+          fi
+
   verify:
     name: Verify
     runs-on: ubuntu-latest
@@ -60,7 +96,8 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          # golangci-lint v2.13.2 cannot read Go 1.27 export data.
+          go-version: "1.26"
           cache: true
 
       - uses: golangci/golangci-lint-action@v9

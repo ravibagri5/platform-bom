@@ -98,26 +98,9 @@ docker_manifests:
       - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-amd64
       - ghcr.io/ravibagri5/platform-bom:{{ if .Prerelease }}rc{{ else }}latest{{ end }}-arm64
 
-changelog:
-  use: github
-  sort: asc
-  groups:
-    - title: Added
-      regexp: '^.*?(feat|add)(\([[:word:]]+\))??!?:.+$'
-      order: 0
-    - title: Fixed
-      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
-      order: 1
-    - title: Other
-      order: 999
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-
+# Release notes come from the tag's CHANGELOG.md section; see release.yaml.
 release:
-  draft: true
+  draft: false
   prerelease: auto
   footer: |
     **Full changelog**: https://github.com/ravibagri5/platform-bom/compare/{{ .PreviousTag }}...{{ .Tag }}

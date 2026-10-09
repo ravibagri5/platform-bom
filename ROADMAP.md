@@ -9,7 +9,7 @@ version or explain the platform they run, from the tools they already use?*
 
 ## How planning works
 
-- **Milestones are themes**, M0 to M11, matching the roadmap in the
+- **Milestones are themes**, M0 to M12, matching the roadmap in the
   [project overview](docs/overview.md#roadmap). Each has a GitHub milestone with its issues.
 - **Releases are cut from `main`** when enough has landed, not per milestone.
   A release usually contains work from several milestones.
@@ -19,9 +19,24 @@ version or explain the platform they run, from the tools they already use?*
   [platform-bom Roadmap](https://github.com/users/ravibagri5/projects/2) board.
   See [docs/community.md](docs/community.md#planning).
 
-## Next: the foundation for integrations
+## Next: secure access, then the foundation for integrations
 
-Every integration needs a stable contract, so the versioned API comes first.
+PBOM is moving from a private tool to something a whole organisation opens, so
+**M12 — Secure access and multi-cluster identity** comes first, targeted for
+end of November 2026:
+
+1. [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in
+   for the web UI and API
+2. [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
+   who can see which environments
+3. [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
+   Identity (managed identity) for discovering AKS clusters
+4. [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
+   credentials per environment: service-account tokens and kubeconfig Secrets
+5. [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
+   theme
+
+Every integration needs a stable contract, so the versioned API follows.
 In priority order:
 
 1. [#8](https://github.com/ravibagri5/platform-bom/issues/8) Versioned REST API
@@ -113,11 +128,6 @@ catalog, the CLI, the JSON API and the web UI.
 
 - [#8](https://github.com/ravibagri5/platform-bom/issues/8) Versioned REST API
   with OpenAPI
-- OIDC authentication for UI and API users, including a documented
-  authenticating-proxy deployment option and authorization policy
-- Kubernetes service-account bearer-token authentication for API clients
-  using TokenReview and explicit access controls (separate from the service
-  account pbom uses to discover clusters)
 - [#9](https://github.com/ravibagri5/platform-bom/issues/9) Prometheus metrics
 - [#10](https://github.com/ravibagri5/platform-bom/issues/10) kubectl plugin
   through krew
@@ -135,6 +145,28 @@ catalog, the CLI, the JSON API and the web UI.
   specification with JSON Schema
 - [#32](https://github.com/ravibagri5/platform-bom/issues/32) Publish platform
   releases as OCI artifacts
+
+### M12 — Secure access and multi-cluster identity
+
+Target: end of November 2026.
+
+- [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in for
+  the web UI and API (Entra ID, Okta, Keycloak, Dex), with `none`, `header`
+  (authenticating proxy) and `oidc` modes and no database
+- [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
+  roles and per-environment visibility from OIDC groups, and Kubernetes
+  service-account tokens (TokenReview) for API clients such as CI
+- [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
+  Identity (user-assigned managed identity) for discovering AKS clusters
+  without kubelogin or stored secrets
+- [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
+  credentials per environment from kubeconfig or service-account token
+  Secrets, with a least-privilege reader for target clusters and
+  per-environment connection status
+- [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
+  theme, following the operating system by default
+
+User access and the credentials pbom uses to discover clusters stay separate.
 
 ## Not planned
 

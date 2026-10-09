@@ -1,0 +1,11 @@
+Wait for Platform BOM and open its inventory:
+
+  kubectl -n {{ .Release.Namespace }} rollout status deployment/{{ include "platform-bom.fullname" . }} --timeout=180s
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "platform-bom.fullname" . }} 8080:{{ .Values.service.port }}
+
+Visit http://127.0.0.1:8080.
+
+The UI has no built-in authentication. Keep it private or use an authenticating proxy.
+{{- if and .Values.rbac.create .Values.rbac.helmSecrets }}
+Helm discovery grants cluster-wide Secret read access. Set rbac.helmSecrets=false to omit it.
+{{- end }}

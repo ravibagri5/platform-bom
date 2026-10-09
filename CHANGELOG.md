@@ -17,8 +17,16 @@ change it; every such change is listed under **Changed** with a migration note.
   components, version drift and release snapshots.
 - Add platform screenshots and expanded documentation for the problem,
   platform model, GitOps deployment and simulation.
+- Add a Helm chart that discovers the cluster it runs in without any platform
+  YAML, with an optional Ingress (cert-manager compatible) and a
+  getting-started runbook. Releases publish the chart to
+  `oci://ghcr.io/ravibagri5/charts/platform-bom`.
 
 ### Changed
+
+- Releases publish automatically when a tag on `main` is pushed, with the
+  version's CHANGELOG section as the release notes, instead of as drafts with
+  notes generated from commits. Tags not on `main` are rejected.
 
 - Improve the platform overview with clearer release alignment and offering
   information.

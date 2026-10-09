@@ -86,7 +86,7 @@ internal ingress controller or an authenticating proxy before exposing the UI.
 
 The tag-triggered release workflow packages a chart with its `version` and
 `appVersion` set to the release tag without `v`, attaches the archive to the
-draft GitHub release, and pushes it to
+GitHub release, and pushes it to
 `oci://ghcr.io/ravibagri5/charts/platform-bom` after image publication succeeds.
 The first GHCR chart package must be made public in its package settings for
 anonymous installation. Do not advertise an OCI version until its chart and

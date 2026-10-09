@@ -77,10 +77,12 @@ kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 
 Keep port-forward running and open <http://127.0.0.1:8080>. Inspect Components
 and Environments for discovered versions and evidence. PBOM refreshes every
-10 minutes by default. Only recognized catalog components are shown, not an
-exhaustive Kubernetes resource browser. Offerings are empty and there is no
-release baseline until you choose to declare them. Missing Crossplane CRDs
-are normal when Crossplane is not installed.
+10 minutes by default. It is not an exhaustive Kubernetes resource browser:
+components recognised by the catalog are named and compared with upstream,
+and other Helm releases and Crossplane packages are listed as unclassified.
+Offerings are empty and there is no release baseline until you choose to
+declare them; see [Next steps](#next-steps-from-inventory-to-a-managed-platform).
+Missing Crossplane CRDs are normal when Crossplane is not installed.
 
 The Service is ClusterIP. PBOM has no built-in authentication; do not expose
 it publicly without an authenticating proxy.
@@ -125,10 +127,153 @@ An optional GitHub token can be supplied through an existing Secret managed
 outside Git. Set `githubTokenSecret.name` (and `githubTokenSecret.key` if it is
 not `token`) on install or upgrade. Never put the token in Helm values or Git.
 
-## Optional next steps
+## Next steps: from inventory to a managed platform
 
-- Customize platform names, offerings and release baselines using the chart's
-  `platform` and `releases` values. See the [GitOps runbook](gitops.md) for an example.
-- Manage the same chart declaratively with Argo CD using [optional GitOps](gitops.md).
-- Use a [binary or container](deployment.md) if installing in the cluster is not appropriate.
-- For multiple clusters, see [multi-cluster discovery](deployment.md#discovering-other-clusters-from-inside-one).
+The install shows what runs. Each step below adds meaning to it and is
+optional; do them in order, when you need them. Keep your settings in one
+values file, for example `pbom-values.yaml`, and apply every change with:
+
+```sh
+helm upgrade --install pbom ./charts/platform-bom -n platform-bom -f pbom-values.yaml
+```
+
+(Use the OCI reference and `--version` instead of `./charts/platform-bom` for a
+published chart.) The pod restarts automatically when configuration changes.
+
+PBOM reads four kinds of document. With the chart, three are Helm values and
+none are Kubernetes resources or CRDs:
+
+| Kind | What it says | Who writes it | With the chart |
+| --- | --- | --- | --- |
+| `Platform` | What the platform is: name, owners, offerings, environments and each environment's target release | You | `platform` value; the default discovers this cluster |
+| `Component` | How to recognise one tool and where its upstream releases are | Built-in catalog of common tools, plus yours | `components` value |
+| `PlatformRelease` | A versioned baseline: the component versions and offerings you support together | You, or `pbom release create` | `releases` value |
+| `Inventory` | What one environment was found running, with evidence | `pbom discover -o yaml` | Not needed for this cluster; only for clusters PBOM cannot reach |
+
+The full schema of each is in [usage.md](usage.md#configuration).
+
+### Name the platform and describe its offerings
+
+Offerings are what application teams get, such as "Kubernetes workloads" or
+"PostgreSQL", linked to the components that provide them. Use component names
+from the Components page:
+
+```yaml
+platform:
+  metadata:
+    name: team-platform
+    displayName: Team Platform
+  spec:
+    tagline: What our platform provides and where it runs.
+    offerings:
+      - name: gitops
+        displayName: GitOps delivery
+        category: delivery
+        status: ga
+        components: [argocd]
+    environments:
+      - name: prod
+        displayName: Production
+        inCluster: true
+```
+
+Helm merges maps with the chart defaults but replaces lists as a whole, so
+`environments` and `offerings` must always be complete. Keep an environment
+with `inCluster: true`, and repeat its full entry when you change it later.
+
+### Teach PBOM about unclassified tools
+
+Helm releases and Crossplane packages the built-in catalog does not recognise
+are listed as unclassified, with a version but no upstream comparison. Add a
+`Component` for each one you care about. The entry name becomes the file name:
+
+```yaml
+components:
+  internal-gateway.yaml:
+    apiVersion: pbom.dev/v1alpha1
+    kind: Component
+    metadata:
+      name: internal-gateway
+    spec:
+      displayName: Internal Gateway
+      category: networking
+      discovery:
+        helmCharts: ["internal-gateway"]
+      upstream:
+        github: acme/internal-gateway   # optional; enables update checks
+```
+
+A definition with the same `metadata.name` as a built-in one replaces it. To
+keep definitions as files, pass them with
+`--set-file 'components.internal\.yaml=components/internal.yaml'`; a file may
+hold several documents separated by `---`. Definitions useful to others belong
+in the built-in catalog; see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+### Record your first release baseline
+
+A release says "this is the platform we support". Cut one from what the
+cluster runs today, from a workstation with the [`pbom` CLI](deployment.md)
+and a kubeconfig context for the cluster. Use a small local platform file, for
+example `baseline/pbom.yaml`, that names the environment the same way:
+
+```yaml
+apiVersion: pbom.dev/v1alpha1
+kind: Platform
+metadata:
+  name: team-platform
+spec:
+  environments:
+    - name: prod
+      kubeContext: prod-cluster   # your kubeconfig context
+```
+
+```sh
+pbom -c baseline/pbom.yaml release create 1.0.0 --from-env prod --summary "First baseline"
+```
+
+This writes `baseline/releases/1.0.0.yaml` with exact versions. Review it,
+loosen versions you do not want to pin (`"1.36"` accepts any 1.36 patch),
+remove components that are not part of the platform, then add it and set the
+target release:
+
+```yaml
+platform:
+  spec:
+    environments:
+      - name: prod
+        inCluster: true
+        targetRelease: "1.0.0"
+```
+
+```sh
+helm upgrade --install pbom ./charts/platform-bom -n platform-bom -f pbom-values.yaml \
+  --set-file 'releases.1\.0\.0\.yaml=baseline/releases/1.0.0.yaml'
+```
+
+Or paste the document under `releases: {1.0.0.yaml: ...}` in the values file.
+The Environments page now shows whether the cluster matches its release, and
+Releases compares baselines as you add more.
+
+### Turn on upstream checks with a token
+
+Upstream versions come from GitHub. Anonymous requests are rate limited, so
+create a token Secret outside Git and reference it:
+
+```sh
+kubectl -n platform-bom create secret generic pbom-github --from-literal=token="$GITHUB_TOKEN"
+```
+
+```yaml
+githubTokenSecret:
+  name: pbom-github
+```
+
+### Share it and manage it with Git
+
+- Expose the UI behind authentication with the optional
+  [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls).
+- Commit `pbom-values.yaml` and let Argo CD apply it with
+  [optional GitOps](gitops.md).
+- Add more clusters with [multi-cluster discovery](deployment.md#discovering-other-clusters-from-inside-one),
+  or use a [binary or container](deployment.md) where installing in the
+  cluster is not appropriate.

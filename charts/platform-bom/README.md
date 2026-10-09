@@ -33,8 +33,9 @@ pod using a configuration checksum.
 | `refreshInterval` | `10m` | Discovery refresh interval |
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
-| `platform` | Single in-cluster environment | PBOM Platform document, not a Kubernetes CRD |
-| `releases` | `{}` | Map of filenames to PlatformRelease documents |
+| `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; `componentsDir` is set to the mounted `components` |
+| `releases` | `{}` | Map of file names to `PlatformRelease` documents or raw file content (`--set-file`) |
+| `components` | `{}` | Map of file names to `Component` documents or raw file content; override or extend the built-in catalog |
 | `resources` | 50m CPU / 128Mi requested, 512Mi memory limit | Pod resources |
 
 The UI has no authentication; keep the Service private or use an
@@ -42,6 +43,10 @@ authenticating proxy. If your administrator pre-provisions discovery access,
 set `rbac.create=false`, `serviceAccount.create=false` and
 `serviceAccount.name` to the existing account. Disabling RBAC creation alone
 does not grant discovery permissions.
+
+File names in `releases` and `components` must end in `.yaml` or `.yml`. For
+what each document kind means and what to configure after installing, see
+[next steps](../../docs/getting-started.md#next-steps-from-inventory-to-a-managed-platform).
 
 ## Optional Ingress and TLS
 

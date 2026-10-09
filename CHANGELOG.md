@@ -21,6 +21,11 @@ change it; every such change is listed under **Changed** with a migration note.
   YAML, with an optional Ingress (cert-manager compatible) and a
   getting-started runbook. Releases publish the chart to
   `oci://ghcr.io/ravibagri5/charts/platform-bom`.
+- The Helm chart's `components` value adds or overrides catalog `Component`
+  definitions, and `releases` and `components` accept raw file content, so
+  files can be passed with `helm --set-file`.
+- Document what each kind (`Platform`, `Component`, `PlatformRelease`,
+  `Inventory`) is for, and the steps after a Helm install.
 
 ### Changed
 

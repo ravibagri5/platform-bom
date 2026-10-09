@@ -20,3 +20,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- define "platform-bom.rbacName" -}}
 {{- printf "%s-%s" .Release.Namespace (include "platform-bom.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/* ConfigMap data from a map of file name to document (a map) or raw file content (a string). */}}
+{{- define "platform-bom.files" -}}
+{{- range $name, $doc := .files }}
+{{- if not (regexMatch "^[A-Za-z0-9][A-Za-z0-9._-]*\\.ya?ml$" $name) }}
+{{- fail (printf "%s key %q must be a file name ending in .yaml or .yml" $.value $name) }}
+{{- end }}
+{{ $name | quote }}: |
+  {{- if kindIs "string" $doc }}
+  {{- $doc | nindent 2 }}
+  {{- else }}
+  {{- toYaml $doc | nindent 2 }}
+  {{- end }}
+{{- end }}
+{{- end -}}

@@ -76,6 +76,9 @@ spec:
             - name: releases
               mountPath: /releases
               readOnly: true
+            - name: components
+              mountPath: /components
+              readOnly: true
             - name: cache
               mountPath: /cache
       volumes:
@@ -85,6 +88,9 @@ spec:
         - name: releases
           configMap:
             name: {{ include "platform-bom.fullname" . }}-releases
+        - name: components
+          configMap:
+            name: {{ include "platform-bom.fullname" . }}-components
         - name: cache
           emptyDir:
             sizeLimit: 64Mi

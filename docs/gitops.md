@@ -107,6 +107,11 @@ ConfigMaps, and the chart's configuration checksum rolls the pod. Releases
 and drift now appear in the UI. To omit Helm Secret access, also set
 `rbac.helmSecrets: false` in the values file.
 
+The same values file can hold `components:` definitions for tools the
+built-in catalog does not recognise. See
+[next steps](getting-started.md#next-steps-from-inventory-to-a-managed-platform)
+for what each document kind does and how to cut a baseline from the cluster.
+
 ## Alternative: use the Kustomize base
 
 PBOM observes your platform; Argo CD (or your existing GitOps controller)

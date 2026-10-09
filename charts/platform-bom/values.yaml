@@ -37,7 +37,12 @@ platform:
         displayName: This cluster
         inCluster: true
 
+# File name -> PlatformRelease document, or raw file content (helm --set-file).
 releases: {}
+
+# File name -> Component document(s), or raw file content. Mounted as
+# componentsDir; definitions override built-in catalog entries with the same name.
+components: {}
 
 resources:
   requests:

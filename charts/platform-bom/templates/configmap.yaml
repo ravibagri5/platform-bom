@@ -1,3 +1,9 @@
+{{- $platform := deepCopy .Values.platform }}
+{{- $spec := default dict $platform.spec }}
+{{- if not $spec.componentsDir }}
+{{- $_ := set $spec "componentsDir" "/components" }}
+{{- end }}
+{{- $_ := set $platform "spec" $spec }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,7 +12,7 @@ metadata:
     {{- include "platform-bom.labels" . | nindent 4 }}
 data:
   pbom.yaml: |
-    {{- toYaml .Values.platform | nindent 4 }}
+    {{- toYaml $platform | nindent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -14,12 +20,22 @@ metadata:
   name: {{ include "platform-bom.fullname" . }}-releases
   labels:
     {{- include "platform-bom.labels" . | nindent 4 }}
+{{- if .Values.releases }}
 data:
-  {{- if .Values.releases }}
-  {{- range $filename, $release := .Values.releases }}
-  {{ $filename | quote }}: |
-    {{- toYaml $release | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {}
-  {{- end }}
+  {{- include "platform-bom.files" (dict "files" .Values.releases "value" "releases") | nindent 2 }}
+{{- else }}
+data: {}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "platform-bom.fullname" . }}-components
+  labels:
+    {{- include "platform-bom.labels" . | nindent 4 }}
+{{- if .Values.components }}
+data:
+  {{- include "platform-bom.files" (dict "files" .Values.components "value" "components") | nindent 2 }}
+{{- else }}
+data: {}
+{{- end }}

@@ -74,7 +74,23 @@ upstream releases, or pass `--no-upstream` to work offline.
 ## Configuration
 
 All documents use `apiVersion: pbom.dev/v1alpha1`. The schema is `v1alpha1`
-and may change between minor releases.
+and may change between minor releases. They are plain YAML files read by
+`pbom`, not Kubernetes resources, and there are four kinds:
+
+| Kind | Answers | Written by | Needed? |
+| --- | --- | --- | --- |
+| [`Platform`](#platform) | What is the platform, what does it offer, and which environments should run which release? | You | Yes, one per platform (the Helm chart provides a default) |
+| [`Component`](#component) | How is a tool recognised in a cluster, and where are its releases published? | Built-in catalog; you add or override | Only for tools the catalog does not know |
+| [`PlatformRelease`](#platformrelease) | Which component versions and offerings make up platform version X? | You, or `pbom release create` | Only to track drift against a baseline |
+| [`Inventory`](#inventory) | What was one environment running, and what is the evidence? | `pbom discover -o yaml` | Only for clusters `pbom` cannot reach |
+
+Declared documents (`Platform`, `PlatformRelease`, `Component`) live in Git and
+are reviewed like code. An `Inventory` is observed output: editing it does not
+classify anything, so to name an unclassified tool write a `Component`.
+
+With the Helm chart, `Platform`, `Component` and `PlatformRelease` documents
+are the `platform`, `components` and `releases` values; see
+[getting started](getting-started.md#next-steps-from-inventory-to-a-managed-platform).
 
 ### Platform
 

@@ -17,11 +17,17 @@ import (
 // configFingerprint hashes every file serve reads its configuration from:
 // the platform file, release and component definitions, the readme and
 // exported inventories. Mounted ConfigMaps update these files in place.
-func configFingerprint(platformPath string) string {
+func configFingerprint(platformPath, releasesDir, componentsDir string) string {
 	h := sha256.New()
 	hashFile(h, platformPath)
 	p, err := service.LoadPlatform(platformPath)
 	if err == nil {
+		if releasesDir != "" {
+			p.Spec.ReleasesDir = releasesDir
+		}
+		if componentsDir != "" {
+			p.Spec.ComponentsDir = componentsDir
+		}
 		base := filepath.Dir(platformPath)
 		resolve := func(path string) string {
 			if path == "" || filepath.IsAbs(path) {
@@ -73,9 +79,8 @@ func hashYAMLDir(h hash.Hash, dir string) {
 
 // watchConfig reloads the service when its configuration files change. An
 // invalid change is logged and the previous configuration keeps serving.
-func watchConfig(ctx context.Context, platformPath string, every time.Duration,
-	load func() (*service.Service, error), swap func(*service.Service)) {
-	last := configFingerprint(platformPath)
+func watchConfig(ctx context.Context, g *globals, every time.Duration, swap func(*service.Service)) {
+	last := configFingerprint(g.config, g.releasesDir, g.componentsDir)
 	tick := time.NewTicker(every)
 	defer tick.Stop()
 	for {
@@ -84,12 +89,12 @@ func watchConfig(ctx context.Context, platformPath string, every time.Duration,
 			return
 		case <-tick.C:
 		}
-		fp := configFingerprint(platformPath)
+		fp := configFingerprint(g.config, g.releasesDir, g.componentsDir)
 		if fp == last {
 			continue
 		}
 		last = fp
-		svc, err := load()
+		svc, err := g.service()
 		if err != nil {
 			slog.Warn("configuration changed but is invalid; still serving the previous configuration", "error", err)
 			continue

@@ -1,6 +1,21 @@
 apiVersion: pbom.dev/v1alpha1
 kind: Component
 metadata:
+  name: platform-bom
+spec:
+  displayName: Platform BOM
+  category: observability
+  description: Platform inventory, release drift and upstream updates.
+  homepage: https://github.com/ravibagri5/platform-bom
+  discovery:
+    images: ["ravibagri5/platform-bom"]
+    helmCharts: ["platform-bom"]
+  upstream:
+    github: ravibagri5/platform-bom
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
   name: prometheus-operator
 spec:
   displayName: Prometheus Operator

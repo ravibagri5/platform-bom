@@ -58,95 +58,92 @@ the platform offers, which tools it is made of, and which versions you support.
 
 ## 4. Describe your platform in YAML
 
-Copy the example directory and edit it. It has one file per kind of document:
+The [`pbom` binary](deployment.md#install-the-pbom-binary) writes the files for
+you from what the cluster runs. It needs `pbom` 0.3.0 or newer
+(`pbom version`). Use the same cluster as in step 2:
 
 ```sh
-cp -r examples/getting-started pbom-config
+pbom init pbom-config --context "$(kubectl config current-context)" --env prod --components
 ```
 
 ```text
 pbom-config/
-├── platform.yaml                    # Platform: name, offerings, environments
-├── components/internal-gateway.yaml # Component: teach PBOM a tool it does not know
-├── releases/1.0.0.yaml              # PlatformRelease: the versions you support
-└── kustomization.yaml               # turns the files into ConfigMaps
+├── platform.yaml        # Platform: name, offerings, environments
+├── releases/1.0.0.yaml  # PlatformRelease: every version running today
+├── components/*.yaml    # Component drafts, one per unclassified Helm release
+└── kustomization.yaml   # turns the files into ConfigMaps
 ```
 
-### Platform (`platform.yaml`)
+Review and edit them before applying; every file is plain YAML:
 
-Name the platform, list the **offerings** teams get (each linked to component
-names from the Components page) and the **environments**. Keep
-`inCluster: true` for the cluster PBOM runs in, and keep `releasesDir` and
-`componentsDir` as they are. Delete `targetRelease` until you have a release.
+- **`platform.yaml`**: set the name and list the **offerings** teams get, each
+  linked to component names from the Components page or `pbom catalog`. The
+  `prod` environment is the cluster PBOM runs in, and it targets release 1.0.0.
+- **`releases/1.0.0.yaml`**: the baseline. Remove components that are not part
+  of the platform, and loosen versions you do not want to pin: `"1.36"` accepts
+  any 1.36 patch, `"1.36.2"` only that one.
+- **`components/`**: one draft per Helm release the built-in catalog does not
+  know. Keep the tools that belong to the platform, set their `category` and,
+  for update checks, `upstream.github`; delete the rest. Leave out
+  `--components` if you want none.
 
-### Components (`components/*.yaml`)
-
-For each unclassified tool you care about, add a file saying how to recognise
-it, usually by Helm chart name or image, and optionally its GitHub repository
-for upstream checks. A component with the same name as a built-in one replaces
-it. Delete the example file if you do not need one, and remove it from
-`kustomization.yaml`.
-
-### Platform releases (`releases/*.yaml`)
-
-A release lists the component versions you support together. `"1.36"` accepts
-any 1.36 patch; `"1.36.2"` pins one. Write it by hand, or generate it from what
-the cluster runs with the [`pbom` binary](deployment.md#install-the-pbom-binary).
-For that, create `pbom-config/local.yaml`, which is not applied to the cluster:
-
-```yaml
-apiVersion: pbom.dev/v1alpha1
-kind: Platform
-metadata:
-  name: local
-spec:
-  environments:
-    - name: prod                 # same name as in platform.yaml
-      kubeContext: my-cluster    # from kubectl config get-contexts
-```
+After adding or deleting files, regenerate the kustomization:
 
 ```sh
-pbom -c pbom-config/local.yaml release create 1.0.0 --from-env prod --summary "First baseline"
+pbom kustomize pbom-config
 ```
 
-This writes `pbom-config/releases/1.0.0.yaml`. Remove anything that is not part
-of the platform, then set `targetRelease: "1.0.0"` on the environment in
-`platform.yaml`. Every new release file must also be listed in
-`kustomization.yaml`.
+### Later: cut the next release
 
-### Inventory (optional)
-
-Only for clusters PBOM cannot reach from where it runs. Export one where you
-do have access, add the file to the `pbom-platform` list in
-`kustomization.yaml`, and add an environment with
-`inventoryFile: <file name>` to `platform.yaml`:
+When the cluster has been upgraded, snapshot it as a new release, then point
+the environment at it by changing `targetRelease` in `platform.yaml`:
 
 ```sh
-pbom discover --context edge-cluster -o yaml > pbom-config/inventories/edge.yaml
+pbom -c pbom-config/platform.yaml release create 1.1.0 --from-env prod \
+  --context "$(kubectl config current-context)" --summary "Kubernetes upgrade"
+```
+
+This writes `pbom-config/releases/1.1.0.yaml` and updates
+`kustomization.yaml`.
+
+### Optional: clusters PBOM cannot reach
+
+Export an inventory from a machine that can reach the cluster, add it to the
+kustomization, and add an `edge` environment that reads it (`environments` is
+the last section of `platform.yaml`, so appending works):
+
+```sh
+pbom discover --context edge-cluster -o yaml > pbom-config/edge.inventory.yaml
+pbom kustomize pbom-config
+cat >> pbom-config/platform.yaml <<'EOF'
+    - name: edge
+      inventoryFile: edge.inventory.yaml
+EOF
 ```
 
 ## 5. Apply the YAML
 
-Apply the files, then tell the chart to use them instead of its defaults. The
-second command is needed only once:
+Apply the files, then switch the chart to them. The `helm upgrade` is needed
+only once:
 
 ```sh
 kubectl apply -k pbom-config
-helm upgrade pbom ./charts/platform-bom -n platform-bom --reuse-values --set configMaps.create=false
+helm upgrade pbom ./charts/platform-bom -n platform-bom --reuse-values --set configMaps.create=false --wait
 ```
 
 From now on, edit the files and run `kubectl apply -k pbom-config` again.
-PBOM reloads changed configuration within about a minute, without a restart.
+PBOM reloads changed configuration within one to two minutes, without a
+restart.
 A file with a mistake is reported in the pod log and the previous
 configuration keeps serving.
 
 ## 6. Keep it in Git
 
-Commit `pbom-config/` to a Git repository. Then point any continuous delivery
-tool at that directory so it applies the files whenever they change: for
-example an Argo CD Application or a Flux Kustomization with that directory as
-its path and `platform-bom` as the namespace. Any tool that can run
-`kubectl apply -k` on a directory works. Platform changes then go through
+Commit `pbom-config/` to a Git repository, then point any continuous delivery
+tool at that directory so it applies the files whenever they change, for
+example an Argo CD Application or a Flux Kustomization with `pbom-config` as
+its path. Any tool that can run `kubectl apply -k` on a directory works. The
+namespace is set in `kustomization.yaml`. Platform changes then go through
 pull requests, and `git log` becomes the platform's changelog.
 
 ## 7. Operate it
@@ -187,7 +184,7 @@ Instead of separate files, the same documents can also be set as the chart's
 | `Forbidden` during install | Your account cannot create cluster-wide RBAC; ask a cluster administrator. |
 | Pod stuck in `ContainerCreating` after step 5 | The `pbom-platform` ConfigMap is missing: run `kubectl apply -k pbom-config`. |
 | `ImagePullBackOff` | `kubectl -n platform-bom describe pod` shows the image and pull error; check access to `ghcr.io`. |
-| A YAML change does not show up | Check the pod log for `configuration changed but is invalid`, and that the file is listed in `kustomization.yaml`. ConfigMap updates can take up to a minute to reach the pod. |
+| A YAML change does not show up | Check the pod log for `configuration changed but is invalid`. After adding or removing files, run `pbom kustomize pbom-config` before `kubectl apply -k`. ConfigMap updates take up to two minutes to reach the pod. |
 | Few or no components | PBOM only names tools in its catalog; others appear as unclassified Helm releases or Crossplane packages. Add a Component. |
 | Helm releases missing | `rbac.helmSecrets` may be disabled. |
 | No upstream versions | The pod needs outbound access to GitHub; add a token if the anonymous rate limit is exhausted. |

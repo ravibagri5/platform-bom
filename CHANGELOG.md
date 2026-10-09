@@ -34,7 +34,16 @@ change it; every such change is listed under **Changed** with a migration note.
 - The Helm chart can mount ConfigMaps you apply yourself
   (`configMaps.create=false`), so each document can live in its own file and
   be applied with `kubectl apply -k` or any CD tool.
-  `examples/getting-started` is a ready-to-copy directory.
+- `pbom init DIR --context C` creates that directory from a live cluster:
+  `platform.yaml`, a first release of everything running, optional Component
+  drafts for unclassified Helm releases (`--components`) and a
+  `kustomization.yaml`. `pbom kustomize DIR` regenerates the kustomization,
+  and `pbom release create --context` snapshots an `inCluster` environment
+  from a workstation and keeps the kustomization in sync.
+- `--releases-dir` and `--components-dir` override the platform file, so the
+  same `platform.yaml` works locally and in the chart's pod. A missing
+  components directory is treated as empty.
+- The built-in catalog recognises Platform BOM itself.
 - The getting-started guide is restructured: install, open the inventory,
   describe the platform in YAML, apply it, keep it in Git, with reference and
   troubleshooting at the end. It replaces the Argo CD specific GitOps guide.

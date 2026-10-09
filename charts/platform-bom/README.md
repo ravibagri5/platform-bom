@@ -35,7 +35,7 @@ pod using a configuration checksum.
 | `githubTokenSecret.key` | `token` | Key in that Secret |
 | `configMaps.create` | `true` | Render configuration from `platform`, `releases` and `components`; `false` mounts ConfigMaps you apply yourself |
 | `configMaps.platform` / `.releases` / `.components` | `pbom-platform` / `pbom-releases` / `pbom-components` | Names of your ConfigMaps when `configMaps.create=false`; releases and components may be absent |
-| `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; `componentsDir` is set to the mounted `components` |
+| `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; releases and components are read from the mounted ConfigMaps |
 | `releases` | `{}` | Map of file names to `PlatformRelease` documents or raw file content (`--set-file`) |
 | `components` | `{}` | Map of file names to `Component` documents or raw file content; override or extend the built-in catalog |
 | `resources` | 50m CPU / 128Mi requested, 512Mi memory limit | Pod resources |

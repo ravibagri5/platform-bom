@@ -50,7 +50,7 @@ func newServeCmd(g *globals) *cobra.Command {
 			}
 			use(svc)
 			if configInterval > 0 {
-				go watchConfig(ctx, g.config, configInterval, g.service, func(s *service.Service) {
+				go watchConfig(ctx, g, configInterval, func(s *service.Service) {
 					use(s)
 					go func() { _, _ = s.Input(ctx, false) }()
 				})

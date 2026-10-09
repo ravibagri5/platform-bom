@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -46,14 +47,15 @@ type Catalog struct {
 }
 
 // Load returns the builtin catalog merged with definitions from extraDir.
-// Definitions in extraDir override builtin ones with the same name.
+// Definitions in extraDir override builtin ones with the same name. A missing
+// extraDir adds nothing, so an empty components directory need not exist.
 func Load(extraDir string) (*Catalog, error) {
 	c := &Catalog{byName: map[string]*api.Component{}}
 	if err := c.loadFS(builtin, "components"); err != nil {
 		return nil, fmt.Errorf("builtin catalog: %w", err)
 	}
 	if extraDir != "" {
-		if err := c.loadFS(os.DirFS(extraDir), "."); err != nil {
+		if err := c.loadFS(os.DirFS(extraDir), "."); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("catalog %s: %w", extraDir, err)
 		}
 	}

@@ -37,7 +37,7 @@ func TestConfigFingerprintTracksEveryConfigFile(t *testing.T) {
 	platform := filepath.Join(dir, "pbom.yaml")
 	writeFile(t, platform, fmt.Sprintf(testPlatform, "one"))
 	writeFile(t, filepath.Join(dir, "prod.yaml"), "kind: Inventory\n")
-	before := configFingerprint(platform)
+	before := configFingerprint(platform, "", "")
 
 	cases := map[string]string{
 		"component":   filepath.Join(dir, "components", "x.yaml"),
@@ -47,7 +47,7 @@ func TestConfigFingerprintTracksEveryConfigFile(t *testing.T) {
 	}
 	for name, path := range cases {
 		writeFile(t, path, "changed: "+name+"\n")
-		after := configFingerprint(platform)
+		after := configFingerprint(platform, "", "")
 		if changed := after != before; changed == (name == "ignored-txt") {
 			t.Errorf("%s: fingerprint changed=%v", name, changed)
 		}
@@ -65,10 +65,8 @@ func TestWatchConfigReloadsValidChangesOnly(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	swapped := make(chan string, 4)
-	load := func() (*service.Service, error) {
-		return service.New(platform, service.Options{NoUpstream: true})
-	}
-	go watchConfig(ctx, platform, 10*time.Millisecond, load, func(s *service.Service) {
+	g := &globals{config: platform, noUpstream: true}
+	go watchConfig(ctx, g, 10*time.Millisecond, func(s *service.Service) {
 		swapped <- s.Platform.Metadata.Name
 	})
 

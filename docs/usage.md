@@ -54,18 +54,22 @@ upstream checks and the HTTP API. For the concepts behind them, start with the
 
 | Command | What it does |
 | --- | --- |
+| `pbom init DIR [--context C] [--env E] [--release V] [--components]` | Create a platform directory from a live cluster: `platform.yaml`, a first release, optional Component drafts for unclassified Helm releases, and a `kustomization.yaml` for the Helm chart. |
+| `pbom kustomize DIR` | Regenerate `DIR/kustomization.yaml` after adding or removing files. |
 | `pbom discover [--env E \| --context C] [-o yaml\|json]` | Discover components. `-o yaml` output can be saved and used as an `inventoryFile`. |
 | `pbom matrix [-o json]` | Component × environment versions, with drift and upstream markers. |
 | `pbom drift [--exit-code]` | Components that differ from each environment's target release. Exits 2 on drift with `--exit-code`. |
 | `pbom updates [--why] [-o json]` | Upgrade recommendations from upstream releases, with the reasoning. |
 | `pbom release list \| show NAME` | Browse platform releases. |
-| `pbom release create NAME --from-env ENV` | Cut a release from what an environment is running. |
+| `pbom release create NAME --from-env ENV [--context C]` | Cut a release from what an environment is running; `--context` discovers through a kube context instead, for example for an `inCluster` environment. Updates a `kustomization.yaml` written by `pbom init`. |
 | `pbom release diff FROM TO [--all]` | Compare two releases. |
 | `pbom catalog` | Known component definitions. |
 | `pbom serve [--addr] [--refresh-interval] [--config-check-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default and reloads configuration files when they change (checked every 15s). |
 | `pbom version` | Print the version. |
 
-Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`) and
+Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`),
+`--releases-dir` and `--components-dir` (override the platform file; the Helm
+chart uses them to point at its mounts) and
 `--no-upstream`.
 
 Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit when fetching

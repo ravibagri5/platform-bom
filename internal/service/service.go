@@ -33,6 +33,10 @@ type Options struct {
 	NoUpstream bool
 	// CacheTTL is how long discovered inventories are reused.
 	CacheTTL time.Duration
+	// ReleasesDir and ComponentsDir override the platform file's settings,
+	// for example where the Helm chart mounts them.
+	ReleasesDir   string
+	ComponentsDir string
 }
 
 // Service is the platform-bom application core.
@@ -89,6 +93,12 @@ func New(path string, opts Options) (*Service, error) {
 	p, err := LoadPlatform(path)
 	if err != nil {
 		return nil, err
+	}
+	if opts.ReleasesDir != "" {
+		p.Spec.ReleasesDir = opts.ReleasesDir
+	}
+	if opts.ComponentsDir != "" {
+		p.Spec.ComponentsDir = opts.ComponentsDir
 	}
 	s := &Service{Platform: p, baseDir: filepath.Dir(path), ttl: opts.CacheTTL}
 	if s.ttl == 0 {

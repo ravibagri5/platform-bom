@@ -2,8 +2,8 @@ apiVersion: v2
 name: platform-bom
 description: Read-only Kubernetes platform inventory with an embedded web UI
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.3.0
+appVersion: "0.3.0"
 home: https://github.com/ravibagri5/platform-bom
 sources:
   - https://github.com/ravibagri5/platform-bom

@@ -24,12 +24,18 @@ type ExitError struct{ Code int }
 func (e ExitError) Error() string { return fmt.Sprintf("exit code %d", e.Code) }
 
 type globals struct {
-	config     string
-	noUpstream bool
+	config        string
+	noUpstream    bool
+	releasesDir   string
+	componentsDir string
 }
 
 func (g *globals) service() (*service.Service, error) {
-	return service.New(g.config, service.Options{NoUpstream: g.noUpstream})
+	return service.New(g.config, service.Options{
+		NoUpstream:    g.noUpstream,
+		ReleasesDir:   g.releasesDir,
+		ComponentsDir: g.componentsDir,
+	})
 }
 
 // NewRoot returns the root command.
@@ -46,8 +52,12 @@ presents the platform as a product.`,
 	}
 	root.PersistentFlags().StringVarP(&g.config, "config", "c", envOr("PBOM_CONFIG", "pbom.yaml"), "platform definition file")
 	root.PersistentFlags().BoolVar(&g.noUpstream, "no-upstream", false, "do not fetch upstream release information")
+	root.PersistentFlags().StringVar(&g.releasesDir, "releases-dir", "", "override the platform's releasesDir")
+	root.PersistentFlags().StringVar(&g.componentsDir, "components-dir", "", "override the platform's componentsDir")
 
 	root.AddCommand(
+		newInitCmd(),
+		newKustomizeCmd(),
 		newDiscoverCmd(g),
 		newMatrixCmd(g),
 		newDriftCmd(g),

@@ -38,6 +38,8 @@ spec:
             - serve
             - --addr=0.0.0.0:8080
             - --config=/config/pbom.yaml
+            - --releases-dir=/releases
+            - --components-dir=/components
             - {{ printf "--refresh-interval=%v" .Values.refreshInterval | quote }}
           env:
             - name: XDG_CACHE_HOME

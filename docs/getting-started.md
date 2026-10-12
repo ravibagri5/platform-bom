@@ -28,16 +28,15 @@ kubectl auth can-i create clusterroles.rbac.authorization.k8s.io
 
 ## 2. Install with Helm
 
-From a clone of this repository:
+Install the published chart directly from GitHub Container Registry:
 
 ```sh
-git clone https://github.com/ravibagri5/platform-bom.git && cd platform-bom
-helm upgrade --install pbom ./charts/platform-bom \
+helm upgrade --install pbom oci://ghcr.io/ravibagri5/charts/platform-bom \
   --namespace platform-bom --create-namespace --wait
 ```
 
-Once a chart release is published, you can install it without cloning:
-`helm upgrade --install pbom oci://ghcr.io/ravibagri5/charts/platform-bom --version <version> --namespace platform-bom --create-namespace --wait`.
+Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
+specific release.
 
 PBOM gets read-only access to nodes, workloads, Crossplane packages and Helm
 release Secrets. Add `--set rbac.helmSecrets=false` if it must not read
@@ -128,7 +127,7 @@ only once:
 
 ```sh
 kubectl apply -k pbom-config
-helm upgrade pbom ./charts/platform-bom -n platform-bom --reset-then-reuse-values --set configMaps.create=false --wait
+helm upgrade pbom oci://ghcr.io/ravibagri5/charts/platform-bom -n platform-bom --reset-then-reuse-values --set configMaps.create=false --wait
 ```
 
 From now on, edit the files and run `kubectl apply -k pbom-config` again.

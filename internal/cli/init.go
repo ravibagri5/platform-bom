@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -65,20 +66,11 @@ Helm chart.`,
 				return err
 			}
 
-			p := api.Platform{
-				TypeMeta: api.TypeMeta{APIVersion: api.APIVersion, Kind: api.KindPlatform},
-				Metadata: api.Metadata{Name: name, DisplayName: titleCase(name)},
-				Spec: api.PlatformSpec{
-					Offerings: []api.Offering{{
-						Name: "kubernetes-workloads", DisplayName: "Kubernetes workloads",
-						Category: "runtime", Status: "ga", Components: []string{"kubernetes"},
-					}},
-				},
-			}
+			offerings := initOfferings(inv)
 			if err := os.MkdirAll(dir, 0o755); err != nil {
 				return err
 			}
-			if err := writePlatform(filepath.Join(dir, "platform.yaml"), name, env, version); err != nil {
+			if err := writePlatform(filepath.Join(dir, "platform.yaml"), name, env, version, offerings); err != nil {
 				return err
 			}
 
@@ -86,7 +78,7 @@ Helm chart.`,
 			if kubeContext != "" {
 				summary += " (" + kubeContext + ")"
 			}
-			rel := release.FromInventory(version, inv, p.Spec.Offerings, summary)
+			rel := release.FromInventory(version, inv, offerings, summary)
 			if _, err := release.Write(filepath.Join(dir, "releases"), rel, force); err != nil {
 				return err
 			}
@@ -141,21 +133,100 @@ spec:
   tagline: What our platform provides and where it runs.
   componentsDir: components
   offerings:
-    - name: kubernetes-workloads
-      displayName: Kubernetes workloads
-      category: runtime
-      status: ga
-      components: [kubernetes]
-  environments:
+%[6]s  environments:
     - name: %[3]s
       displayName: %[4]s
       inCluster: true
       targetRelease: %[5]s
 `
 
-func writePlatform(path, name, env, version string) error {
+// offeringNames are starting names for the offering generated per category.
+var offeringNames = map[string]string{
+	"runtime":        "Kubernetes workloads",
+	"compute":        "Compute and scaling",
+	"delivery":       "Application delivery",
+	"infrastructure": "Infrastructure provisioning",
+	"composition":    "Infrastructure composition",
+	"networking":     "Networking and traffic",
+	"security":       "Security and secrets",
+	"observability":  "Observability",
+	"data":           "Data services",
+}
+
+// initOfferings drafts one offering per category of the recognised top-level
+// components, so the Offerings page starts with the platform's capabilities.
+func initOfferings(inv *api.Inventory) []api.Offering {
+	byCat := map[string][]api.DiscoveredComponent{}
+	seen := map[string]bool{}
+	for _, c := range inv.Components {
+		if !c.Known || c.PartOf != "" || seen[c.Name] {
+			continue
+		}
+		switch c.Category {
+		case "", "other", "platform-api":
+			continue
+		}
+		seen[c.Name] = true
+		byCat[c.Category] = append(byCat[c.Category], c)
+	}
+	cats := make([]string, 0, len(byCat))
+	for cat := range byCat {
+		cats = append(cats, cat)
+	}
+	sort.Slice(cats, func(i, j int) bool {
+		ri, rj := catalog.CategoryRank(cats[i]), catalog.CategoryRank(cats[j])
+		if ri != rj {
+			return ri < rj
+		}
+		return cats[i] < cats[j]
+	})
+	var out []api.Offering
+	for _, cat := range cats {
+		comps := byCat[cat]
+		sort.Slice(comps, func(i, j int) bool { return comps[i].Name < comps[j].Name })
+		names, labels := make([]string, len(comps)), make([]string, len(comps))
+		for i, c := range comps {
+			names[i] = c.Name
+			labels[i] = c.DisplayName
+			if labels[i] == "" {
+				labels[i] = c.Name
+			}
+		}
+		display := offeringNames[cat]
+		if display == "" {
+			display = titleCase(cat)
+		}
+		out = append(out, api.Offering{
+			Name: cat, DisplayName: display, Category: cat, Status: "ga",
+			Description: "Provided by " + strings.Join(labels, ", ") + ".",
+			Components:  names,
+		})
+	}
+	if len(out) == 0 {
+		out = []api.Offering{{
+			Name: "runtime", DisplayName: offeringNames["runtime"], Category: "runtime", Status: "ga",
+			Components: []string{"kubernetes"},
+		}}
+	}
+	return out
+}
+
+func writePlatform(path, name, env, version string, offerings []api.Offering) error {
 	q := func(s string) string { b, _ := json.Marshal(s); return string(b) }
-	data := fmt.Sprintf(platformTemplate, q(name), q(titleCase(name)), q(env), q(titleCase(env)), q(version))
+	var ob strings.Builder
+	for _, o := range offerings {
+		comps := make([]string, len(o.Components))
+		for i, c := range o.Components {
+			comps[i] = q(c)
+		}
+		fmt.Fprintf(&ob, "    - name: %s\n      displayName: %s\n      category: %s\n      status: %s\n",
+			q(o.Name), q(o.DisplayName), q(o.Category), q(o.Status))
+		if o.Description != "" {
+			fmt.Fprintf(&ob, "      description: %s\n", q(o.Description))
+		}
+		fmt.Fprintf(&ob, "      components: [%s]\n", strings.Join(comps, ", "))
+	}
+	data := fmt.Sprintf(platformTemplate, q(name), q(titleCase(name)), q(env), q(titleCase(env)), q(version), ob.String())
 	p := &api.Platform{}
 	if err := yaml.UnmarshalStrict([]byte(data), p); err != nil {
 		return fmt.Errorf("generated platform.yaml is invalid: %w", err)

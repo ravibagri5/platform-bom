@@ -298,14 +298,15 @@ func (d *discoverer) addHelmRelease(ns string, rel *helmRelease) {
 		Detail:    fmt.Sprintf("chart %s-%s", md.Name, md.Version),
 		Version:   md.AppVersion,
 	}
+	// Charts without an appVersion, such as kubernetes-dashboard, version the app with the chart.
+	if ev.Version == "" {
+		ev.Version = md.Version
+	}
 	if comp := d.cat.MatchHelmChart(md.Name); comp != nil {
 		d.col.add(comp, ev)
 		return
 	}
 	if !d.opts.Policy.HideUnclassified {
-		if ev.Version == "" {
-			ev.Version = md.Version
-		}
 		d.col.addUnknown(md.Name, md.Name, "other", "", ev)
 	}
 }

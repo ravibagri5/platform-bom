@@ -42,6 +42,39 @@ func TestMatching(t *testing.T) {
 	if c.MatchImage("docker.io/library/nginx") != nil {
 		t.Error("nginx should not match")
 	}
+	charts := map[string]string{
+		"traefik":                          "traefik",
+		"ztunnel":                          "istio",
+		"kiali-operator":                   "kiali",
+		"thanos":                           "thanos",
+		"prometheus-blackbox-exporter":     "blackbox-exporter",
+		"csi-secrets-store-provider-azure": "secrets-store-provider-azure",
+		"workload-identity-webhook":        "azure-workload-identity",
+		"vpa":                              "vertical-pod-autoscaler",
+		"strimzi-kafka-operator":           "strimzi",
+		"kubernetes-dashboard":             "kubernetes-dashboard",
+	}
+	for chart, want := range charts {
+		if got := c.MatchHelmChart(chart); got == nil || got.Metadata.Name != want {
+			t.Errorf("MatchHelmChart(%q) = %v, want %s", chart, got, want)
+		}
+	}
+	images := map[string]string{
+		"quay.io/thanos/thanos":                                 "thanos",
+		"ghcr.io/dexidp/dex":                                    "dex",
+		"quay.io/prometheus/blackbox-exporter":                  "blackbox-exporter",
+		"mcr.microsoft.com/oss/azure/workload-identity/webhook": "azure-workload-identity",
+		"ghcr.io/loft-sh/vcluster-oss":                          "vcluster",
+		"docker.io/library/traefik":                             "traefik",
+	}
+	for img, want := range images {
+		if got := c.MatchImage(img); got == nil || got.Metadata.Name != want {
+			t.Errorf("MatchImage(%q) = %v, want %s", img, got, want)
+		}
+	}
+	if got := c.MatchCrossplanePackage("xpkg.upbound.io/upbound/provider-kubernetes"); got == nil || got.Metadata.Name != "provider-kubernetes" {
+		t.Errorf("upbound provider-kubernetes = %v", got)
+	}
 }
 
 func TestSplitImage(t *testing.T) {

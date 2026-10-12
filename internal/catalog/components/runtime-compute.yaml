@@ -60,3 +60,84 @@ spec:
   upstream:
     github: kubernetes-sigs/metrics-server
     tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vertical-pod-autoscaler
+spec:
+  displayName: Vertical Pod Autoscaler
+  category: compute
+  description: Right-size container CPU and memory requests.
+  homepage: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+  discovery:
+    images: ["autoscaling/vpa-recommender"]
+    helmCharts: ["vpa", "vertical-pod-autoscaler"]
+    apiGroups: ["autoscaling.k8s.io"]
+  upstream:
+    github: kubernetes/autoscaler
+    tagPrefix: vertical-pod-autoscaler-
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: goldilocks
+spec:
+  displayName: Goldilocks
+  category: compute
+  description: Resource request recommendations from the Vertical Pod Autoscaler.
+  homepage: https://goldilocks.docs.fairwinds.com
+  discovery:
+    images: ["goldilocks"]
+    helmCharts: ["goldilocks"]
+  upstream:
+    github: FairwindsOps/goldilocks
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: spegel
+spec:
+  displayName: Spegel
+  category: compute
+  description: Peer-to-peer container image mirror between nodes.
+  homepage: https://spegel.dev
+  discovery:
+    images: ["spegel-org/spegel"]
+    helmCharts: ["spegel"]
+  upstream:
+    github: spegel-org/spegel
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vcluster
+spec:
+  displayName: vCluster
+  category: runtime
+  description: Virtual Kubernetes clusters inside a namespace.
+  homepage: https://www.vcluster.com
+  discovery:
+    images: ["loft-sh/vcluster*", "loftsh/vcluster*"]
+    helmCharts: ["vcluster"]
+  upstream:
+    github: loft-sh/vcluster
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kubernetes-dashboard
+spec:
+  displayName: Kubernetes Dashboard
+  category: runtime
+  description: Web UI for Kubernetes clusters.
+  homepage: https://github.com/kubernetes/dashboard
+  discovery:
+    # Dashboard modules are versioned separately, so the chart version is used.
+    helmCharts: ["kubernetes-dashboard"]
+  upstream:
+    github: kubernetes/dashboard
+    tagPrefix: kubernetes-dashboard-

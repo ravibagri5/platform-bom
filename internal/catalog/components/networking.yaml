@@ -8,8 +8,8 @@ spec:
   description: Service mesh for traffic management, security and telemetry.
   homepage: https://istio.io
   discovery:
-    images: ["istio/pilot"]
-    helmCharts: ["istiod"]
+    images: ["istio/pilot", "istio/ztunnel"]
+    helmCharts: ["istiod", "ztunnel"]
     apiGroups: ["networking.istio.io"]
   upstream:
     github: istio/istio
@@ -77,3 +77,35 @@ spec:
     apiGroups: ["cilium.io"]
   upstream:
     github: cilium/cilium
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: traefik
+spec:
+  displayName: Traefik
+  category: networking
+  description: Cloud-native ingress controller and reverse proxy.
+  homepage: https://traefik.io/traefik
+  discovery:
+    images: ["traefik"]
+    helmCharts: ["traefik"]
+    apiGroups: ["traefik.io"]
+  upstream:
+    github: traefik/traefik
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kiali
+spec:
+  displayName: Kiali
+  category: networking
+  description: Console for the Istio service mesh.
+  homepage: https://kiali.io
+  discovery:
+    images: ["kiali/kiali", "kiali/kiali-operator"]
+    helmCharts: ["kiali-operator", "kiali-server"]
+    apiGroups: ["kiali.io"]
+  upstream:
+    github: kiali/kiali

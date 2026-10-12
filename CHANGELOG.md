@@ -11,6 +11,30 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-12
+
+### Added
+
+- Recognise more popular tools out of the box: Traefik, Kiali, Thanos, Grafana
+  Operator, Prometheus Adapter, Blackbox Exporter, Pushgateway, Secrets Store
+  CSI Driver with the Azure Key Vault provider, Azure Workload Identity, Dex,
+  OAuth2 Proxy, Harbor, Reloader, Testkube, Vertical Pod Autoscaler,
+  Goldilocks, Spegel, vCluster, Kubernetes Dashboard, Strimzi and kro. Istio
+  also matches ztunnel, and Crossplane providers Kubernetes and Helm match
+  their Upbound packages.
+
+### Changed
+
+- `pbom init` drafts one offering per category of recognised components, such
+  as Delivery, Networking, Security and Observability, instead of a single
+  Kubernetes workloads offering.
+- The binary install instructions download the latest release by default.
+
+### Fixed
+
+- Helm charts without an `appVersion` report their chart version for
+  recognised components too, as they already did for unclassified ones.
+
 ## [0.3.0] - 2026-10-09
 
 ### Security
@@ -116,5 +140,7 @@ The first release. Release candidate: `v0.1.0-rc.1`.
   README, usage and deployment guides in `docs/`, and a roadmap organised as
   milestones M0 to M11.
 
-[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/ravibagri5/platform-bom/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.3.0
 [0.1.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.1.0

@@ -69,7 +69,7 @@ spec:
   description: Manage Kubernetes objects from Crossplane.
   partOf: crossplane
   discovery:
-    crossplanePackages: ["crossplane-contrib/provider-kubernetes"]
+    crossplanePackages: ["crossplane-contrib/provider-kubernetes", "upbound/provider-kubernetes"]
   upstream:
     github: crossplane-contrib/provider-kubernetes
 ---
@@ -83,7 +83,7 @@ spec:
   description: Manage Helm releases from Crossplane.
   partOf: crossplane
   discovery:
-    crossplanePackages: ["crossplane-contrib/provider-helm"]
+    crossplanePackages: ["crossplane-contrib/provider-helm", "upbound/provider-helm"]
   upstream:
     github: crossplane-contrib/provider-helm
 ---
@@ -228,3 +228,35 @@ spec:
     apiGroups: ["velero.io"]
   upstream:
     github: vmware-tanzu/velero
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: strimzi
+spec:
+  displayName: Strimzi
+  category: data
+  description: Run Apache Kafka on Kubernetes.
+  homepage: https://strimzi.io
+  discovery:
+    images: ["strimzi/operator"]
+    helmCharts: ["strimzi-kafka-operator"]
+    apiGroups: ["kafka.strimzi.io"]
+  upstream:
+    github: strimzi/strimzi-kafka-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kro
+spec:
+  displayName: kro
+  category: composition
+  description: Kube Resource Orchestrator for grouping resources into custom APIs.
+  homepage: https://kro.run
+  discovery:
+    helmCharts: ["kro"]
+    apiGroups: ["kro.run"]
+  upstream:
+    github: kubernetes-sigs/kro
+    tagPrefix: v

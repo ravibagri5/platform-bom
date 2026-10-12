@@ -8,6 +8,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/ravibagri5/platform-bom/internal/api"
 	"github.com/ravibagri5/platform-bom/internal/service"
 )
 
@@ -77,7 +78,8 @@ func TestWriteKustomizationKeepsHandWrittenFiles(t *testing.T) {
 
 func TestWritePlatformAcceptsAppendedEnvironment(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "platform.yaml")
-	if err := writePlatform(path, `team "x"`, "prod", "1.0.0"); err != nil {
+	offs := []api.Offering{{Name: "runtime", DisplayName: "Kubernetes workloads", Category: "runtime", Status: "ga", Components: []string{"kubernetes"}}}
+	if err := writePlatform(path, `team "x"`, "prod", "1.0.0", offs); err != nil {
 		t.Fatal(err)
 	}
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
@@ -96,6 +98,51 @@ func TestWritePlatformAcceptsAppendedEnvironment(t *testing.T) {
 	}
 	if p.Spec.Environments[0].TargetRelease != "1.0.0" || !p.Spec.Environments[0].InCluster || p.Spec.ComponentsDir != "components" {
 		t.Fatalf("unexpected first environment: %+v", p.Spec)
+	}
+}
+
+func TestInitOfferingsGroupsByCategory(t *testing.T) {
+	inv := &api.Inventory{Components: []api.DiscoveredComponent{
+		{Name: "kubernetes", DisplayName: "Kubernetes", Category: "runtime", Known: true},
+		{Name: "istio", DisplayName: "Istio", Category: "networking", Known: true},
+		{Name: "argo-cd", DisplayName: "Argo CD", Category: "delivery", Known: true},
+		{Name: "ingress-nginx", DisplayName: "Ingress NGINX", Category: "networking", Known: true},
+		{Name: "provider-aws", Category: "infrastructure", Known: true, PartOf: "crossplane"},
+		{Name: "my-app", Category: "other", Kind: "helm"},
+		{Name: "xdatabases", Category: "platform-api", Known: true},
+	}}
+	got := initOfferings(inv)
+	want := []struct{ name, comps string }{
+		{"runtime", "kubernetes"},
+		{"delivery", "argo-cd"},
+		{"networking", "ingress-nginx,istio"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("offerings = %+v", got)
+	}
+	for i, w := range want {
+		if got[i].Name != w.name || got[i].Category != w.name || strings.Join(got[i].Components, ",") != w.comps {
+			t.Errorf("offering %d = %+v, want %s %s", i, got[i], w.name, w.comps)
+		}
+	}
+	if got[2].Description != "Provided by Ingress NGINX, Istio." {
+		t.Errorf("description = %q", got[2].Description)
+	}
+
+	path := filepath.Join(t.TempDir(), "platform.yaml")
+	if err := writePlatform(path, "p", "prod", "1.0.0", got); err != nil {
+		t.Fatal(err)
+	}
+	p, err := service.LoadPlatform(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Spec.Offerings) != 3 || p.Spec.Offerings[2].Components[1] != "istio" {
+		t.Fatalf("round trip = %+v", p.Spec.Offerings)
+	}
+
+	if empty := initOfferings(&api.Inventory{}); len(empty) != 1 || empty[0].Name != "runtime" {
+		t.Errorf("fallback = %+v", empty)
 	}
 }
 

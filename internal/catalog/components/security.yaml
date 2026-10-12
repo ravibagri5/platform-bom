@@ -92,3 +92,84 @@ spec:
     apiGroups: ["secrets.hashicorp.com"]
   upstream:
     github: hashicorp/vault-secrets-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: secrets-store-csi-driver
+spec:
+  displayName: Secrets Store CSI Driver
+  category: security
+  description: Mount secrets from external stores as volumes.
+  homepage: https://secrets-store-csi-driver.sigs.k8s.io
+  discovery:
+    images: ["csi-secrets-store/driver"]
+    helmCharts: ["secrets-store-csi-driver"]
+    apiGroups: ["secrets-store.csi.x-k8s.io"]
+  upstream:
+    github: kubernetes-sigs/secrets-store-csi-driver
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: secrets-store-provider-azure
+spec:
+  displayName: Azure Key Vault Provider
+  category: security
+  description: Azure Key Vault provider for the Secrets Store CSI Driver.
+  homepage: https://azure.github.io/secrets-store-csi-driver-provider-azure
+  partOf: secrets-store-csi-driver
+  discovery:
+    images: ["azure/secrets-store/provider-azure"]
+    helmCharts: ["csi-secrets-store-provider-azure"]
+  upstream:
+    github: Azure/secrets-store-csi-driver-provider-azure
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: azure-workload-identity
+spec:
+  displayName: Azure Workload Identity
+  category: security
+  description: Federated Azure identities for Kubernetes service accounts.
+  homepage: https://azure.github.io/azure-workload-identity
+  discovery:
+    images: ["azure/workload-identity/webhook"]
+    helmCharts: ["workload-identity-webhook"]
+  upstream:
+    github: Azure/azure-workload-identity
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: dex
+spec:
+  displayName: Dex
+  category: security
+  description: OpenID Connect identity provider with pluggable connectors.
+  homepage: https://dexidp.io
+  discovery:
+    images: ["dexidp/dex"]
+    helmCharts: ["dex"]
+  upstream:
+    github: dexidp/dex
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: oauth2-proxy
+spec:
+  displayName: OAuth2 Proxy
+  category: security
+  description: Authenticating reverse proxy for OAuth2 and OIDC providers.
+  homepage: https://oauth2-proxy.github.io/oauth2-proxy
+  discovery:
+    images: ["oauth2-proxy/oauth2-proxy"]
+    helmCharts: ["oauth2-proxy"]
+  upstream:
+    github: oauth2-proxy/oauth2-proxy
+    tagPrefix: v

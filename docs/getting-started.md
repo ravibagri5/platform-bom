@@ -12,6 +12,7 @@ never installs or changes anything.
 6. [Keep it in Git](#6-keep-it-in-git)
 7. [Operate it](#7-operate-it)
 
+[Clusters PBOM cannot reach](#optional-clusters-pbom-cannot-reach),
 [Reference: what each file is for](#reference-what-each-file-is-for) and
 [Troubleshooting](#troubleshooting) are at the end.
 
@@ -58,8 +59,13 @@ the platform offers, which tools it is made of, and which versions you support.
 ## 4. Describe your platform in YAML
 
 The [`pbom` binary](deployment.md#install-the-pbom-binary) writes the files for
-you from what the cluster runs. It needs `pbom` 0.3.0 or newer
-(`pbom version`). Use the same cluster as in step 2:
+you from what the cluster runs. It needs `pbom` 0.4.0 or newer
+(`pbom version`). Use the same cluster as in step 2.
+
+`--env` names the environment this cluster is, such as `prod`, `staging` or
+`dev` (lowercase letters, digits and dashes). It becomes the environment's name
+in `platform.yaml` and on the Environments page; choose the one that describes
+this cluster before running:
 
 ```sh
 pbom init pbom-config --context "$(kubectl config current-context)" --env prod --components
@@ -75,9 +81,12 @@ pbom-config/
 
 Review and edit them before applying; every file is plain YAML:
 
-- **`platform.yaml`**: set the name and list the **offerings** teams get, each
-  linked to component names from the Components page or `pbom catalog`. The
-  `prod` environment is the cluster PBOM runs in, and it targets release 1.0.0.
+- **`platform.yaml`**: set the name and review the **offerings** teams get.
+  `pbom init` drafts one offering per category of recognised components, such
+  as Delivery, Networking, Security or Observability, each listing the
+  components that provide it. Rename, split or describe them; component names
+  come from the Components page or `pbom catalog`. The environment named by
+  `--env` is the cluster PBOM runs in, and it targets release 1.0.0.
 - **`releases/1.0.0.yaml`**: the baseline. Remove components that are not part
   of the platform, and loosen versions you do not want to pin: `"1.36"` accepts
   any 1.36 patch, `"1.36.2"` only that one.
@@ -104,21 +113,6 @@ pbom -c pbom-config/platform.yaml release create 1.1.0 --from-env prod \
 
 This writes `pbom-config/releases/1.1.0.yaml` and updates
 `kustomization.yaml`.
-
-### Optional: clusters PBOM cannot reach
-
-Export an inventory from a machine that can reach the cluster, add it to the
-kustomization, and add an `edge` environment that reads it (`environments` is
-the last section of `platform.yaml`, so appending works):
-
-```sh
-pbom discover --context edge-cluster -o yaml > pbom-config/edge.inventory.yaml
-pbom kustomize pbom-config
-cat >> pbom-config/platform.yaml <<'EOF'
-    - name: edge
-      inventoryFile: edge.inventory.yaml
-EOF
-```
 
 ## 5. Apply the YAML
 
@@ -154,9 +148,27 @@ pull requests, and `git log` becomes the platform's changelog.
 | Upstream checks without rate limits | `kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<token>`, then `helm upgrade ... --reset-then-reuse-values --set githubTokenSecret.name=pbom-github` |
 | Share the UI | Enable the [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls) behind an authenticating proxy; PBOM has no login of its own |
 | More clusters | [Multi-cluster discovery](deployment.md#discovering-other-clusters-from-inside-one) or exported inventories |
-| Uninstall | `helm uninstall pbom -n platform-bom` and `kubectl delete -k pbom-config` |
+| Uninstall | `kubectl delete -k pbom-config`, then `helm uninstall pbom -n platform-bom` |
 
 All chart settings are listed in the [chart README](../charts/platform-bom/README.md).
+
+## Optional: clusters PBOM cannot reach
+
+Export an inventory from a machine that can reach the cluster, add it to the
+kustomization, and add an `edge` environment that reads it (`environments` is
+the last section of `platform.yaml`, so appending works), then apply:
+
+```sh
+pbom discover --context edge-cluster -o yaml > pbom-config/edge.inventory.yaml
+pbom kustomize pbom-config
+cat >> pbom-config/platform.yaml <<'EOF'
+    - name: edge
+      inventoryFile: edge.inventory.yaml
+EOF
+kubectl apply -k pbom-config
+```
+
+Re-export the inventory whenever that cluster changes.
 
 ## Reference: what each file is for
 

@@ -104,3 +104,80 @@ spec:
     helmCharts: ["alloy"]
   upstream:
     github: grafana/alloy
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: thanos
+spec:
+  displayName: Thanos
+  category: observability
+  description: Highly available Prometheus with long-term storage.
+  homepage: https://thanos.io
+  discovery:
+    images: ["thanos/thanos", "bitnami/thanos"]
+    helmCharts: ["thanos"]
+  upstream:
+    github: thanos-io/thanos
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: grafana-operator
+spec:
+  displayName: Grafana Operator
+  category: observability
+  description: Manage Grafana instances, dashboards and data sources.
+  homepage: https://grafana.github.io/grafana-operator
+  discovery:
+    images: ["grafana/grafana-operator"]
+    helmCharts: ["grafana-operator"]
+    apiGroups: ["grafana.integreatly.org"]
+  upstream:
+    github: grafana/grafana-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: prometheus-adapter
+spec:
+  displayName: Prometheus Adapter
+  category: observability
+  description: Serve Prometheus metrics through the Kubernetes metrics APIs.
+  homepage: https://github.com/kubernetes-sigs/prometheus-adapter
+  discovery:
+    images: ["prometheus-adapter/prometheus-adapter"]
+    helmCharts: ["prometheus-adapter"]
+  upstream:
+    github: kubernetes-sigs/prometheus-adapter
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: blackbox-exporter
+spec:
+  displayName: Blackbox Exporter
+  category: observability
+  description: Probe endpoints over HTTP, DNS, TCP and ICMP.
+  homepage: https://github.com/prometheus/blackbox_exporter
+  discovery:
+    images: ["prometheus/blackbox-exporter"]
+    helmCharts: ["prometheus-blackbox-exporter"]
+  upstream:
+    github: prometheus/blackbox_exporter
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: pushgateway
+spec:
+  displayName: Prometheus Pushgateway
+  category: observability
+  description: Accept metrics pushed from batch jobs.
+  homepage: https://github.com/prometheus/pushgateway
+  discovery:
+    images: ["prometheus/pushgateway"]
+    helmCharts: ["prometheus-pushgateway"]
+  upstream:
+    github: prometheus/pushgateway

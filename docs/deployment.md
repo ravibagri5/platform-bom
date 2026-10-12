@@ -30,12 +30,13 @@ nothing else to download. You need it to discover clusters from your
 workstation, cut releases with `pbom release create`, or check drift in CI.
 Running PBOM inside a cluster with the Helm chart does not need it.
 
-**macOS and Linux.** Pick a version from the
+**macOS and Linux.** Download the latest release, check and install it. To
+pin a version instead, set `VERSION` to one from the
 [releases page](https://github.com/ravibagri5/platform-bom/releases), without
-the leading `v`, then download, check and install it:
+the leading `v`:
 
 ```sh
-VERSION=0.2.0
+VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/ravibagri5/platform-bom/releases/latest | sed 's|.*/tag/v||')
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')                 # darwin or linux
 ARCH=$(uname -m); case "$ARCH" in x86_64) ARCH=amd64 ;; aarch64|arm64) ARCH=arm64 ;; esac
 ARCHIVE="platform-bom_${VERSION}_${OS}_${ARCH}.tar.gz"
@@ -75,7 +76,7 @@ cosign verify-blob checksums.txt \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-**Upgrade or remove.** Repeat the steps with a newer `VERSION` to upgrade.
+**Upgrade or remove.** Repeat the steps to upgrade to the latest release.
 Remove the binary to uninstall; the only other file it writes is the upstream
 release cache in `~/Library/Caches/pbom` on macOS or `~/.cache/pbom` on Linux.
 

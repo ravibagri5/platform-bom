@@ -74,3 +74,51 @@ spec:
     apiGroups: ["source.toolkit.fluxcd.io"]
   upstream:
     github: fluxcd/flux2
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: harbor
+spec:
+  displayName: Harbor
+  category: delivery
+  description: Container image and artifact registry.
+  homepage: https://goharbor.io
+  discovery:
+    images: ["goharbor/harbor-core"]
+    helmCharts: ["harbor"]
+  upstream:
+    github: goharbor/harbor
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: reloader
+spec:
+  displayName: Reloader
+  category: delivery
+  description: Roll workloads when their ConfigMaps or Secrets change.
+  homepage: https://github.com/stakater/Reloader
+  discovery:
+    images: ["stakater/reloader"]
+    helmCharts: ["reloader"]
+  upstream:
+    github: stakater/Reloader
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: testkube
+spec:
+  displayName: Testkube
+  category: delivery
+  description: Run and orchestrate tests inside Kubernetes.
+  homepage: https://testkube.io
+  discovery:
+    images: ["kubeshop/testkube-api-server"]
+    helmCharts: ["testkube"]
+    apiGroups: ["tests.testkube.io"]
+  upstream:
+    github: kubeshop/testkube
+    tagPrefix: v

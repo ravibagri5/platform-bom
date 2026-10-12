@@ -1,0 +1,12 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: backstage
+spec:
+  displayName: Backstage
+  category: developer-experience
+  description: Developer portal with a software catalog and templates.
+  homepage: https://backstage.io
+  discovery:
+    # Backstage apps are custom builds, so the chart is the only reliable signal and no upstream is tracked.
+    helmCharts: ["backstage"]

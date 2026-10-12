@@ -41,7 +41,7 @@ spec:
       components: [prometheus, grafana]
     - name: autoscaling
       displayName: Event-driven scaling
-      category: compute
+      category: infrastructure
       status: ga
       description: Scale workloads based on demand with KEDA.
       components: [keda]

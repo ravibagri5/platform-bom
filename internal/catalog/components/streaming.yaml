@@ -1,0 +1,64 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: strimzi
+spec:
+  displayName: Strimzi
+  category: streaming
+  description: Run Apache Kafka on Kubernetes.
+  homepage: https://strimzi.io
+  discovery:
+    images: ["strimzi/operator"]
+    helmCharts: ["strimzi-kafka-operator"]
+    apiGroups: ["kafka.strimzi.io"]
+  upstream:
+    github: strimzi/strimzi-kafka-operator
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: nats
+spec:
+  displayName: NATS
+  category: streaming
+  description: Messaging and streaming with JetStream.
+  homepage: https://nats.io
+  discovery:
+    images: ["nats"]
+    helmCharts: ["nats"]
+  upstream:
+    github: nats-io/nats-server
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: rabbitmq-cluster-operator
+spec:
+  displayName: RabbitMQ Cluster Operator
+  category: streaming
+  description: Run RabbitMQ clusters on Kubernetes.
+  homepage: https://www.rabbitmq.com/kubernetes/operator/operator-overview
+  discovery:
+    images: ["rabbitmqoperator/cluster-operator"]
+    helmCharts: ["rabbitmq-cluster-operator"]
+    apiGroups: ["rabbitmq.com"]
+  upstream:
+    github: rabbitmq/cluster-operator
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: knative-eventing
+spec:
+  displayName: Knative Eventing
+  category: streaming
+  description: CloudEvents brokers, triggers and event sources.
+  homepage: https://knative.dev
+  discovery:
+    images: ["knative.dev/eventing/cmd/controller"]
+    apiGroups: ["eventing.knative.dev"]
+  upstream:
+    github: knative/eventing
+    tagPrefix: knative-v

@@ -109,3 +109,54 @@ spec:
     apiGroups: ["kiali.io"]
   upstream:
     github: kiali/kiali
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: linkerd
+spec:
+  displayName: Linkerd
+  category: networking
+  description: Lightweight service mesh.
+  homepage: https://linkerd.io
+  discovery:
+    images: ["linkerd/controller"]
+    helmCharts: ["linkerd-control-plane"]
+    apiGroups: ["linkerd.io"]
+  upstream:
+    github: linkerd/linkerd2
+    tagPrefix: edge-
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: contour
+spec:
+  displayName: Contour
+  category: networking
+  description: Envoy-based ingress and Gateway API controller.
+  homepage: https://projectcontour.io
+  discovery:
+    images: ["projectcontour/contour"]
+    helmCharts: ["contour"]
+    apiGroups: ["projectcontour.io"]
+  upstream:
+    github: projectcontour/contour
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: metallb
+spec:
+  displayName: MetalLB
+  category: networking
+  description: Load balancer for bare-metal clusters.
+  homepage: https://metallb.io
+  discovery:
+    images: ["metallb/controller"]
+    helmCharts: ["metallb"]
+    apiGroups: ["metallb.io"]
+  upstream:
+    github: metallb/metallb
+    tagPrefix: v

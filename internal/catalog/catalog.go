@@ -24,10 +24,25 @@ var builtin embed.FS
 
 var docSeparator = regexp.MustCompile(`(?m)^---\s*$`)
 
-// Categories in display order.
+// Categories are the platform pillars in display order. Platform APIs are
+// discovered Crossplane configurations; other is anything unrecognised.
 var Categories = []string{
-	"runtime", "compute", "delivery", "infrastructure", "composition", "platform-api",
-	"networking", "security", "observability", "data", "other",
+	"runtime", "infrastructure", "delivery", "networking", "security",
+	"observability", "data", "streaming", "developer-experience", "platform-api", "other",
+}
+
+// legacyCategories maps categories from earlier releases to their pillar.
+var legacyCategories = map[string]string{
+	"compute":     "infrastructure",
+	"composition": "infrastructure",
+}
+
+// NormalizeCategory maps a category from an earlier release to its current pillar.
+func NormalizeCategory(c string) string {
+	if n, ok := legacyCategories[c]; ok {
+		return n
+	}
+	return c
 }
 
 // CategoryRank returns the display order of a category.
@@ -115,6 +130,7 @@ func Parse(data []byte) ([]*api.Component, error) {
 		if comp.Spec.Category == "" {
 			comp.Spec.Category = "other"
 		}
+		comp.Spec.Category = NormalizeCategory(comp.Spec.Category)
 		out = append(out, comp)
 	}
 	return out, nil

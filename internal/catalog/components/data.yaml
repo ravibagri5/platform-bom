@@ -1,0 +1,66 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: velero
+spec:
+  displayName: Velero
+  category: data
+  description: Backup and restore of cluster resources and volumes.
+  homepage: https://velero.io
+  discovery:
+    images: ["velero/velero"]
+    helmCharts: ["velero"]
+    apiGroups: ["velero.io"]
+  upstream:
+    github: vmware-tanzu/velero
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: cloudnative-pg
+spec:
+  displayName: CloudNativePG
+  category: data
+  description: PostgreSQL operator.
+  homepage: https://cloudnative-pg.io
+  discovery:
+    images: ["cloudnative-pg/cloudnative-pg"]
+    helmCharts: ["cloudnative-pg"]
+    apiGroups: ["postgresql.cnpg.io"]
+  upstream:
+    github: cloudnative-pg/cloudnative-pg
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: rook
+spec:
+  displayName: Rook
+  category: data
+  description: Ceph block, file and object storage operator.
+  homepage: https://rook.io
+  discovery:
+    images: ["rook/ceph"]
+    helmCharts: ["rook-ceph"]
+    apiGroups: ["ceph.rook.io"]
+  upstream:
+    github: rook/rook
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: longhorn
+spec:
+  displayName: Longhorn
+  category: data
+  description: Distributed block storage for Kubernetes.
+  homepage: https://longhorn.io
+  discovery:
+    images: ["longhornio/longhorn-manager"]
+    helmCharts: ["longhorn"]
+    apiGroups: ["longhorn.io"]
+  upstream:
+    github: longhorn/longhorn
+    tagPrefix: v

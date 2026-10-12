@@ -28,7 +28,7 @@ func TestClassifyPackage(t *testing.T) {
 	cases := []struct{ resource, repo, name, display, category, partOf string }{
 		{"configurations", "ghcr.io/example/pkgs/postgres", "postgres", "postgres", "platform-api", ""},
 		{"functions", "ghcr.io/example/pkgs/postgres_function-render", "postgres_function-render", "function-render", "platform-api", "postgres"},
-		{"functions", "ghcr.io/example/pkgs/function-hash", "function-hash", "function-hash", "composition", "crossplane"},
+		{"functions", "ghcr.io/example/pkgs/function-hash", "function-hash", "function-hash", "infrastructure", "crossplane"},
 		{"providers", "ghcr.io/example/provider-queue", "provider-queue", "provider-queue", "infrastructure", "crossplane"},
 	}
 	for _, c := range cases {

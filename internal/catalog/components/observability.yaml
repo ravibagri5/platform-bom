@@ -181,3 +181,116 @@ spec:
     helmCharts: ["prometheus-pushgateway"]
   upstream:
     github: prometheus/pushgateway
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: opentelemetry-collector
+spec:
+  displayName: OpenTelemetry Collector
+  category: observability
+  description: Receive, process and export metrics, logs and traces.
+  homepage: https://opentelemetry.io/docs/collector
+  discovery:
+    images: ["otel/opentelemetry-collector*", "opentelemetry-collector-releases/opentelemetry-collector*"]
+    helmCharts: ["opentelemetry-collector"]
+  upstream:
+    github: open-telemetry/opentelemetry-collector-releases
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: jaeger
+spec:
+  displayName: Jaeger
+  category: observability
+  description: Distributed tracing.
+  homepage: https://www.jaegertracing.io
+  discovery:
+    images: ["jaegertracing/jaeger", "jaegertracing/all-in-one", "jaegertracing/jaeger-query"]
+    helmCharts: ["jaeger"]
+    apiGroups: ["jaegertracing.io"]
+  upstream:
+    github: jaegertracing/jaeger
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: tempo
+spec:
+  displayName: Grafana Tempo
+  category: observability
+  description: Trace storage.
+  homepage: https://grafana.com/oss/tempo
+  discovery:
+    images: ["grafana/tempo"]
+    helmCharts: ["tempo", "tempo-distributed"]
+  upstream:
+    github: grafana/tempo
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: mimir
+spec:
+  displayName: Grafana Mimir
+  category: observability
+  description: Scalable long-term storage for Prometheus metrics.
+  homepage: https://grafana.com/oss/mimir
+  discovery:
+    images: ["grafana/mimir"]
+    helmCharts: ["mimir-distributed"]
+  upstream:
+    github: grafana/mimir
+    tagPrefix: mimir-
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: fluent-bit
+spec:
+  displayName: Fluent Bit
+  category: observability
+  description: Log and metrics processor and forwarder.
+  homepage: https://fluentbit.io
+  discovery:
+    images: ["fluent/fluent-bit"]
+    helmCharts: ["fluent-bit"]
+  upstream:
+    github: fluent/fluent-bit
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: fluentd
+spec:
+  displayName: Fluentd
+  category: observability
+  description: Unified logging layer.
+  homepage: https://www.fluentd.org
+  discovery:
+    images: ["fluent/fluentd", "fluent/fluentd-kubernetes-daemonset"]
+    helmCharts: ["fluentd"]
+  upstream:
+    github: fluent/fluentd
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: opencost
+spec:
+  displayName: OpenCost
+  category: observability
+  description: Kubernetes cost allocation and monitoring.
+  homepage: https://opencost.io
+  discovery:
+    images: ["opencost/opencost"]
+    helmCharts: ["opencost"]
+  upstream:
+    github: opencost/opencost
+    tagPrefix: v

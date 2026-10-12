@@ -1,0 +1,111 @@
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kubernetes
+spec:
+  displayName: Kubernetes
+  category: runtime
+  description: Container orchestration control plane.
+  homepage: https://kubernetes.io
+  discovery:
+    kubernetes: true
+  upstream:
+    github: kubernetes/kubernetes
+    supportedMinors: 3
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vcluster
+spec:
+  displayName: vCluster
+  category: runtime
+  description: Virtual Kubernetes clusters inside a namespace.
+  homepage: https://www.vcluster.com
+  discovery:
+    images: ["loft-sh/vcluster*", "loftsh/vcluster*"]
+    helmCharts: ["vcluster"]
+  upstream:
+    github: loft-sh/vcluster
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kubernetes-dashboard
+spec:
+  displayName: Kubernetes Dashboard
+  category: runtime
+  description: Web UI for Kubernetes clusters.
+  homepage: https://github.com/kubernetes/dashboard
+  discovery:
+    # Dashboard modules are versioned separately, so the chart version is used.
+    helmCharts: ["kubernetes-dashboard"]
+  upstream:
+    github: kubernetes/dashboard
+    tagPrefix: kubernetes-dashboard-
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: coredns
+spec:
+  displayName: CoreDNS
+  category: runtime
+  description: Cluster DNS server.
+  homepage: https://coredns.io
+  discovery:
+    images: ["coredns/coredns", "kubernetes/coredns", "eks/coredns"]
+    helmCharts: ["coredns"]
+  upstream:
+    github: coredns/coredns
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: knative-serving
+spec:
+  displayName: Knative Serving
+  category: runtime
+  description: Serverless workloads that scale to zero.
+  homepage: https://knative.dev
+  discovery:
+    images: ["knative.dev/serving/cmd/controller"]
+    apiGroups: ["serving.knative.dev"]
+  upstream:
+    github: knative/serving
+    tagPrefix: knative-v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: kubevirt
+spec:
+  displayName: KubeVirt
+  category: runtime
+  description: Run virtual machines alongside containers.
+  homepage: https://kubevirt.io
+  discovery:
+    images: ["kubevirt/virt-operator"]
+    apiGroups: ["kubevirt.io"]
+  upstream:
+    github: kubevirt/kubevirt
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: dapr
+spec:
+  displayName: Dapr
+  category: runtime
+  description: Portable building blocks for distributed applications.
+  homepage: https://dapr.io
+  discovery:
+    images: ["daprio/operator"]
+    helmCharts: ["dapr"]
+    apiGroups: ["dapr.io"]
+  upstream:
+    github: dapr/dapr
+    tagPrefix: v

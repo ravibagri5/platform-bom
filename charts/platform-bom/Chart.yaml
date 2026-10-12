@@ -1,9 +1,39 @@
 apiVersion: v2
 name: platform-bom
-description: Read-only Kubernetes platform inventory with an embedded web UI
+description: PBOM (Platform BOM) - read-only Kubernetes platform inventory with an embedded web UI
 type: application
-version: 0.4.0
-appVersion: "0.4.0"
+version: 0.5.0
+appVersion: "0.5.0"
 home: https://github.com/ravibagri5/platform-bom
 sources:
   - https://github.com/ravibagri5/platform-bom
+keywords:
+  - pbom
+  - platform-bom
+  - platform bill of materials
+  - inventory
+  - platform engineering
+  - drift
+  - upgrades
+  - crossplane
+  - helm
+maintainers:
+  - name: Ravi Bagri
+    url: https://github.com/ravibagri5
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md
+    - name: support
+      url: https://github.com/ravibagri5/platform-bom/issues
+  artifacthub.io/screenshots: |
+    - title: Components discovered per environment
+      url: https://raw.githubusercontent.com/ravibagri5/platform-bom/main/docs/screenshots/components.png
+    - title: Offerings linked to components
+      url: https://raw.githubusercontent.com/ravibagri5/platform-bom/main/docs/screenshots/offerings.png
+    - title: Environment drift against the target release
+      url: https://raw.githubusercontent.com/ravibagri5/platform-bom/main/docs/screenshots/environments.png
+    - title: Explainable upstream updates
+      url: https://raw.githubusercontent.com/ravibagri5/platform-bom/main/docs/screenshots/updates.png

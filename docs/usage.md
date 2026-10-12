@@ -172,6 +172,12 @@ where its releases are published. The builtin catalog lives in
 [internal/catalog/components](../internal/catalog/components); add or override
 definitions with `componentsDir`.
 
+Built-in categories are the platform pillars `runtime`, `infrastructure`
+(compute and infrastructure), `delivery`, `networking`, `security`,
+`observability`, `data`, `streaming` and `developer-experience`. Any other
+value creates your own category; `compute` and `composition` from earlier
+releases are read as `infrastructure`.
+
 ```yaml
 apiVersion: pbom.dev/v1alpha1
 kind: Component
@@ -179,7 +185,7 @@ metadata:
   name: karpenter
 spec:
   displayName: Karpenter
-  category: compute
+  category: infrastructure
   description: Just-in-time node provisioning.
   homepage: https://karpenter.sh
   partOf: ""                        # nest under another component, e.g. crossplane

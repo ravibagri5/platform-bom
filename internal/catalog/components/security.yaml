@@ -173,3 +173,67 @@ spec:
   upstream:
     github: oauth2-proxy/oauth2-proxy
     tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: keycloak
+spec:
+  displayName: Keycloak
+  category: security
+  description: Identity and access management with SSO.
+  homepage: https://www.keycloak.org
+  discovery:
+    images: ["keycloak/keycloak", "bitnami/keycloak"]
+    helmCharts: ["keycloak", "keycloakx"]
+    apiGroups: ["k8s.keycloak.org"]
+  upstream:
+    github: keycloak/keycloak
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: spire
+spec:
+  displayName: SPIRE
+  category: security
+  description: SPIFFE workload identity.
+  homepage: https://spiffe.io
+  discovery:
+    images: ["spiffe/spire-server"]
+    helmCharts: ["spire"]
+  upstream:
+    github: spiffe/spire
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: falco
+spec:
+  displayName: Falco
+  category: security
+  description: Runtime threat detection.
+  homepage: https://falco.org
+  discovery:
+    images: ["falcosecurity/falco", "falcosecurity/falco-no-driver"]
+    helmCharts: ["falco"]
+  upstream:
+    github: falcosecurity/falco
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: trivy-operator
+spec:
+  displayName: Trivy Operator
+  category: security
+  description: Continuous vulnerability and configuration scanning.
+  homepage: https://aquasecurity.github.io/trivy-operator
+  discovery:
+    images: ["aquasecurity/trivy-operator", "aquasec/trivy-operator"]
+    helmCharts: ["trivy-operator"]
+    apiGroups: ["aquasecurity.github.io"]
+  upstream:
+    github: aquasecurity/trivy-operator
+    tagPrefix: v

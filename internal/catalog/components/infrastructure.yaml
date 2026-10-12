@@ -1,6 +1,103 @@
 apiVersion: pbom.dev/v1alpha1
 kind: Component
 metadata:
+  name: karpenter
+spec:
+  displayName: Karpenter
+  category: infrastructure
+  description: Just-in-time node provisioning.
+  homepage: https://karpenter.sh
+  discovery:
+    images: ["karpenter/controller", "karpenter/karpenter"]
+    helmCharts: ["karpenter"]
+    apiGroups: ["karpenter.sh"]
+  upstream:
+    github: aws/karpenter-provider-aws
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: keda
+spec:
+  displayName: KEDA
+  category: infrastructure
+  description: Event-driven workload autoscaling.
+  homepage: https://keda.sh
+  discovery:
+    images: ["kedacore/keda"]
+    helmCharts: ["keda"]
+    apiGroups: ["keda.sh"]
+  upstream:
+    github: kedacore/keda
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: metrics-server
+spec:
+  displayName: Metrics Server
+  category: infrastructure
+  description: Resource metrics for autoscaling.
+  homepage: https://github.com/kubernetes-sigs/metrics-server
+  discovery:
+    images: ["metrics-server/metrics-server"]
+    helmCharts: ["metrics-server"]
+  upstream:
+    github: kubernetes-sigs/metrics-server
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: vertical-pod-autoscaler
+spec:
+  displayName: Vertical Pod Autoscaler
+  category: infrastructure
+  description: Right-size container CPU and memory requests.
+  homepage: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+  discovery:
+    images: ["autoscaling/vpa-recommender"]
+    helmCharts: ["vpa", "vertical-pod-autoscaler"]
+    apiGroups: ["autoscaling.k8s.io"]
+  upstream:
+    github: kubernetes/autoscaler
+    tagPrefix: vertical-pod-autoscaler-
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: goldilocks
+spec:
+  displayName: Goldilocks
+  category: infrastructure
+  description: Resource request recommendations from the Vertical Pod Autoscaler.
+  homepage: https://goldilocks.docs.fairwinds.com
+  discovery:
+    images: ["goldilocks"]
+    helmCharts: ["goldilocks"]
+  upstream:
+    github: FairwindsOps/goldilocks
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: spegel
+spec:
+  displayName: Spegel
+  category: infrastructure
+  description: Peer-to-peer container image mirror between nodes.
+  homepage: https://spegel.dev
+  discovery:
+    images: ["spegel-org/spegel"]
+    helmCharts: ["spegel"]
+  upstream:
+    github: spegel-org/spegel
+    tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
   name: crossplane
 spec:
   displayName: Crossplane
@@ -62,6 +159,20 @@ spec:
 apiVersion: pbom.dev/v1alpha1
 kind: Component
 metadata:
+  name: provider-upjet-azuread
+spec:
+  displayName: Crossplane Provider Azure AD
+  category: infrastructure
+  description: Manage Entra ID (Azure AD) applications, groups and service principals.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["upbound/provider-azuread", "crossplane-contrib/provider-azuread"]
+  upstream:
+    github: crossplane-contrib/provider-upjet-azuread
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
   name: provider-kubernetes
 spec:
   displayName: Crossplane Provider Kubernetes
@@ -86,90 +197,6 @@ spec:
     crossplanePackages: ["crossplane-contrib/provider-helm", "upbound/provider-helm"]
   upstream:
     github: crossplane-contrib/provider-helm
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: function-patch-and-transform
-spec:
-  displayName: Function Patch and Transform
-  category: composition
-  description: Classic patch-and-transform composition.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["crossplane-contrib/function-patch-and-transform"]
-  upstream:
-    github: crossplane-contrib/function-patch-and-transform
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: function-go-templating
-spec:
-  displayName: Function Go Templating
-  category: composition
-  description: Compose resources with Go templates.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["crossplane-contrib/function-go-templating"]
-  upstream:
-    github: crossplane-contrib/function-go-templating
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: function-auto-ready
-spec:
-  displayName: Function Auto Ready
-  category: composition
-  description: Automatically detect composed resource readiness.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["crossplane-contrib/function-auto-ready"]
-  upstream:
-    github: crossplane-contrib/function-auto-ready
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: function-environment-configs
-spec:
-  displayName: Function Environment Configs
-  category: composition
-  description: Load EnvironmentConfigs into the composition pipeline.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["crossplane-contrib/function-environment-configs"]
-  upstream:
-    github: crossplane-contrib/function-environment-configs
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: function-extra-resources
-spec:
-  displayName: Function Extra Resources
-  category: composition
-  description: Fetch existing cluster resources for use in compositions.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["crossplane-contrib/function-extra-resources"]
-  upstream:
-    github: crossplane-contrib/function-extra-resources
----
-apiVersion: pbom.dev/v1alpha1
-kind: Component
-metadata:
-  name: provider-upjet-azuread
-spec:
-  displayName: Crossplane Provider Azure AD
-  category: infrastructure
-  description: Manage Entra ID (Azure AD) applications, groups and service principals.
-  partOf: crossplane
-  discovery:
-    crossplanePackages: ["upbound/provider-azuread", "crossplane-contrib/provider-azuread"]
-  upstream:
-    github: crossplane-contrib/provider-upjet-azuread
 ---
 apiVersion: pbom.dev/v1alpha1
 kind: Component
@@ -216,34 +243,72 @@ spec:
 apiVersion: pbom.dev/v1alpha1
 kind: Component
 metadata:
-  name: velero
+  name: function-patch-and-transform
 spec:
-  displayName: Velero
-  category: data
-  description: Backup and restore of cluster resources and volumes.
-  homepage: https://velero.io
+  displayName: Function Patch and Transform
+  category: infrastructure
+  description: Classic patch-and-transform composition.
+  partOf: crossplane
   discovery:
-    images: ["velero/velero"]
-    helmCharts: ["velero"]
-    apiGroups: ["velero.io"]
+    crossplanePackages: ["crossplane-contrib/function-patch-and-transform"]
   upstream:
-    github: vmware-tanzu/velero
+    github: crossplane-contrib/function-patch-and-transform
 ---
 apiVersion: pbom.dev/v1alpha1
 kind: Component
 metadata:
-  name: strimzi
+  name: function-go-templating
 spec:
-  displayName: Strimzi
-  category: data
-  description: Run Apache Kafka on Kubernetes.
-  homepage: https://strimzi.io
+  displayName: Function Go Templating
+  category: infrastructure
+  description: Compose resources with Go templates.
+  partOf: crossplane
   discovery:
-    images: ["strimzi/operator"]
-    helmCharts: ["strimzi-kafka-operator"]
-    apiGroups: ["kafka.strimzi.io"]
+    crossplanePackages: ["crossplane-contrib/function-go-templating"]
   upstream:
-    github: strimzi/strimzi-kafka-operator
+    github: crossplane-contrib/function-go-templating
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-auto-ready
+spec:
+  displayName: Function Auto Ready
+  category: infrastructure
+  description: Automatically detect composed resource readiness.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-auto-ready"]
+  upstream:
+    github: crossplane-contrib/function-auto-ready
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-environment-configs
+spec:
+  displayName: Function Environment Configs
+  category: infrastructure
+  description: Load EnvironmentConfigs into the composition pipeline.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-environment-configs"]
+  upstream:
+    github: crossplane-contrib/function-environment-configs
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: function-extra-resources
+spec:
+  displayName: Function Extra Resources
+  category: infrastructure
+  description: Fetch existing cluster resources for use in compositions.
+  partOf: crossplane
+  discovery:
+    crossplanePackages: ["crossplane-contrib/function-extra-resources"]
+  upstream:
+    github: crossplane-contrib/function-extra-resources
 ---
 apiVersion: pbom.dev/v1alpha1
 kind: Component
@@ -251,7 +316,7 @@ metadata:
   name: kro
 spec:
   displayName: kro
-  category: composition
+  category: infrastructure
   description: Kube Resource Orchestrator for grouping resources into custom APIs.
   homepage: https://kro.run
   discovery:

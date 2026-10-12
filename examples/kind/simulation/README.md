@@ -2,7 +2,7 @@
 
 This fixture installs **19 common components in each cluster**, with an extra
 OpenTelemetry Operator fixture in dev. It covers delivery, infrastructure,
-backup, networking, observability, security, compute and FinOps (OpenCost).
+backup, networking, observability, security, autoscaling and FinOps (OpenCost).
 The original `1.0.0` release is installed in prod; dev and QA run the newer
 `1.1.0` release. All three target `1.1.0`, so PBOM's matrix shows prod
 running the older release with 16 version drifts and dev's extra OpenTelemetry

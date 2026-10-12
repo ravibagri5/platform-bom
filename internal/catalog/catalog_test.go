@@ -14,6 +14,22 @@ func TestBuiltinCatalogLoads(t *testing.T) {
 		if comp.Spec.Upstream != nil && comp.Spec.Upstream.GitHub == "" {
 			t.Errorf("%s: upstream without github", comp.Metadata.Name)
 		}
+		if CategoryRank(comp.Spec.Category) == len(Categories) {
+			t.Errorf("%s: category %q is not a platform pillar", comp.Metadata.Name, comp.Spec.Category)
+		}
+	}
+}
+
+func TestLegacyCategories(t *testing.T) {
+	comps, err := Parse([]byte("apiVersion: pbom.dev/v1alpha1\nkind: Component\nmetadata: {name: x}\nspec: {category: compute}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if comps[0].Spec.Category != "infrastructure" {
+		t.Errorf("compute -> %q", comps[0].Spec.Category)
+	}
+	if NormalizeCategory("composition") != "infrastructure" || NormalizeCategory("ml-platform") != "ml-platform" {
+		t.Error("unexpected normalisation")
 	}
 }
 
@@ -53,6 +69,14 @@ func TestMatching(t *testing.T) {
 		"vpa":                              "vertical-pod-autoscaler",
 		"strimzi-kafka-operator":           "strimzi",
 		"kubernetes-dashboard":             "kubernetes-dashboard",
+		"linkerd-control-plane":            "linkerd",
+		"falco":                            "falco",
+		"cloudnative-pg":                   "cloudnative-pg",
+		"rook-ceph":                        "rook",
+		"nats":                             "nats",
+		"opentelemetry-collector":          "opentelemetry-collector",
+		"argo-events":                      "argo-events",
+		"backstage":                        "backstage",
 	}
 	for chart, want := range charts {
 		if got := c.MatchHelmChart(chart); got == nil || got.Metadata.Name != want {

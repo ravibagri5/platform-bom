@@ -119,26 +119,33 @@ export function RefreshButton({ onClick, loading }: { onClick: () => void; loadi
 
 const categoryGlyph: Record<string, string> = {
   runtime: 'K',
-  compute: 'C',
-  delivery: 'D',
   infrastructure: 'I',
-  composition: 'F',
+  delivery: 'D',
   networking: 'N',
   security: 'S',
   observability: 'O',
   data: 'B',
+  streaming: 'M',
   finops: '$',
   'developer-experience': 'X',
   'platform-api': 'A',
 }
 
 const categoryLabels: Record<string, string> = {
+  runtime: 'Runtime',
+  infrastructure: 'Compute & infrastructure',
+  delivery: 'Delivery (CI/CD & GitOps)',
+  networking: 'Networking & service mesh',
+  security: 'Security & identity',
+  observability: 'Observability',
+  data: 'Data & storage',
+  streaming: 'Streaming & messaging',
   'platform-api': 'Platform APIs',
   'developer-experience': 'Developer experience',
   finops: 'FinOps',
 }
 
-export const categoryName = (c: string) => categoryLabels[c] ?? titleCase(c)
+export const categoryName = (c: string) => categoryLabels[c] ?? c.split(/[-_ ]+/).map(titleCase).join(' ')
 
 export const kindInfo: Record<string, { label: string; plural: string }> = {
   cluster: { label: 'Cluster', plural: 'clusters' },

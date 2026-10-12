@@ -52,6 +52,8 @@ kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 Open <http://127.0.0.1:8080>. **Components** lists what PBOM recognised, with
 versions, evidence and the latest upstream release. Helm releases and
 Crossplane packages it does not recognise appear as *unclassified*.
+Latest upstream versions are fetched from GitHub after startup and can take a few
+minutes to fill in, longer without a [GitHub token](#7-operate-it).
 
 That is a working install. The next steps are optional and add meaning: what
 the platform offers, which tools it is made of, and which versions you support.

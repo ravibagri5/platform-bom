@@ -4,10 +4,13 @@ See the [getting-started guide](../../docs/getting-started.md) for installation
 and for managing the platform's YAML files with Git.
 
 ```sh
-helm upgrade --install pbom ./charts/platform-bom \
+helm upgrade --install pbom oci://ghcr.io/ravibagri5/charts/platform-bom \
   --namespace platform-bom --create-namespace --wait --timeout 3m
 kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 ```
+
+Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
+specific release.
 
 The defaults discover the current cluster without custom YAML or a declared
 release. No CRDs are installed. Resource names include the Helm release name;

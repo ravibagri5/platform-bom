@@ -101,16 +101,17 @@ cluster must be able to pull the image from GHCR. The default reader includes
 cluster-wide Secret access for Helm metadata; add `--set rbac.helmSecrets=false`
 to skip it.
 
-Until the chart is published, install it from a checkout (Git is needed for
-this route):
+Install the published chart directly from GitHub Container Registry; no
+repository clone is needed:
 
 ```sh
-git clone https://github.com/ravibagri5/platform-bom.git
-cd platform-bom
-helm upgrade --install pbom ./charts/platform-bom \
+helm upgrade --install pbom oci://ghcr.io/ravibagri5/charts/platform-bom \
   --namespace platform-bom --create-namespace --wait --timeout 3m
 kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 ```
+
+Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
+specific release.
 
 Open <http://127.0.0.1:8080>. PBOM discovers this cluster using its read-only
 service account. The UI has no built-in authentication; keep the Service

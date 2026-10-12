@@ -180,7 +180,7 @@ func initOfferings(inv *api.Inventory) []api.Offering {
 		}
 		return cats[i] < cats[j]
 	})
-	var out []api.Offering
+	out := make([]api.Offering, 0, len(cats))
 	for _, cat := range cats {
 		comps := byCat[cat]
 		sort.Slice(comps, func(i, j int) bool { return comps[i].Name < comps[j].Name })

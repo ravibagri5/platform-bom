@@ -331,7 +331,7 @@ func classifyPackage(resource, repo string) (name, display, category, partOf str
 		if cfg, fn, ok := strings.Cut(name, "_"); ok {
 			return name, fn, "platform-api", cfg
 		}
-		return name, name, "composition", "crossplane"
+		return name, name, "infrastructure", "crossplane"
 	default:
 		return name, name, "infrastructure", "crossplane"
 	}

@@ -1,6 +1,6 @@
 # Platform BOM Helm chart
 
-See the [getting-started guide](../../docs/getting-started.md) for installation
+See the [getting-started guide](https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md) for installation
 and for managing the platform's YAML files with Git.
 
 ```sh
@@ -52,7 +52,7 @@ does not grant discovery permissions.
 File names in `releases` and `components` must end in `.yaml` or `.yml`. To
 keep each document in its own file instead, apply them as ConfigMaps and set
 `configMaps.create=false`; see
-[getting started](../../docs/getting-started.md#4-describe-your-platform-in-yaml).
+[getting started](https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md#4-describe-your-platform-in-yaml).
 Either way, PBOM reloads changed configuration without a restart.
 
 `values.schema.json` validates values on every install, upgrade, `template` and

@@ -122,3 +122,34 @@ spec:
   upstream:
     github: kubeshop/testkube
     tagPrefix: v
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: argo-events
+spec:
+  displayName: Argo Events
+  category: delivery
+  description: Event-driven triggers for workflows and deployments.
+  homepage: https://argoproj.github.io/events
+  discovery:
+    images: ["argoproj/argo-events"]
+    helmCharts: ["argo-events"]
+  upstream:
+    github: argoproj/argo-events
+---
+apiVersion: pbom.dev/v1alpha1
+kind: Component
+metadata:
+  name: tekton-pipelines
+spec:
+  displayName: Tekton Pipelines
+  category: delivery
+  description: Kubernetes-native CI/CD pipelines.
+  homepage: https://tekton.dev
+  discovery:
+    images: ["tektoncd/pipeline/cmd/controller"]
+    apiGroups: ["tekton.dev"]
+  upstream:
+    github: tektoncd/pipeline
+    tagPrefix: v

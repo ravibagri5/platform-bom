@@ -19,7 +19,7 @@ components:
      evidence: [{source: image, namespace: crossplane-system, object: Deployment/crossplane, detail: "xpkg.crossplane.io/crossplane/crossplane:v2.0.0", version: v2.0.0}]}
   - {name: provider-upjet-aws, displayName: Crossplane Provider AWS, category: infrastructure, version: 1.23.0, known: true,
      evidence: [{source: crossplane-package, object: Provider/provider-aws-s3, detail: "xpkg.upbound.io/upbound/provider-aws-s3:v1.23.0", version: v1.23.0}]}
-  - {name: karpenter, displayName: Karpenter, category: compute, version: 1.5.0, known: true,
+  - {name: karpenter, displayName: Karpenter, category: infrastructure, version: 1.5.0, known: true,
      evidence: [{source: image, namespace: kube-system, object: Deployment/karpenter, detail: "public.ecr.aws/karpenter/controller:1.5.0", version: 1.5.0}]}
   - {name: cert-manager, displayName: cert-manager, category: security, version: 1.18.0, known: true,
      evidence: [{source: image, namespace: cert-manager, object: Deployment/cert-manager, detail: "quay.io/jetstack/cert-manager-controller:v1.18.0", version: v1.18.0}]}

@@ -11,6 +11,29 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-12
+
+### Added
+
+- Recognise popular CNCF and community projects out of the box: CoreDNS,
+  Knative Serving and Eventing, KubeVirt, Dapr, Linkerd, Contour, MetalLB,
+  Keycloak, SPIRE, Falco, Trivy Operator, OpenTelemetry Collector, Jaeger,
+  Grafana Tempo and Mimir, Fluent Bit, Fluentd, OpenCost, CloudNativePG, Rook,
+  Longhorn, NATS, RabbitMQ Cluster Operator, Argo Events, Tekton Pipelines and
+  Backstage.
+- Chart metadata for Artifact Hub: keywords (including `pbom`), category,
+  license, links and screenshots.
+
+### Changed
+
+- Built-in categories are now platform pillars: Runtime, Compute &
+  infrastructure, Delivery, Networking, Security & identity, Observability,
+  Data & storage, Streaming & messaging and Developer experience. Strimzi moves
+  to Streaming, autoscalers and Crossplane functions to Compute &
+  infrastructure. Migration: `compute` and `composition` in Components,
+  offerings and exported inventories are read as `infrastructure`; no change
+  is required.
+
 ## [0.4.0] - 2026-10-12
 
 ### Added
@@ -140,7 +163,8 @@ The first release. Release candidate: `v0.1.0-rc.1`.
   README, usage and deployment guides in `docs/`, and a roadmap organised as
   milestones M0 to M11.
 
-[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ravibagri5/platform-bom/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.3.0
 [0.1.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.1.0

@@ -142,15 +142,15 @@ spec:
 
 // offeringNames are starting names for the offering generated per category.
 var offeringNames = map[string]string{
-	"runtime":        "Kubernetes workloads",
-	"compute":        "Compute and scaling",
-	"delivery":       "Application delivery",
-	"infrastructure": "Infrastructure provisioning",
-	"composition":    "Infrastructure composition",
-	"networking":     "Networking and traffic",
-	"security":       "Security and secrets",
-	"observability":  "Observability",
-	"data":           "Data services",
+	"runtime":              "Kubernetes workloads",
+	"infrastructure":       "Compute and infrastructure",
+	"delivery":             "Application delivery",
+	"networking":           "Networking and traffic",
+	"security":             "Security and identity",
+	"observability":        "Observability",
+	"data":                 "Data and storage",
+	"streaming":            "Streaming and messaging",
+	"developer-experience": "Developer portal",
 }
 
 // initOfferings drafts one offering per category of the recognised top-level

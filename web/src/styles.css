@@ -108,14 +108,13 @@ footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1.
   background: linear-gradient(135deg, #64748b, #94a3b8);
 }
 .cat-runtime { background: linear-gradient(135deg, #2563eb, #60a5fa); }
-.cat-compute { background: linear-gradient(135deg, #0891b2, #22d3ee); }
-.cat-delivery { background: linear-gradient(135deg, #ea580c, #fb923c); }
 .cat-infrastructure { background: linear-gradient(135deg, #4f46e5, #818cf8); }
-.cat-composition { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+.cat-delivery { background: linear-gradient(135deg, #ea580c, #fb923c); }
 .cat-networking { background: linear-gradient(135deg, #0d9488, #2dd4bf); }
 .cat-security { background: linear-gradient(135deg, #dc2626, #f87171); }
 .cat-observability { background: linear-gradient(135deg, #ca8a04, #facc15); }
 .cat-data { background: linear-gradient(135deg, #475569, #94a3b8); }
+.cat-streaming { background: linear-gradient(135deg, #0891b2, #22d3ee); }
 .cat-finops { background: linear-gradient(135deg, #15803d, #4ade80); }
 .cat-developer-experience { background: linear-gradient(135deg, #db2777, #f472b6); }
 .cat-platform-api { background: linear-gradient(135deg, #9333ea, #c084fc); }
@@ -196,15 +195,14 @@ table { width: 100%; border-collapse: collapse; }
 
 /* Environments tree */
 .catc-runtime { --cat: #3b82f6; }
-.catc-compute { --cat: #06b6d4; }
-.catc-delivery { --cat: #f97316; }
 .catc-infrastructure { --cat: #6366f1; }
-.catc-composition { --cat: #8b5cf6; }
+.catc-delivery { --cat: #f97316; }
 .catc-platform-api { --cat: #a855f7; }
 .catc-networking { --cat: #14b8a6; }
 .catc-security { --cat: #ef4444; }
 .catc-observability { --cat: #eab308; }
 .catc-data { --cat: #64748b; }
+.catc-streaming { --cat: #06b6d4; }
 .catc-finops { --cat: #16a34a; }
 .catc-developer-experience { --cat: #ec4899; }
 .matrix tr.tree-row > td:first-child, .matrix tr.group-row > td { box-shadow: inset 3px 0 0 var(--cat, #cbd5e1); }

@@ -30,13 +30,13 @@ spec:
   offerings:
     - name: kubernetes-workloads
       displayName: Kubernetes workloads
-      category: compute
+      category: runtime
       status: ga
       description: Run containers on managed Kubernetes with namespaces, quotas and RBAC set up for your team.
       components: [kubernetes]
     - name: autoscaling
       displayName: Node autoscaling
-      category: compute
+      category: infrastructure
       status: beta
       description: Nodes appear when workloads need them and disappear when they don't.
       components: [karpenter]

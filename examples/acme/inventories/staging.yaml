@@ -19,11 +19,11 @@ components:
      evidence: [{source: image, namespace: crossplane-system, object: Deployment/crossplane, detail: "xpkg.crossplane.io/crossplane/crossplane:v2.0.2", version: v2.0.2}]}
   - {name: provider-upjet-aws, displayName: Crossplane Provider AWS, category: infrastructure, version: 2.0.0, known: true,
      evidence: [{source: crossplane-package, object: Provider/provider-aws-s3, detail: "xpkg.upbound.io/upbound/provider-aws-s3:v2.0.0", version: v2.0.0}]}
-  - {name: function-patch-and-transform, displayName: Function Patch and Transform, category: composition, version: 0.9.0, known: true,
+  - {name: function-patch-and-transform, displayName: Function Patch and Transform, category: infrastructure, version: 0.9.0, known: true,
      evidence: [{source: crossplane-package, object: Function/function-patch-and-transform, detail: "xpkg.crossplane.io/crossplane-contrib/function-patch-and-transform:v0.9.0", version: v0.9.0}]}
-  - {name: function-auto-ready, displayName: Function Auto Ready, category: composition, version: 0.5.0, known: true,
+  - {name: function-auto-ready, displayName: Function Auto Ready, category: infrastructure, version: 0.5.0, known: true,
      evidence: [{source: crossplane-package, object: Function/function-auto-ready, detail: "xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.5.0", version: v0.5.0}]}
-  - {name: karpenter, displayName: Karpenter, category: compute, version: 1.6.2, known: true,
+  - {name: karpenter, displayName: Karpenter, category: infrastructure, version: 1.6.2, known: true,
      evidence: [{source: image, namespace: kube-system, object: Deployment/karpenter, detail: "public.ecr.aws/karpenter/controller:1.6.2", version: 1.6.2}]}
   - {name: cert-manager, displayName: cert-manager, category: security, version: 1.18.2, known: true,
      evidence: [{source: image, namespace: cert-manager, object: Deployment/cert-manager, detail: "quay.io/jetstack/cert-manager-controller:v1.18.2", version: v1.18.2}]}

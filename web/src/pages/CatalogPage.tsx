@@ -15,29 +15,29 @@ import {
 
 const categoryOrder = [
   'runtime',
-  'compute',
-  'delivery',
   'infrastructure',
-  'composition',
-  'platform-api',
+  'delivery',
   'networking',
   'security',
   'observability',
   'data',
+  'streaming',
+  'developer-experience',
+  'platform-api',
   'other',
 ]
 
 const categoryBlurb: Record<string, string> = {
   runtime: 'Where workloads run',
-  compute: 'Nodes, scaling and resource metrics',
-  delivery: 'How changes reach every environment',
-  infrastructure: 'Self-service cloud resources',
-  composition: 'Building blocks for platform APIs',
-  'platform-api': 'Crossplane configurations your teams consume',
+  infrastructure: 'Nodes, autoscaling and self-service cloud resources',
+  delivery: 'How changes are built, tested and reach every environment',
   networking: 'Traffic, ingress, mesh and DNS',
-  security: 'Certificates, secrets and policy',
-  observability: 'Metrics, logs and traces',
-  data: 'Backup and data services',
+  security: 'Identity, certificates, secrets, policy and threat detection',
+  observability: 'Metrics, logs, traces and cost',
+  data: 'Databases, storage and backup',
+  streaming: 'Event streaming and messaging',
+  'developer-experience': 'Portals and self-service for developers',
+  'platform-api': 'Crossplane configurations your teams consume',
   other: 'Everything else',
 }
 

@@ -85,6 +85,9 @@ func LoadPlatform(path string) (*api.Platform, error) {
 	if p.Spec.ReleasesDir == "" {
 		p.Spec.ReleasesDir = "releases"
 	}
+	for i := range p.Spec.Offerings {
+		p.Spec.Offerings[i].Category = catalog.NormalizeCategory(p.Spec.Offerings[i].Category)
+	}
 	return p, nil
 }
 
@@ -183,6 +186,9 @@ func LoadInventory(path, env string) (*api.Inventory, error) {
 		return nil, fmt.Errorf("%s: expected kind %s", path, api.KindInventory)
 	}
 	inv.Environment = env
+	for i := range inv.Components {
+		inv.Components[i].Category = catalog.NormalizeCategory(inv.Components[i].Category)
+	}
 	return inv, nil
 }
 

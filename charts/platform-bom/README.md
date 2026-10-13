@@ -37,6 +37,9 @@ pod using a configuration checksum.
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
 | `kubeconfigSecret.name` | Empty | Existing Secret with a kubeconfig for other clusters, mounted read-only at `/kubeconfig`; see [multi-cluster](https://github.com/ravibagri5/platform-bom/blob/main/docs/multi-cluster.md) |
+| `extraInitContainers` | `[]` | Init containers that run before PBOM starts |
+| `extraVolumes` | `[]` | Additional pod volumes; `platform`, `releases`, `components`, `cache` and `kubeconfig` are reserved |
+| `extraVolumeMounts` | `[]` | Additional mounts in the PBOM container |
 | `configMaps.create` | `true` | Render configuration from `platform`, `releases` and `components`; `false` mounts ConfigMaps you apply yourself |
 | `configMaps.platform` / `.releases` / `.components` | `pbom-platform` / `pbom-releases` / `pbom-components` | Names of your ConfigMaps when `configMaps.create=false`; releases and components may be absent |
 | `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; releases and components are read from the mounted ConfigMaps |
@@ -100,6 +103,37 @@ appropriate controller rewrite rules.
 
 **TLS is not authentication.** PBOM has no built-in authentication. Use an
 internal ingress controller or an authenticating proxy before exposing the UI.
+
+## Extra volumes and init containers
+
+`extraVolumes`, `extraVolumeMounts` and `extraInitContainers` extend the pod
+without forking the chart, for example to mount a CA bundle or exported
+inventories, or to add a kubeconfig credential plugin. The PBOM image is
+distroless and has no plugins, so an init container copies one into a shared
+`emptyDir`:
+
+```yaml
+extraInitContainers:
+  - name: kubelogin
+    image: registry.example.com/tools/kubelogin:1.0.0   # any image with the binary
+    command: [cp, /usr/local/bin/kubelogin, /plugins/kubelogin]
+    volumeMounts:
+      - name: plugins
+        mountPath: /plugins
+extraVolumes:
+  - name: plugins
+    emptyDir: {}
+extraVolumeMounts:
+  - name: plugins
+    mountPath: /plugins
+    readOnly: true
+```
+
+The kubeconfig then calls the plugin by absolute path
+(`exec.command: /plugins/kubelogin`) and passes its settings in `exec.env`.
+The plugin must be a statically linked binary; tools that need a shell or an
+interpreter, such as the AWS CLI, do not run in the image. Init containers run
+with the pod's non-root security context.
 
 ## Release publishing
 

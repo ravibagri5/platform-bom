@@ -32,6 +32,10 @@ spec:
         fsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+      {{- with .Values.extraInitContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: pbom
           image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
@@ -90,6 +94,9 @@ spec:
               mountPath: /kubeconfig
               readOnly: true
             {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       volumes:
         - name: platform
           configMap:
@@ -110,4 +117,7 @@ spec:
           secret:
             secretName: {{ $kubeconfigSecret }}
             defaultMode: 0440
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}

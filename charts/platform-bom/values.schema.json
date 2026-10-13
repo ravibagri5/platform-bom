@@ -133,6 +133,48 @@
         "name": { "type": "string" }
       }
     },
+    "extraInitContainers": {
+      "description": "Init containers run before PBOM starts.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "image"],
+        "properties": {
+          "name": { "$ref": "#/definitions/nonEmptyString" },
+          "image": { "$ref": "#/definitions/nonEmptyString" }
+        }
+      }
+    },
+    "extraVolumes": {
+      "description": "Pod volumes added after the chart's own.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "allOf": [
+              { "$ref": "#/definitions/nonEmptyString" },
+              { "not": { "enum": ["platform", "releases", "components", "cache", "kubeconfig"] } }
+            ]
+          }
+        }
+      }
+    },
+    "extraVolumeMounts": {
+      "description": "Volume mounts added to the PBOM container.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "mountPath"],
+        "properties": {
+          "name": { "$ref": "#/definitions/nonEmptyString" },
+          "mountPath": { "type": "string", "pattern": "^/" },
+          "readOnly": { "type": "boolean" },
+          "subPath": { "type": "string" }
+        }
+      }
+    },
     "configMaps": {
       "type": "object",
       "additionalProperties": false,

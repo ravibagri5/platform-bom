@@ -17,6 +17,9 @@ change it; every such change is listed under **Changed** with a migration note.
   `/kubeconfig`, so one PBOM installed with Helm can discover dev, QA and prod
   clusters. The chart schema accepts `kubeconfig`, `kubeContext` and
   `inventoryFile` on environments.
+- Helm chart values `extraVolumes`, `extraVolumeMounts` and
+  `extraInitContainers` extend the pod without forking the chart, for example
+  to add a kubeconfig credential plugin.
 - `deploy/remote-reader.yaml` and `hack/remote-kubeconfig.sh` create a
   read-only account in a target cluster and a token-based kubeconfig for it.
 - [Multi-cluster guide](docs/multi-cluster.md) with architecture diagrams for a

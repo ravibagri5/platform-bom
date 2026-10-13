@@ -327,6 +327,6 @@ kubeconfig is never committed to Git: it lives only in the Secret.
 | --- | --- |
 | `dial tcp ... i/o timeout` or `connection refused` | The PBOM pod cannot reach that API server. Allow the traffic, or choose [C](#c-exported-inventories) for that cluster. |
 | Server is `127.0.0.1` or a private name | The address in your admin context only works on your machine. Re-run the script with the address the pod can reach, for example `SERVER=https://10.0.0.12:6443 sh remote-kubeconfig.sh my-dev-admin dev`. |
-| `exec: executable ... not found` (`kubelogin`, `aws`, `gke-gcloud-auth-plugin`) | The kubeconfig uses a cloud login plugin, which the image does not include. Use the script's token-based kubeconfig. |
+| `exec: executable ... not found` (`kubelogin`, `aws`, `gke-gcloud-auth-plugin`) | The kubeconfig uses a cloud login plugin, which the image does not include. Use the script's token-based kubeconfig, or add a statically linked plugin with [extra volumes and init containers](../charts/platform-bom/README.md#extra-volumes-and-init-containers). |
 | `Unauthorized` | The token was deleted. Rotate it as described above. |
 | `context "x" does not exist` | `kubeContext` in `platform.yaml` must match a context name you gave the script. |

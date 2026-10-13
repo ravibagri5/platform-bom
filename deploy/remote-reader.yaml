@@ -1,6 +1,6 @@
-# Read-only discovery access for a central PBOM, applied to each cluster it
-# reaches through a kubeconfig. hack/remote-kubeconfig.sh applies this and
-# writes the matching kubeconfig context.
+# A service account with a long-lived token for a central PBOM, bound to the
+# ClusterRole in remote-reader-role.yaml. hack/remote-kubeconfig.sh applies
+# both and writes the matching kubeconfig context.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -23,26 +23,6 @@ metadata:
   annotations:
     kubernetes.io/service-account.name: pbom-reader
 type: kubernetes.io/service-account-token
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: pbom-remote-reader
-rules:
-  - apiGroups: [""]
-    resources: [nodes]
-    verbs: [get, list]
-  # Helm stores release metadata in Secrets, and RBAC cannot restrict by label.
-  # Remove this rule to skip Helm discovery; everything else keeps working.
-  - apiGroups: [""]
-    resources: [secrets]
-    verbs: [get, list]
-  - apiGroups: [apps]
-    resources: [deployments, statefulsets, daemonsets]
-    verbs: [get, list]
-  - apiGroups: [pkg.crossplane.io]
-    resources: [providers, functions, configurations]
-    verbs: [get, list]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

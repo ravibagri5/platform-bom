@@ -1,0 +1,21 @@
+# Read-only access to everything discovery looks at, for clusters a central
+# PBOM reaches. Bind it to the identity PBOM uses in this cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pbom-remote-reader
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list]
+  # Helm stores release metadata in Secrets, and RBAC cannot restrict by label.
+  # Remove this rule to skip Helm discovery; everything else keeps working.
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, daemonsets]
+    verbs: [get, list]
+  - apiGroups: [pkg.crossplane.io]
+    resources: [providers, functions, configurations]
+    verbs: [get, list]

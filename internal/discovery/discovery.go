@@ -4,6 +4,7 @@ package discovery
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"strings"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/ravibagri5/platform-bom/internal/api"
 	"github.com/ravibagri5/platform-bom/internal/catalog"
+	"github.com/ravibagri5/platform-bom/internal/cloudauth"
 	"github.com/ravibagri5/platform-bom/internal/version"
 )
 
@@ -33,7 +35,9 @@ type Options struct {
 }
 
 // RESTConfig loads a client config for kubeconfig and context. Empty values
-// use the default loading rules, falling back to in-cluster config.
+// use the default loading rules, falling back to in-cluster config. AKS, EKS
+// and GKE exec plugins are replaced by the pod's workload identity when it
+// has one.
 func RESTConfig(kubeconfig, context string) (*rest.Config, error) {
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if kubeconfig != "" {
@@ -43,6 +47,13 @@ func RESTConfig(kubeconfig, context string) (*rest.Config, error) {
 		&clientcmd.ConfigOverrides{CurrentContext: context}).ClientConfig()
 	if err != nil {
 		return nil, err
+	}
+	provider, err := cloudauth.Apply(cfg)
+	if err != nil {
+		return nil, err
+	}
+	if provider != "" {
+		slog.Debug("using workload identity", "context", context, "provider", provider)
 	}
 	return tune(cfg), nil
 }

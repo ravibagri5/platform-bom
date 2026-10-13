@@ -14,9 +14,9 @@ admin=${1:?usage: remote-kubeconfig.sh ADMIN_CONTEXT NAME [OUTPUT]}
 name=${2:?usage: remote-kubeconfig.sh ADMIN_CONTEXT NAME [OUTPUT]}
 out=${3:-pbom-kubeconfig}
 
-manifest="$(dirname -- "$0")/../deploy/remote-reader.yaml"
-[ -f "$manifest" ] || manifest=https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader.yaml
-kubectl --context "$admin" apply -f "$manifest"
+deploy="$(dirname -- "$0")/../deploy"
+[ -f "$deploy/remote-reader.yaml" ] || deploy=https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy
+kubectl --context "$admin" apply -f "$deploy/remote-reader-role.yaml" -f "$deploy/remote-reader.yaml"
 
 secret() {
   kubectl --context "$admin" -n platform-bom get secret pbom-reader-token -o "jsonpath={.data.$1}"

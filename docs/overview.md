@@ -604,8 +604,8 @@ publishing releases as OCI artifacts, and a community process for evolving it.
 
 **M12 — Secure access and multi-cluster identity.** OIDC sign-in and
 role-based, per-environment authorization for the UI and API, including
-service-account tokens for API clients; keyless discovery of AKS clusters with
-Azure Workload Identity; per-environment kubeconfig or service-account token
+service-account tokens for API clients; keyless discovery of AKS, EKS and GKE
+clusters with workload identity; per-environment kubeconfig or service-account token
 credentials for other clusters; a dark theme. Discovery credentials and inbound
 user access are separate concerns.
 

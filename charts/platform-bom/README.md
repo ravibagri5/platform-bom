@@ -27,6 +27,8 @@ pod using a configuration checksum.
 | `rbac.helmSecrets` | `true` | Allow cluster-wide Secret reading for Helm metadata |
 | `serviceAccount.create` | `true` | Create a service account |
 | `serviceAccount.name` | Generated name | Existing account required when creation is disabled |
+| `serviceAccount.annotations` | `{}` | Service account annotations, such as a cloud [workload identity](https://github.com/ravibagri5/platform-bom/blob/main/docs/multi-cluster.md#managed-clusters-aks-eks-and-gke) |
+| `podLabels` | `{}` | Extra pod labels, such as `azure.workload.identity/use: "true"` |
 | `service.port` | `80` | Private ClusterIP Service port |
 | `ingress.enabled` | `false` | Create an optional Ingress |
 | `ingress.className` | Empty | Ingress controller class |

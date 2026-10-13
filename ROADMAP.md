@@ -29,8 +29,8 @@ end of November 2026:
    for the web UI and API
 2. [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
    who can see which environments
-3. [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
-   Identity (managed identity) for discovering AKS clusters
+3. [#42](https://github.com/ravibagri5/platform-bom/issues/42) Workload
+   identity for discovering AKS, EKS and GKE clusters
 4. [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
    credentials per environment: service-account tokens and kubeconfig Secrets
 5. [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
@@ -156,9 +156,9 @@ Target: end of November 2026.
 - [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
   roles and per-environment visibility from OIDC groups, and Kubernetes
   service-account tokens (TokenReview) for API clients such as CI
-- [#42](https://github.com/ravibagri5/platform-bom/issues/42) Azure Workload
-  Identity (user-assigned managed identity) for discovering AKS clusters
-  without kubelogin or stored secrets
+- [#42](https://github.com/ravibagri5/platform-bom/issues/42) Workload
+  identity for discovering AKS, EKS and GKE clusters without login plugins or
+  stored secrets
 - [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
   credentials per environment from kubeconfig or service-account token
   Secrets, with a least-privilege reader for target clusters and

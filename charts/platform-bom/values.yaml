@@ -10,6 +10,11 @@ rbac:
 serviceAccount:
   create: true
   name: ""
+  # Cloud workload identity, for example azure.workload.identity/client-id,
+  # eks.amazonaws.com/role-arn or iam.gke.io/gcp-service-account.
+  annotations: {}
+# Azure Workload Identity also needs azure.workload.identity/use: "true".
+podLabels: {}
 
 service:
   port: 80

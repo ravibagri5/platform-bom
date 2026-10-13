@@ -68,6 +68,8 @@ jobs:
             echo "::error::extraVolumes must not reuse the chart's volume names"
             exit 1
           fi
+          helm template pbom charts/platform-bom --set-json 'serviceAccount.annotations={"azure.workload.identity/client-id":"id"}' --set-json 'podLabels={"azure.workload.identity/use":"true"}' > /tmp/wi.yaml
+          grep -q 'azure.workload.identity/client-id: id' /tmp/wi.yaml && grep -q 'azure.workload.identity/use: "true"' /tmp/wi.yaml
           if helm template pbom charts/platform-bom --set ingress.enabled=true > /dev/null 2>&1; then
             echo "::error::Ingress must require a hostname when enabled"
             exit 1

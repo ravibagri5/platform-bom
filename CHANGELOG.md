@@ -11,6 +11,8 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-13
+
 ### Added
 
 - Dark theme for the web UI. It follows the operating system by default; a

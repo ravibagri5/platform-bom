@@ -1,5 +1,11 @@
 {{- /* Releases upgraded with --reuse-values from an older chart have no kubeconfigSecret. */}}
 {{- $kubeconfigSecret := (default dict .Values.kubeconfigSecret).name }}
+{{- $auth := default dict .Values.auth }}
+{{- $authMode := default "none" $auth.mode }}
+{{- $authHeader := default dict $auth.header }}
+{{- $oidc := default dict $auth.oidc }}
+{{- $clientSecret := default dict $oidc.clientSecret }}
+{{- $sessionSecret := default dict $auth.sessionSecret }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,9 +56,50 @@ spec:
             - --releases-dir=/releases
             - --components-dir=/components
             - {{ printf "--refresh-interval=%v" .Values.refreshInterval | quote }}
+            - {{ printf "--auth=%s" $authMode | quote }}
+            {{- if eq $authMode "header" }}
+            - {{ printf "--auth-header=%s" (default "X-Forwarded-User" $authHeader.name) | quote }}
+            {{- with $authHeader.trustedProxies }}
+            - {{ printf "--auth-trusted-proxies=%s" (join "," .) | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if eq $authMode "oidc" }}
+            - {{ printf "--oidc-issuer=%s" (required "auth.oidc.issuer is required when auth.mode=oidc" $oidc.issuer) | quote }}
+            - {{ printf "--oidc-client-id=%s" (required "auth.oidc.clientId is required when auth.mode=oidc" $oidc.clientId) | quote }}
+            - {{ printf "--oidc-redirect-url=%s" (required "auth.oidc.redirectURL is required when auth.mode=oidc" $oidc.redirectURL) | quote }}
+            {{- with $oidc.scopes }}
+            - {{ printf "--oidc-scopes=%s" (join "," .) | quote }}
+            {{- end }}
+            {{- with $oidc.usernameClaim }}
+            - {{ printf "--oidc-username-claim=%s" . | quote }}
+            {{- end }}
+            {{- with $oidc.groupsClaim }}
+            - {{ printf "--oidc-groups-claim=%s" . | quote }}
+            {{- end }}
+            {{- with $oidc.allowedGroups }}
+            - {{ printf "--oidc-allowed-groups=%s" (join "," .) | quote }}
+            {{- end }}
+            {{- with $auth.sessionDuration }}
+            - {{ printf "--session-duration=%s" . | quote }}
+            {{- end }}
+            {{- end }}
           env:
             - name: XDG_CACHE_HOME
               value: /cache
+            {{- if and (eq $authMode "oidc") $clientSecret.name }}
+            - name: PBOM_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $clientSecret.name }}
+                  key: {{ default "client-secret" $clientSecret.key }}
+            {{- end }}
+            {{- if and (eq $authMode "oidc") $sessionSecret.name }}
+            - name: PBOM_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $sessionSecret.name }}
+                  key: {{ default "session-secret" $sessionSecret.key }}
+            {{- end }}
             {{- if .Values.githubTokenSecret.name }}
             - name: GITHUB_TOKEN
               valueFrom:

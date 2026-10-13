@@ -10,6 +10,7 @@ linters:
     - copyloopvar
     - errorlint
     - gocritic
+    - gosec
     - misspell
     - nolintlint
     - prealloc
@@ -40,11 +41,20 @@ linters:
       disabled-checks:
         - ifElseChain
 
+    gosec:
+      excludes:
+        # Paths come from CLI flags and the platform file, never from HTTP requests.
+        - G304
+        # Files written are YAML for Git and a cache of public GitHub releases.
+        - G301
+        - G306
+
   exclusions:
     rules:
       # Tests are allowed to be repetitive and to skip the doc comments.
       - path: _test\.go
         linters:
+          - gosec
           - revive
           - unparam
 

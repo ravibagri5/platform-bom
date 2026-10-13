@@ -5,7 +5,12 @@ Wait for Platform BOM and open its inventory:
 
 Visit http://127.0.0.1:8080.
 
-The UI has no built-in authentication. Keep it private or use an authenticating proxy.
+{{- $mode := (default dict .Values.auth).mode | default "none" }}
+{{- if eq $mode "none" }}
+The UI has no sign-in (auth.mode=none). Keep it private, or set auth.mode to oidc or header.
+{{- else }}
+Sign-in: auth.mode={{ $mode }}.
+{{- end }}
 {{- if and .Values.rbac.create .Values.rbac.helmSecrets }}
 Helm discovery grants cluster-wide Secret read access. Set rbac.helmSecrets=false to omit it.
 {{- end }}

@@ -29,6 +29,37 @@ githubTokenSecret:
   name: ""
   key: token
 
+# Who may open the UI and API. none: anyone who can reach the Service.
+# header: the user named in a header set by an authenticating proxy.
+# oidc: sign-in with an OpenID Connect provider such as Entra ID, Okta,
+# Keycloak, Dex or Google.
+auth:
+  mode: none
+  header:
+    name: X-Forwarded-User
+    # CIDRs the proxy connects from; requests from elsewhere are refused.
+    trustedProxies: []
+  oidc:
+    issuer: ""
+    clientId: ""
+    # Existing Secret with the client secret; leave name empty for a public client.
+    clientSecret:
+      name: ""
+      key: client-secret
+    # Public URL of the callback, such as https://pbom.example.com/auth/callback.
+    redirectURL: ""
+    scopes: [openid, profile, email]
+    usernameClaim: ""
+    groupsClaim: groups
+    # Only members of these groups may sign in; empty allows anyone the provider signs in.
+    allowedGroups: []
+  # Existing Secret with at least 32 random bytes that encrypts session cookies.
+  # Without it, users sign in again whenever the pod restarts.
+  sessionSecret:
+    name: ""
+    key: session-secret
+  sessionDuration: 12h
+
 # Existing Secret with a kubeconfig for other clusters, mounted read-only at
 # /kubeconfig. Environments use it with kubeconfig: /kubeconfig/<key> and
 # kubeContext. Token updates are picked up at the next discovery.

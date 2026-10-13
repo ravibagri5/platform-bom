@@ -97,8 +97,9 @@ release cache in `~/Library/Caches/pbom` on macOS or `~/.cache/pbom` on Linux.
   `./pbom.yaml` by default, or the file given with `-c` or `$PBOM_CONFIG`.
 - **Upstream checks call GitHub.** Export `GITHUB_TOKEN` to avoid the anonymous
   rate limit, or pass `--no-upstream` to work offline.
-- **The UI binds to `127.0.0.1`.** `pbom serve` has no authentication; keep it
-  local, or put it behind an authenticating proxy if you change `--addr`.
+- **The UI binds to `127.0.0.1`.** By default `pbom serve` has no sign-in;
+  keep it local, or turn on [authentication](authentication.md) if you change
+  `--addr`.
 
 ### From source
 
@@ -161,8 +162,8 @@ The image runs as a non-root user and expects the platform file at
 `aws eks get-token` need those binaries, so for those, run the binary directly
 or use exported inventories.
 
-The UI has no authentication of its own. It binds to `127.0.0.1` by default;
-put it behind your organisation's authenticating proxy before exposing it.
+By default the UI has no sign-in. It binds to `127.0.0.1`; turn on
+[authentication](authentication.md) before exposing it.
 
 ## Running in a cluster
 
@@ -265,6 +266,6 @@ kubectl apply -k deploy
 
 ### Exposing it
 
-The Service is `ClusterIP` on purpose: the UI has no authentication. To share
-it, put it behind an Ingress or Gateway that authenticates users, for example
-with oauth2-proxy or your identity-aware proxy.
+The Service is `ClusterIP` on purpose: by default the UI has no sign-in. To
+share it, turn on [authentication](authentication.md), either OpenID Connect
+sign-in or an authenticating proxy, and expose it with an Ingress or Gateway.

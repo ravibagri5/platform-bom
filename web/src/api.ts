@@ -187,10 +187,26 @@ export interface Inventory {
   components: { name: string; version?: string; known: boolean; evidence?: Evidence[] }[]
 }
 
+export interface Me {
+  mode: 'none' | 'header' | 'oidc'
+  user?: { name: string; email?: string }
+  logout?: boolean
+}
+
+let signingIn = false
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path, { headers: { Accept: 'application/json' } })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
+    if (res.status === 401 && body.login) {
+      if (!signingIn) {
+        signingIn = true
+        const here = window.location.pathname + window.location.search + window.location.hash
+        window.location.assign(`${body.login}?rd=${encodeURIComponent(here)}`)
+      }
+      return new Promise<T>(() => {})
+    }
     throw new Error(body.error ?? `${res.status} ${res.statusText}`)
   }
   return res.json()
@@ -199,6 +215,7 @@ async function get<T>(path: string): Promise<T> {
 const q = (refresh?: boolean) => (refresh ? '?refresh=true' : '')
 
 export const api = {
+  me: () => get<Me>('/api/me'),
   platform: () => get<PlatformResponse>('/api/platform'),
   matrix: (refresh?: boolean) => get<Matrix>('/api/matrix' + q(refresh)),
   updates: (refresh?: boolean) => get<Update[]>('/api/updates' + q(refresh)),

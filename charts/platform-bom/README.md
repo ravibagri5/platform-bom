@@ -38,6 +38,16 @@ pod using a configuration checksum.
 | `refreshInterval` | `10m` | Discovery refresh interval |
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
+| `auth.mode` | `none` | `none`, `header` (authenticating proxy) or `oidc` (OpenID Connect sign-in); see [authentication](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md) |
+| `auth.header.name` | `X-Forwarded-User` | Header with the user name, in `header` mode |
+| `auth.header.trustedProxies` | `[]` | CIDRs the proxy connects from; other clients are refused |
+| `auth.oidc.issuer` / `.clientId` / `.redirectURL` | Empty | Required in `oidc` mode; `redirectURL` ends in `/auth/callback` |
+| `auth.oidc.clientSecret.name` / `.key` | Empty / `client-secret` | Existing Secret with the client secret; empty for a public client |
+| `auth.oidc.scopes` | `[openid, profile, email]` | Scopes to request |
+| `auth.oidc.usernameClaim` | Empty | Claim shown as the user's name |
+| `auth.oidc.groupsClaim` / `.allowedGroups` | `groups` / `[]` | Only members of these groups may sign in |
+| `auth.sessionSecret.name` / `.key` | Empty / `session-secret` | Existing Secret with 32+ random bytes for session cookies; without it, users sign in again after a restart |
+| `auth.sessionDuration` | `12h` | How long a sign-in lasts |
 | `kubeconfigSecret.name` | Empty | Existing Secret with a kubeconfig for other clusters, mounted read-only at `/kubeconfig`; see [multi-cluster](https://github.com/ravibagri5/platform-bom/blob/main/docs/multi-cluster.md) |
 | `extraInitContainers` | `[]` | Init containers that run before PBOM starts |
 | `extraVolumes` | `[]` | Additional pod volumes; `platform`, `releases`, `components`, `cache` and `kubeconfig` are reserved |
@@ -49,8 +59,10 @@ pod using a configuration checksum.
 | `components` | `{}` | Map of file names to `Component` documents or raw file content; override or extend the built-in catalog |
 | `resources` | 50m CPU / 128Mi requested, 512Mi memory limit | Pod resources |
 
-The UI has no authentication; keep the Service private or use an
-authenticating proxy. If your administrator pre-provisions discovery access,
+By default the UI has no sign-in; keep the Service private, or set
+`auth.mode` to `oidc` or `header` as described in
+[authentication](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md).
+If your administrator pre-provisions discovery access,
 set `rbac.create=false`, `serviceAccount.create=false` and
 `serviceAccount.name` to the existing account. Disabling RBAC creation alone
 does not grant discovery permissions.
@@ -103,8 +115,9 @@ and authentication proxy annotations can be added. Paths default to `/` with
 `Prefix` when omitted. PBOM serves at the root path; subpath deployments need
 appropriate controller rewrite rules.
 
-**TLS is not authentication.** PBOM has no built-in authentication. Use an
-internal ingress controller or an authenticating proxy before exposing the UI.
+**TLS is not authentication.** Without `auth.mode`, anyone who reaches the
+Ingress can open the UI. Use `oidc` sign-in, an authenticating proxy with
+`header` mode, or an internal ingress controller.
 
 ## Extra volumes and init containers
 

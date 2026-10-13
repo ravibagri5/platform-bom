@@ -11,6 +11,24 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-13
+
+### Added
+
+- Sign-in for the web UI and API: `pbom serve --auth oidc` with any OpenID
+  Connect provider (Microsoft Entra ID, Okta, Keycloak, Dex, Google), using
+  the authorization code flow with PKCE, verified ID tokens, optional
+  `--oidc-allowed-groups` and encrypted session cookies, without a database;
+  or `--auth header` behind an authenticating proxy, optionally limited to
+  `--auth-trusted-proxies`. The UI shows the signed-in user and **Sign out**.
+  Chart values under `auth` configure both. See
+  [authentication](docs/authentication.md).
+
+### Security
+
+- CI lint runs gosec, and the HTTP server has tests for security headers,
+  API errors, rejected writes and path traversal.
+
 ## [0.7.0] - 2026-10-13
 
 ### Added

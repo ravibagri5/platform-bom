@@ -11,6 +11,17 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+### Added
+
+- Dark theme for the web UI. It follows the operating system by default; a
+  System, Light or Dark selector in the top bar overrides it and is remembered
+  in the browser, with no flash of the wrong theme on load.
+
+### Changed
+
+- Muted text and the green and red status colours in the light theme are
+  slightly darker, so all text meets WCAG AA contrast.
+
 ## [0.8.0] - 2026-10-13
 
 ### Added

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
-import { useAsync } from './components'
+import { useAsync, ThemeSelect } from './components'
 import PlatformPage from './pages/PlatformPage'
 import InventoryPage from './pages/InventoryPage'
 import ReleasesPage from './pages/ReleasesPage'
@@ -65,20 +65,23 @@ export default function App() {
             </a>
           ))}
         </nav>
-        {user && (
-          <div className="user-menu">
-            <span className="user-name" title={user.email ?? user.name}>
-              {user.name}
-            </span>
-            {me.data?.logout && (
-              <form method="post" action="/auth/logout">
-                <button type="submit" className="sign-out">
-                  Sign out
-                </button>
-              </form>
-            )}
-          </div>
-        )}
+        <div className="topbar-end">
+          <ThemeSelect />
+          {user && (
+            <div className="user-menu">
+              <span className="user-name" title={user.email ?? user.name}>
+                {user.name}
+              </span>
+              {me.data?.logout && (
+                <form method="post" action="/auth/logout">
+                  <button type="submit" className="sign-out">
+                    Sign out
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+        </div>
       </header>
       <main>
         {page === '' && <PlatformPage platform={platform} />}

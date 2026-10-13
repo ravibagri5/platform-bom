@@ -36,6 +36,7 @@ pod using a configuration checksum.
 | `refreshInterval` | `10m` | Discovery refresh interval |
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
+| `kubeconfigSecret.name` | Empty | Existing Secret with a kubeconfig for other clusters, mounted read-only at `/kubeconfig`; see [multi-cluster](https://github.com/ravibagri5/platform-bom/blob/main/docs/multi-cluster.md) |
 | `configMaps.create` | `true` | Render configuration from `platform`, `releases` and `components`; `false` mounts ConfigMaps you apply yourself |
 | `configMaps.platform` / `.releases` / `.components` | `pbom-platform` / `pbom-releases` / `pbom-components` | Names of your ConfigMaps when `configMaps.create=false`; releases and components may be absent |
 | `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; releases and components are read from the mounted ConfigMaps |

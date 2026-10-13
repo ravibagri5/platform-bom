@@ -125,6 +125,14 @@
         "key": { "$ref": "#/definitions/nonEmptyString" }
       }
     },
+    "kubeconfigSecret": {
+      "description": "Existing Secret with a kubeconfig for other clusters, mounted at /kubeconfig.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" }
+      }
+    },
     "configMaps": {
       "type": "object",
       "additionalProperties": false,
@@ -152,6 +160,9 @@
                 "properties": {
                   "name": { "type": "string", "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" },
                   "inCluster": { "type": "boolean" },
+                  "kubeconfig": { "type": "string" },
+                  "kubeContext": { "type": "string" },
+                  "inventoryFile": { "type": "string" },
                   "targetRelease": { "type": "string" }
                 }
               }

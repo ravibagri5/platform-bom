@@ -718,6 +718,7 @@ or pass `--no-upstream` to work offline.
 | --- | --- |
 | [docs/usage.md](usage.md) | CLI, configuration reference, discovery, upstream updates, drift in CI, web UI, HTTP API |
 | [docs/deployment.md](deployment.md) | Installation, required RBAC, containers, running in a cluster |
+| [docs/multi-cluster.md](multi-cluster.md) | One PBOM for several clusters, with architecture for each setup |
 | [ROADMAP.md](../ROADMAP.md) | Near-term plans per release |
 | [docs/community.md](community.md) | Labels, planning and repository settings |
 | [SECURITY.md](../SECURITY.md) | Threat model and vulnerability reporting |

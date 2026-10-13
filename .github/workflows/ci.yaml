@@ -57,6 +57,17 @@ jobs:
             exit 1
           fi
           helm template pbom charts/platform-bom --set configMaps.create=false | grep -q 'name: pbom-platform$'
+          helm template pbom charts/platform-bom --set kubeconfigSecret.name=pbom-kubeconfig | grep -q 'secretName: pbom-kubeconfig$'
+          if helm template pbom charts/platform-bom | grep -q 'mountPath: /kubeconfig'; then
+            echo "::error::kubeconfig must only be mounted when kubeconfigSecret.name is set"
+            exit 1
+          fi
+          helm template pbom charts/platform-bom --set-json 'extraInitContainers=[{"name":"plugin","image":"busybox"}]' --set-json 'extraVolumes=[{"name":"plugins","emptyDir":{}}]' --set-json 'extraVolumeMounts=[{"name":"plugins","mountPath":"/plugins"}]' > /tmp/extra.yaml
+          grep -q 'initContainers:' /tmp/extra.yaml && grep -q 'mountPath: /plugins' /tmp/extra.yaml
+          if helm template pbom charts/platform-bom --set-json 'extraVolumes=[{"name":"cache","emptyDir":{}}]' > /dev/null 2>&1; then
+            echo "::error::extraVolumes must not reuse the chart's volume names"
+            exit 1
+          fi
           if helm template pbom charts/platform-bom --set ingress.enabled=true > /dev/null 2>&1; then
             echo "::error::Ingress must require a hostname when enabled"
             exit 1

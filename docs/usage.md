@@ -140,6 +140,18 @@ spec:
     ignoreNamespaces: [team-a]
 ```
 
+Each environment uses one source:
+
+| Source | Fields |
+| --- | --- |
+| The cluster `pbom` runs in, with its own service account | `inCluster: true` |
+| A kubeconfig context | `kubeContext`, optionally `kubeconfig` |
+| A service-account token, such as a mounted token Secret | `server` (`https://`), `tokenFile`, optionally `caFile` |
+| An exported inventory | `inventoryFile` |
+
+See [multi-cluster setup](multi-cluster.md) for running one `pbom` for
+several clusters.
+
 ### PlatformRelease
 
 ```yaml

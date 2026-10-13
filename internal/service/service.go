@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -81,6 +82,9 @@ func LoadPlatform(path string) (*api.Platform, error) {
 			return nil, fmt.Errorf("%s: duplicate environment %q", path, e.Name)
 		}
 		seen[e.Name] = true
+		if err := validateTokenSource(e); err != nil {
+			return nil, fmt.Errorf("%s: environment %q: %w", path, e.Name, err)
+		}
 	}
 	if p.Spec.ReleasesDir == "" {
 		p.Spec.ReleasesDir = "releases"
@@ -89,6 +93,22 @@ func LoadPlatform(path string) (*api.Platform, error) {
 		p.Spec.Offerings[i].Category = catalog.NormalizeCategory(p.Spec.Offerings[i].Category)
 	}
 	return p, nil
+}
+
+func validateTokenSource(e api.Environment) error {
+	switch {
+	case e.Server == "" && (e.TokenFile != "" || e.CAFile != ""):
+		return errors.New("tokenFile and caFile need server")
+	case e.Server == "":
+		return nil
+	case !strings.HasPrefix(e.Server, "https://"):
+		return errors.New("server must be an https:// URL")
+	case e.TokenFile == "":
+		return errors.New("server needs tokenFile")
+	case e.InCluster || e.Kubeconfig != "" || e.KubeContext != "" || e.InventoryFile != "":
+		return errors.New("server cannot be combined with inCluster, kubeconfig, kubeContext or inventoryFile")
+	}
+	return nil
 }
 
 // New loads the platform at path.
@@ -156,10 +176,14 @@ func (s *Service) DiscoverEnvironment(ctx context.Context, env *api.Environment)
 	var cfg *rest.Config
 	var err error
 	contextName := env.KubeContext
-	if env.InCluster {
+	switch {
+	case env.InCluster:
 		cfg, err = discovery.InClusterConfig()
 		contextName = "in-cluster"
-	} else {
+	case env.Server != "":
+		cfg, err = discovery.TokenConfig(env.Server, s.resolve(env.TokenFile), s.resolve(env.CAFile))
+		contextName = env.Server
+	default:
 		cfg, err = discovery.RESTConfig(s.resolve(env.Kubeconfig), env.KubeContext)
 	}
 	if err != nil {

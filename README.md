@@ -170,6 +170,7 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | [Usage](docs/usage.md) | Configuration, discovery, CLI, drift checks, web UI and API |
 | [Getting started](docs/getting-started.md) | Install with Helm, describe the platform in YAML, apply it, keep it in Git, troubleshooting |
 | [Deployment](docs/deployment.md) | Binary and container alternatives, RBAC and advanced cluster deployment |
+| [Multi-cluster](docs/multi-cluster.md) | One PBOM for dev, QA and prod: management cluster, one of your clusters, or exported inventories |
 | [Kind simulation](examples/kind/simulation/README.md) | Recreate the screenshot environment and release drift |
 | [Roadmap](ROADMAP.md) | Upcoming work and milestones |
 | [Community](docs/community.md) | Planning, labels and participation |

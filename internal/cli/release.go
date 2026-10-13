@@ -105,6 +105,7 @@ func newReleaseCreateCmd(g *globals) *cobra.Command {
 				// Discover from here, e.g. an environment that is inCluster for the deployed pbom.
 				local := *env
 				local.InCluster, local.InventoryFile = false, ""
+				local.Server, local.TokenFile, local.CAFile = "", "", ""
 				local.KubeContext, local.Kubeconfig = kubeContext, kubeconfig
 				env = &local
 			}

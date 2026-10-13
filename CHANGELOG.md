@@ -11,6 +11,8 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-13
+
 ### Added
 
 - Helm chart value `kubeconfigSecret.name` mounts a kubeconfig Secret at

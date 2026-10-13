@@ -11,6 +11,25 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-13
+
+### Added
+
+- Helm chart value `kubeconfigSecret.name` mounts a kubeconfig Secret at
+  `/kubeconfig`, so one PBOM installed with Helm can discover dev, QA and prod
+  clusters. The chart schema accepts `kubeconfig`, `kubeContext` and
+  `inventoryFile` on environments.
+- Helm chart values `extraVolumes`, `extraVolumeMounts` and
+  `extraInitContainers` extend the pod without forking the chart, for example
+  to add a kubeconfig credential plugin.
+- `deploy/remote-reader.yaml` and `hack/remote-kubeconfig.sh` create a
+  read-only account in a target cluster and a token-based kubeconfig for it.
+- Environments can use a service-account token without a kubeconfig:
+  `server`, `tokenFile` and optional `caFile`, for example from a mounted
+  token Secret. The token is re-read when it rotates.
+- [Multi-cluster guide](docs/multi-cluster.md) with architecture diagrams for a
+  management cluster, one of your clusters, and exported inventories.
+
 ## [0.5.0] - 2026-10-12
 
 ### Added

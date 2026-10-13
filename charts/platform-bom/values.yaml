@@ -24,6 +24,19 @@ githubTokenSecret:
   name: ""
   key: token
 
+# Existing Secret with a kubeconfig for other clusters, mounted read-only at
+# /kubeconfig. Environments use it with kubeconfig: /kubeconfig/<key> and
+# kubeContext. Token updates are picked up at the next discovery.
+kubeconfigSecret:
+  name: ""
+
+# Extend the pod without forking the chart, for example an init container that
+# copies a kubeconfig credential plugin into an emptyDir mounted in the pod.
+# Names platform, releases, components, cache and kubeconfig are used by the chart.
+extraInitContainers: []
+extraVolumes: []
+extraVolumeMounts: []
+
 # false: mount ConfigMaps you apply yourself (kubectl apply -k, any CD tool)
 # instead of rendering them from platform, releases and components below.
 # Changes to them are picked up without a restart.

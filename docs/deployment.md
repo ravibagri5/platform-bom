@@ -206,7 +206,8 @@ read-only root filesystem and no capabilities, and the namespace enforces the
 ### Discovering other clusters from inside one
 
 A single in-cluster `pbom` can discover other clusters through a kubeconfig.
-Create a Secret holding a kubeconfig with one context per cluster, uncomment
+With the Helm chart, follow [multi-cluster setup](multi-cluster.md). With this
+kustomize base, create a Secret holding a kubeconfig with one context per cluster, uncomment
 the `kubeconfig` volume in [deploy/deployment.yaml](../deploy/deployment.yaml),
 and reference it from each environment:
 
@@ -223,6 +224,7 @@ kubectl -n platform-bom create secret generic pbom-kubeconfig --from-file=config
 The image contains no credential plugins such as `kubelogin` or
 `aws eks get-token`, so the kubeconfig must carry a token, typically for a
 service account bound to the same read-only ClusterRole in each target cluster.
+[hack/remote-kubeconfig.sh](../hack/remote-kubeconfig.sh) creates both.
 Where that is not possible, run `pbom discover -o yaml` in a job that can reach
 the cluster and use the result as an `inventoryFile`.
 

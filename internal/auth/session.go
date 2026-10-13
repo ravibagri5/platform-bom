@@ -77,7 +77,8 @@ func (c cookies) set(w http.ResponseWriter, name, path string, v any, ttl time.D
 	if err != nil {
 		return err
 	}
-	http.SetCookie(w, &http.Cookie{
+	// Secure is off only for http:// redirect URLs, such as local testing.
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // HttpOnly and SameSite are set; Secure follows the redirect URL scheme
 		Name: name, Value: value, Path: path, MaxAge: int(ttl.Seconds()),
 		HttpOnly: true, Secure: c.secure, SameSite: http.SameSiteLaxMode,
 	})
@@ -85,7 +86,7 @@ func (c cookies) set(w http.ResponseWriter, name, path string, v any, ttl time.D
 }
 
 func (c cookies) clear(w http.ResponseWriter, name, path string) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // clears the cookie; same attributes as set
 		Name: name, Value: "", Path: path, MaxAge: -1,
 		HttpOnly: true, Secure: c.secure, SameSite: http.SameSiteLaxMode,
 	})

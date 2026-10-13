@@ -15,7 +15,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const eksTokenPrefix = "k8s-aws-v1."
+const eksTokenPrefix = "k8s-aws-v1." //nolint:gosec // token format prefix, not a credential
 
 // awsAvailable reports whether the pod has IAM Roles for Service Accounts or
 // EKS Pod Identity.

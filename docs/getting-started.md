@@ -148,7 +148,7 @@ pull requests, and `git log` becomes the platform's changelog.
 | Logs | `kubectl -n platform-bom logs deploy/pbom-platform-bom` |
 | Upgrade PBOM | Re-run the `helm upgrade` from step 2 or 5 with a newer chart |
 | Upstream checks without rate limits | `kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<token>`, then `helm upgrade ... --reset-then-reuse-values --set githubTokenSecret.name=pbom-github` |
-| Share the UI | Enable the [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls) behind an authenticating proxy; PBOM has no login of its own |
+| Share the UI | Turn on [sign-in](authentication.md) with your identity provider, then enable the [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls) |
 | More clusters | [Multi-cluster setup](multi-cluster.md): one PBOM for dev, QA and prod |
 | Uninstall | `kubectl delete -k pbom-config`, then `helm uninstall pbom -n platform-bom` |
 

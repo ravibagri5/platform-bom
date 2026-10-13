@@ -500,8 +500,8 @@ certificate instead.
   PBOM uses the new token at its next discovery, without a restart. When
   rotating, put every context back into `pbom-kubeconfig` first, because the
   file replaces the whole Secret.
-- **The UI has no login.** Keep it private or put it behind an authenticating
-  proxy, as described in the [chart README](../charts/platform-bom/README.md#optional-ingress-and-tls).
+- **Turn on sign-in.** By default the UI has no sign-in; see
+  [authentication](authentication.md).
 
 ## Troubleshooting
 

@@ -34,6 +34,14 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ### Added
 
+- Sign-in for the web UI and API: `pbom serve --auth oidc` with any OpenID
+  Connect provider (Microsoft Entra ID, Okta, Keycloak, Dex, Google), using
+  the authorization code flow with PKCE, verified ID tokens, optional
+  `--oidc-allowed-groups` and encrypted session cookies, without a database;
+  or `--auth header` behind an authenticating proxy, optionally limited to
+  `--auth-trusted-proxies`. The UI shows the signed-in user and **Sign out**.
+  Chart values under `auth` configure both. See
+  [authentication](docs/authentication.md).
 - Helm chart value `kubeconfigSecret.name` mounts a kubeconfig Secret at
   `/kubeconfig`, so one PBOM installed with Helm can discover dev, QA and prod
   clusters. The chart schema accepts `kubeconfig`, `kubeContext` and

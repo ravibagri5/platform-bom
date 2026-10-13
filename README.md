@@ -115,8 +115,8 @@ Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
 specific release.
 
 Open <http://127.0.0.1:8080>. PBOM discovers this cluster using its read-only
-service account. The UI has no built-in authentication; keep the Service
-private or use an authenticating proxy.
+service account. By default the UI has no sign-in; before sharing it, turn on
+[OpenID Connect sign-in or an authenticating proxy](docs/authentication.md).
 
 Next, [describe your platform in YAML](docs/getting-started.md#4-describe-your-platform-in-yaml):
 a `Platform` with offerings and environments, `Component` files for tools PBOM
@@ -171,6 +171,7 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | [Getting started](docs/getting-started.md) | Install with Helm, describe the platform in YAML, apply it, keep it in Git, troubleshooting |
 | [Deployment](docs/deployment.md) | Binary and container alternatives, RBAC and advanced cluster deployment |
 | [Multi-cluster](docs/multi-cluster.md) | One PBOM for dev, QA and prod: management cluster, one of your clusters, or exported inventories |
+| [Authentication](docs/authentication.md) | OpenID Connect sign-in (Entra ID, Okta, Keycloak, Dex, Google) or an authenticating proxy |
 | [Kind simulation](examples/kind/simulation/README.md) | Recreate the screenshot environment and release drift |
 | [Roadmap](ROADMAP.md) | Upcoming work and milestones |
 | [Community](docs/community.md) | Planning, labels and participation |

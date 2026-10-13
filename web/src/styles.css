@@ -68,6 +68,14 @@ footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1.
 .topbar nav a { color: var(--ink-2); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.92rem; }
 .topbar nav a:hover { background: #f1f2f8; text-decoration: none; }
 .topbar nav a.active { background: #eef0ff; color: var(--accent); font-weight: 600; }
+.user-menu { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; color: var(--ink-2); }
+.user-menu form { margin: 0; }
+.user-name { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sign-out {
+  border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+  padding: 0.3rem 0.7rem; border-radius: 8px; font: inherit; cursor: pointer;
+}
+.sign-out:hover { background: #f1f2f8; }
 
 .page-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin: 0.5rem 0 1.5rem; }
 .page-header .subtitle { margin: 0; color: var(--muted); max-width: 720px; }

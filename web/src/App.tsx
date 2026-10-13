@@ -38,6 +38,8 @@ export default function App() {
   const page = route[0] ?? ''
   const section = aliases[page] ?? page
   const platform = useAsync(() => api.platform())
+  const me = useAsync(() => api.me())
+  const user = me.data?.user
   const name = platform.data?.platform.metadata.displayName ?? platform.data?.platform.metadata.name
 
   useEffect(() => {
@@ -63,6 +65,20 @@ export default function App() {
             </a>
           ))}
         </nav>
+        {user && (
+          <div className="user-menu">
+            <span className="user-name" title={user.email ?? user.name}>
+              {user.name}
+            </span>
+            {me.data?.logout && (
+              <form method="post" action="/auth/logout">
+                <button type="submit" className="sign-out">
+                  Sign out
+                </button>
+              </form>
+            )}
+          </div>
+        )}
       </header>
       <main>
         {page === '' && <PlatformPage platform={platform} />}

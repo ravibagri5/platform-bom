@@ -70,15 +70,28 @@ Helm discovery then fails with a warning and everything else still works.
 A path through which Secret data, or Helm values, reaches `pbom`'s output, its
 logs, the API or an exported inventory is a vulnerability. Please report it.
 
-### The web UI and API are unauthenticated
+### Access to the web UI and API
 
-`pbom serve` has no authentication or authorisation of its own. Anyone who can
+By default (`--auth none`), `pbom serve` has no authentication. Anyone who can
 reach it can read your platform definition, inventories and release notes. It
-exposes no write operations and no cluster credentials.
+exposes no write operations and no cluster credentials. It binds to
+`127.0.0.1` by default.
 
-It binds to `127.0.0.1` by default. If you bind it to another address, put it
-behind a proxy that authenticates users. Reports that the UI is unauthenticated
-will be closed with a pointer to this section.
+Before exposing it, turn on [authentication](docs/authentication.md):
+
+- `--auth oidc` signs users in with an OpenID Connect provider using the
+  authorization code flow with PKCE, state and nonce checks, and verified ID
+  tokens. Sessions are AES-GCM encrypted, `HttpOnly`, `SameSite=Lax` cookies,
+  `Secure` when the redirect URL is HTTPS.
+- `--auth header` trusts a user header from an authenticating proxy. Restrict
+  it with `--auth-trusted-proxies` or a network policy, because any client
+  that reaches `pbom` directly can set the header.
+
+Every signed-in user can see everything; per-environment authorisation is
+planned in [#40](https://github.com/ravibagri5/platform-bom/issues/40).
+Reports that the UI is readable with `--auth none` will be closed with a
+pointer to this section. A way to bypass sign-in in `oidc` or `header` mode is
+a vulnerability.
 
 ### Untrusted content
 

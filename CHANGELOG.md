@@ -11,6 +11,25 @@ change it; every such change is listed under **Changed** with a migration note.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-13
+
+### Added
+
+- Discover AKS, EKS and GKE clusters with the pod's cloud workload identity
+  (Azure Workload Identity, IAM Roles for Service Accounts or EKS Pod Identity,
+  Workload Identity Federation for GKE). Kubeconfig contexts that use
+  `kubelogin`, `aws eks get-token`, `aws-iam-authenticator` or
+  `gke-gcloud-auth-plugin` get their token natively, without the plugin or a
+  stored secret. Chart values `serviceAccount.annotations` and `podLabels`
+  configure the identity. See
+  [managed clusters](docs/multi-cluster.md#managed-clusters-aks-eks-and-gke).
+
+### Changed
+
+- The read-only ClusterRole for target clusters moved to
+  `deploy/remote-reader-role.yaml`, so cloud identities can be bound to it
+  without the token account. `hack/remote-kubeconfig.sh` applies both files.
+
 ## [0.6.0] - 2026-10-13
 
 ### Added

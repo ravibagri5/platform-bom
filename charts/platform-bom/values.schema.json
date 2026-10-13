@@ -58,9 +58,11 @@
       "additionalProperties": false,
       "properties": {
         "create": { "type": "boolean" },
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "annotations": { "type": "object", "additionalProperties": { "type": "string" } }
       }
     },
+    "podLabels": { "type": "object", "additionalProperties": { "type": "string" } },
     "service": {
       "type": "object",
       "additionalProperties": false,

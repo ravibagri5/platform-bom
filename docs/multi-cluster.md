@@ -253,6 +253,10 @@ You need the files from [getting started](getting-started.md), steps 1 to 5,
 installed in the cluster that hosts PBOM, and chart 0.6.0 or newer. The
 `pbom-config` directory must already be applied.
 
+These steps work with any Kubernetes cluster and store a token for each one.
+On AKS, EKS and GKE you can use the pod's cloud identity instead; see
+[managed clusters](#managed-clusters-aks-eks-and-gke).
+
 **1. Create a read-only account in each cluster PBOM should reach.** Run the
 script once per cluster, with your admin context for that cluster and the
 name PBOM should use:
@@ -265,6 +269,7 @@ sh remote-kubeconfig.sh my-prod-admin prod     # skip the host cluster in setup 
 ```
 
 In each cluster, the script applies
+[deploy/remote-reader-role.yaml](../deploy/remote-reader-role.yaml) and
 [deploy/remote-reader.yaml](../deploy/remote-reader.yaml): a `pbom-reader`
 service account that can only `get` and `list` nodes, workloads, Crossplane
 packages and Secrets, the last for Helm metadata. It then adds a context with
@@ -307,7 +312,9 @@ rotate on its own.
 Apply the read-only account first if the script has not done so:
 
 ```sh
-kubectl --context my-qa-admin apply -f https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader.yaml
+kubectl --context my-qa-admin apply \
+  -f https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader-role.yaml \
+  -f https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader.yaml
 for key in token ca.crt; do
   kubectl --context my-qa-admin -n platform-bom get secret pbom-reader-token \
     -o go-template="{{index .data \"$key\" | base64decode}}" > "$key"
@@ -344,13 +351,141 @@ PBOM re-reads the token when the Secret changes, so rotating it needs no
 restart. Without `caFile`, the server certificate must be signed by a public
 authority.
 
+## Managed clusters: AKS, EKS and GKE
+
+On AKS, EKS and GKE, PBOM can sign in with the cloud identity of its pod
+instead of a stored token. Nothing secret is stored, the image needs no login
+plugin, and tokens expire within an hour.
+
+```mermaid
+flowchart LR
+    subgraph host["Cluster running PBOM"]
+        direction TB
+        sa[("Projected<br/>service-account token")]:::secret
+        pbom["<b>PBOM</b><br/>service account linked<br/>to a cloud identity"]:::pbom
+        sa -.-> pbom
+    end
+
+    idp["<b>Cloud identity</b><br/>Microsoft Entra ID<br/>AWS STS<br/>Google IAM"]:::idp
+
+    subgraph target["Target cluster in the same cloud"]
+        direction TB
+        api["Kubernetes API"]:::api
+        rbac["ClusterRoleBinding<br/>pbom-remote-reader"]:::config
+        api --- rbac
+    end
+
+    pbom -- "1. exchange pod token" --> idp
+    idp -- "2. short-lived cloud token" --> pbom
+    pbom -- "3. get/list with that token" --> api
+
+    classDef pbom fill:#2563eb,stroke:#1e40af,color:#ffffff
+    classDef secret fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef idp fill:#f5f3ff,stroke:#7c3aed,color:#2e1065
+    classDef config fill:#ecfdf5,stroke:#059669,color:#064e3b
+    classDef api fill:#f8fafc,stroke:#64748b,color:#0f172a
+    style host fill:#eff6ff,stroke:#3b82f6
+    style target fill:#f8fafc,stroke:#94a3b8
+```
+
+Use the kubeconfig that the cloud's own tool writes. When a context uses that
+cloud's login plugin and the pod has that cloud's workload identity, PBOM
+fetches the token itself. Otherwise it uses the kubeconfig unchanged, so the
+same file also works on a workstation with the plugin installed.
+
+| | AKS | EKS | GKE |
+| --- | --- | --- | --- |
+| Login plugin PBOM replaces | `kubelogin get-token` | `aws eks get-token`, `aws-iam-authenticator token` | `gke-gcloud-auth-plugin` |
+| Pod identity | Azure Workload Identity | IAM Roles for Service Accounts or EKS Pod Identity | Workload Identity Federation for GKE |
+| Name in the target cluster's RBAC | Managed identity's object ID | Group from an EKS access entry | Google service account email |
+
+PBOM must run in the same cloud as the clusters it signs in to this way. For
+clusters in another cloud, use the [token script](#set-up-live-discovery-a-and-b).
+The examples use a Helm release named `pbom` in namespace `platform-bom`, so
+PBOM's service account is `pbom-platform-bom`.
+
+**1. Give PBOM's pod a cloud identity** with Helm values, passed with `-f` on
+`helm upgrade`:
+
+- **AKS:** a user-assigned managed identity with a federated credential for
+  the service account. The host cluster needs the OIDC issuer and workload
+  identity enabled.
+
+  ```sh
+  az identity federated-credential create --name pbom --identity-name pbom-reader --resource-group my-rg \
+    --issuer "$(az aks show -g my-rg -n host-cluster --query oidcIssuerProfile.issuerUrl -o tsv)" \
+    --subject system:serviceaccount:platform-bom:pbom-platform-bom
+  ```
+
+  ```yaml
+  serviceAccount:
+    annotations:
+      azure.workload.identity/client-id: <managed identity client ID>
+  podLabels:
+    azure.workload.identity/use: "true"
+  ```
+
+- **EKS:** an IAM role trusted by the host cluster. With IAM Roles for Service
+  Accounts, annotate the service account; with EKS Pod Identity, create an
+  association instead and set no values.
+
+  ```yaml
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::111122223333:role/pbom-reader
+  ```
+
+- **GKE:** a Google service account that PBOM's service account may use. The
+  host cluster needs Workload Identity Federation for GKE.
+
+  ```sh
+  gcloud iam service-accounts add-iam-policy-binding pbom-reader@my-project.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:my-project.svc.id.goog[platform-bom/pbom-platform-bom]"
+  ```
+
+  ```yaml
+  serviceAccount:
+    annotations:
+      iam.gke.io/gcp-service-account: pbom-reader@my-project.iam.gserviceaccount.com
+  ```
+
+**2. Let that identity read each target cluster.** Apply the read-only
+ClusterRole, then bind it to the identity:
+
+```sh
+kubectl --context my-prod-admin apply -f https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader-role.yaml
+```
+
+| Cloud | Binding |
+| --- | --- |
+| AKS | `kubectl create clusterrolebinding pbom-reader --clusterrole=pbom-remote-reader --user=<managed identity object ID>` |
+| EKS | `aws eks create-access-entry --cluster-name prod --principal-arn <role ARN> --kubernetes-groups pbom-readers`, then `kubectl create clusterrolebinding pbom-reader --clusterrole=pbom-remote-reader --group=pbom-readers` |
+| GKE | `gcloud projects add-iam-policy-binding my-project --member serviceAccount:pbom-reader@my-project.iam.gserviceaccount.com --role roles/container.clusterViewer`, then `kubectl create clusterrolebinding pbom-reader --clusterrole=pbom-remote-reader --user=pbom-reader@my-project.iam.gserviceaccount.com` |
+
+**3. Write the kubeconfig** with the cloud's tool, one context per cluster:
+
+| Cloud | Command |
+| --- | --- |
+| AKS | `az aks get-credentials -g my-rg -n prod-aks --file pbom-kubeconfig --context prod` |
+| EKS | `aws eks update-kubeconfig --name prod-eks --region eu-west-1 --kubeconfig pbom-kubeconfig --alias prod` |
+| GKE | `KUBECONFIG=pbom-kubeconfig gcloud container clusters get-credentials prod-gke --location europe-west1`, then `kubectl --kubeconfig pbom-kubeconfig config rename-context gke_my-project_europe-west1_prod-gke prod` |
+
+The file holds only addresses, certificates and the plugin command, no
+credentials. AKS clusters must use Microsoft Entra ID authentication; for
+clusters with only local accounts, `az aks get-credentials` writes a client
+certificate instead.
+
+**4. Store, mount and use it** as in steps 2 to 4 of
+[live discovery](#set-up-live-discovery-a-and-b).
+
 ## Security
 
 - **Read-only.** Every account PBOM uses can only `get` and `list`. PBOM never
   changes a cluster.
 - **Helm metadata is in Secrets.** Helm stores release data in Secrets, and
   Kubernetes cannot limit access to only those Secrets. Remove the `secrets`
-  rule from `remote-reader.yaml` to skip Helm discovery in a cluster. PBOM
+  rule from `remote-reader-role.yaml` to skip Helm discovery in a cluster. PBOM
   still reads images, Crossplane packages and the cluster version there.
 - **Revoke or rotate** a cluster's access by deleting its token. Then run the
   script again and update the Secret:
@@ -374,6 +509,8 @@ authority.
 | --- | --- |
 | `dial tcp ... i/o timeout` or `connection refused` | The PBOM pod cannot reach that API server. Allow the traffic, or choose [C](#c-exported-inventories) for that cluster. |
 | Server is `127.0.0.1` or a private name | The address in your admin context only works on your machine. Re-run the script with the address the pod can reach, for example `SERVER=https://10.0.0.12:6443 sh remote-kubeconfig.sh my-dev-admin dev`. |
-| `exec: executable ... not found` (`kubelogin`, `aws`, `gke-gcloud-auth-plugin`) | The kubeconfig uses a cloud login plugin, which the image does not include. Use the script's token-based kubeconfig, or add a statically linked plugin with [extra volumes and init containers](../charts/platform-bom/README.md#extra-volumes-and-init-containers). |
+| `exec: executable ... not found` (`kubelogin`, `aws`, `gke-gcloud-auth-plugin`) | The pod has no workload identity for that cloud, so PBOM used the login plugin, which the image does not include. Check the values in [managed clusters](#managed-clusters-aks-eks-and-gke), step 1. In other clouds, use the script's token-based kubeconfig or add a statically linked plugin with [extra volumes and init containers](../charts/platform-bom/README.md#extra-volumes-and-init-containers). |
+| `Unauthorized` or `Forbidden` with a cloud identity | The identity has no binding in that cluster. Check step 2 of [managed clusters](#managed-clusters-aks-eks-and-gke). |
+| `no AWS region` | Add `--region` to the `aws eks get-token` arguments in the kubeconfig. |
 | `Unauthorized` | The token was deleted. Rotate it as described above. |
 | `context "x" does not exist` | `kubeContext` in `platform.yaml` must match a context name you gave the script. |

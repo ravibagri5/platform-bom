@@ -100,6 +100,11 @@ type Environment struct {
 	Kubeconfig  string `json:"kubeconfig,omitempty"`
 	// InCluster discovers the cluster pbom itself runs in, using its service account.
 	InCluster bool `json:"inCluster,omitempty"`
+	// Server, TokenFile and CAFile discover a cluster with a service-account
+	// token, such as a mounted token Secret, without a kubeconfig.
+	Server    string `json:"server,omitempty"`
+	TokenFile string `json:"tokenFile,omitempty"`
+	CAFile    string `json:"caFile,omitempty"`
 	// InventoryFile loads a previously exported Inventory instead of a live cluster.
 	InventoryFile string `json:"inventoryFile,omitempty"`
 	// TargetRelease is the PlatformRelease this environment should be running.

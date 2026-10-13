@@ -1,3 +1,5 @@
+{{- /* Releases upgraded with --reuse-values from an older chart have no kubeconfigSecret. */}}
+{{- $kubeconfigSecret := (default dict .Values.kubeconfigSecret).name }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,6 +32,10 @@ spec:
         fsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
+      {{- with .Values.extraInitContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: pbom
           image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
@@ -83,6 +89,14 @@ spec:
               readOnly: true
             - name: cache
               mountPath: /cache
+            {{- if $kubeconfigSecret }}
+            - name: kubeconfig
+              mountPath: /kubeconfig
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
       volumes:
         - name: platform
           configMap:
@@ -98,3 +112,12 @@ spec:
         - name: cache
           emptyDir:
             sizeLimit: 64Mi
+        {{- if $kubeconfigSecret }}
+        - name: kubeconfig
+          secret:
+            secretName: {{ $kubeconfigSecret }}
+            defaultMode: 0440
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}

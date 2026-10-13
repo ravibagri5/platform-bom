@@ -4,6 +4,7 @@ package discovery
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -44,6 +45,19 @@ func RESTConfig(kubeconfig, context string) (*rest.Config, error) {
 		return nil, err
 	}
 	return tune(cfg), nil
+}
+
+// TokenConfig connects to server with the bearer token in tokenFile, which is
+// re-read as it rotates. Without caFile, the system roots verify the server.
+func TokenConfig(server, tokenFile, caFile string) (*rest.Config, error) {
+	if _, err := os.Stat(tokenFile); err != nil {
+		return nil, err
+	}
+	return tune(&rest.Config{
+		Host:            server,
+		BearerTokenFile: tokenFile,
+		TLSClientConfig: rest.TLSClientConfig{CAFile: caFile},
+	}), nil
 }
 
 // InClusterConfig uses the service account of the pod pbom runs in.

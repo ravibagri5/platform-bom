@@ -297,6 +297,53 @@ kubectl apply -k pbom-config
 The **Environments** page lists every cluster within one to two minutes. The
 kubeconfig is never committed to Git: it lives only in the Secret.
 
+### Alternative: a token Secret per cluster
+
+Instead of a kubeconfig, PBOM can read a cluster's service-account token and
+CA certificate directly. Each cluster then has its own Secret, which you can
+rotate on its own.
+
+**1. Copy the token** from the target cluster into a Secret next to PBOM.
+Apply the read-only account first if the script has not done so:
+
+```sh
+kubectl --context my-qa-admin apply -f https://raw.githubusercontent.com/ravibagri5/platform-bom/main/deploy/remote-reader.yaml
+for key in token ca.crt; do
+  kubectl --context my-qa-admin -n platform-bom get secret pbom-reader-token \
+    -o go-template="{{index .data \"$key\" | base64decode}}" > "$key"
+done
+kubectl -n platform-bom create secret generic pbom-token-qa --from-file=token --from-file=ca.crt
+rm token ca.crt
+```
+
+**2. Mount it** with Helm values:
+
+```yaml
+extraVolumes:
+  - name: token-qa
+    secret:
+      secretName: pbom-token-qa
+extraVolumeMounts:
+  - name: token-qa
+    mountPath: /tokens/qa
+    readOnly: true
+```
+
+**3. Point the environment at it** in `platform.yaml`, with the API server
+address the pod can reach:
+
+```yaml
+    - name: qa
+      server: https://qa.example.com:6443
+      tokenFile: /tokens/qa/token
+      caFile: /tokens/qa/ca.crt
+      targetRelease: "1.2.0"
+```
+
+PBOM re-reads the token when the Secret changes, so rotating it needs no
+restart. Without `caFile`, the server certificate must be signed by a public
+authority.
+
 ## Security
 
 - **Read-only.** Every account PBOM uses can only `get` and `list`. PBOM never

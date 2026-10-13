@@ -205,6 +205,9 @@
                   "kubeconfig": { "type": "string" },
                   "kubeContext": { "type": "string" },
                   "inventoryFile": { "type": "string" },
+                  "server": { "type": "string", "pattern": "^https://" },
+                  "tokenFile": { "type": "string" },
+                  "caFile": { "type": "string" },
                   "targetRelease": { "type": "string" }
                 }
               }

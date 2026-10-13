@@ -22,6 +22,9 @@ change it; every such change is listed under **Changed** with a migration note.
   to add a kubeconfig credential plugin.
 - `deploy/remote-reader.yaml` and `hack/remote-kubeconfig.sh` create a
   read-only account in a target cluster and a token-based kubeconfig for it.
+- Environments can use a service-account token without a kubeconfig:
+  `server`, `tokenFile` and optional `caFile`, for example from a mounted
+  token Secret. The token is re-read when it rotates.
 - [Multi-cluster guide](docs/multi-cluster.md) with architecture diagrams for a
   management cluster, one of your clusters, and exported inventories.
 

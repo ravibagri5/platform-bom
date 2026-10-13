@@ -86,6 +86,7 @@ alignment, upstream currency, and the capabilities teams receive.
 | **Releases** | Review the declared versioned platform snapshots and compare what changed between them. | [![Platform release snapshots](docs/screenshots/releases.png)](docs/screenshots/releases.png) |
 | **Environments** | Compare observed component versions with the Git-declared target release; pinpoint drift and untracked components. | [![Environment comparison and drift](docs/screenshots/environments.png)](docs/screenshots/environments.png) |
 | **Updates** | Prioritize newer upstream releases with per-environment versions and reasons for attention. | [![Explainable upstream updates](docs/screenshots/updates.png)](docs/screenshots/updates.png) |
+| **Dark theme** | Follows the operating system by default; switch between System, Light and Dark in the top bar. | [![Environments in the dark theme](docs/screenshots/environments-dark.png)](docs/screenshots/environments-dark.png) |
 
 The simulation uses zero-replica discovery fixtures; it does not install or
 operate the real products. Upstream releases and percentages can change over time.

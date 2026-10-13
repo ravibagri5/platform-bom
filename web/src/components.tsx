@@ -25,6 +25,45 @@ export function useAsync<T>(fn: (refresh: boolean) => Promise<T>, deps: unknown[
   return { data, error, loading, reload: () => load(true) }
 }
 
+type ThemePref = 'system' | 'light' | 'dark'
+const themeKey = 'pbom-theme'
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)')
+
+function applyTheme(pref: ThemePref) {
+  const dark = pref === 'dark' || (pref === 'system' && systemDark.matches)
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+}
+
+function savedTheme(): ThemePref {
+  const v = localStorage.getItem(themeKey)
+  return v === 'light' || v === 'dark' ? v : 'system'
+}
+
+// public/theme.js applies the same preference before React loads.
+export function ThemeSelect() {
+  const [pref, setPref] = useState<ThemePref>(savedTheme)
+  useEffect(() => {
+    applyTheme(pref)
+    localStorage.setItem(themeKey, pref)
+    if (pref !== 'system') return
+    const follow = () => applyTheme('system')
+    systemDark.addEventListener('change', follow)
+    return () => systemDark.removeEventListener('change', follow)
+  }, [pref])
+  return (
+    <select
+      className="theme-select"
+      aria-label="Colour theme"
+      value={pref}
+      onChange={(e) => setPref(e.target.value as ThemePref)}
+    >
+      <option value="system">System theme</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+  )
+}
+
 export const freshnessInfo: Record<Freshness, { label: string; tone: string }> = {
   latest: { label: 'Up to date', tone: 'good' },
   'patch-available': { label: 'Patch available', tone: 'info' },

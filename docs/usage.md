@@ -312,6 +312,10 @@ jobs:
 The UI never changes a cluster. **Rediscover** re-reads the clusters on demand;
 otherwise the server rediscovers on `--refresh-interval` (default 10 minutes).
 
+The UI follows the operating system's light or dark setting. The selector in
+the top bar overrides it with **Light** or **Dark**; the choice is remembered
+in the browser.
+
 ## HTTP API
 
 The API is read-only JSON, and the web UI is built entirely on it. It is not

@@ -1,0 +1,8 @@
+title: Platform BOM | Field Notes
+description: Practical notes on building, operating, and understanding internal platforms.
+url: https://ravibagri5.github.io
+baseurl: /platform-bom
+markdown: kramdown
+permalink: /:title/
+exclude:
+  - README.md

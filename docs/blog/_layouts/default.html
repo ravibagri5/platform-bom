@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ page.description | default: site.description | escape }}">
+    <link rel="canonical" href="{{ site.url }}{{ site.baseurl }}{{ page.url }}">
+    <link rel="stylesheet" href="{{ '/assets/site.css' | relative_url }}">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="{{ '/' | relative_url }}" aria-label="Platform BOM Field Notes home">
+        <span class="brand-mark" aria-hidden="true">PB</span>
+        <span class="brand-name">Platform BOM<small>FIELD NOTES</small></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="{{ '/' | relative_url }}">Articles</a>
+        <a href="https://github.com/ravibagri5/platform-bom">GitHub project</a>
+      </nav>
+    </header>
+    <main id="main">
+      {{ content }}
+    </main>
+    <footer class="site-footer">
+      <span>Platform BOM</span>
+      <span>Open source notes for platform engineers</span>
+      <a href="https://github.com/ravibagri5/platform-bom">View the project</a>
+    </footer>
+  </body>
+</html>

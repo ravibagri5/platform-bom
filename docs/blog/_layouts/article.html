@@ -1,0 +1,29 @@
+---
+layout: default
+---
+<article class="article-shell">
+  <header class="article-header">
+    <p class="eyebrow">Platform engineering <span>/</span> Open source</p>
+    <h1>{{ page.title }}</h1>
+    <p class="article-deck">{{ page.description }}</p>
+    <div class="article-meta">
+      <span>Ravi Kumar</span>
+      <span aria-hidden="true">/</span>
+      <time datetime="{{ page.date | date: '%Y-%m-%d' }}">{{ page.date | date: "%b %-d, %Y" }}</time>
+      <span aria-hidden="true">/</span>
+      <span>7 min read</span>
+    </div>
+  </header>
+  <div class="article-content">
+    {{ content }}
+  </div>
+  <aside class="article-cta">
+    <p class="eyebrow">Continue the conversation</p>
+    <h2>What does your platform make visible?</h2>
+    <p>Explore Platform BOM or share what your team tracks today.</p>
+    <div class="cta-links">
+      <a class="button-link" href="https://github.com/ravibagri5/platform-bom">Explore the project</a>
+      <a href="https://github.com/ravibagri5/platform-bom/discussions">Join the discussion</a>
+    </div>
+  </aside>
+</article>

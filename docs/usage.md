@@ -56,7 +56,7 @@ upstream checks and the HTTP API. For the concepts behind them, start with the
 | --- | --- |
 | `pbom init DIR [--context C] [--env E] [--release V] [--components]` | Create a platform directory from a live cluster: `platform.yaml`, a first release, optional Component drafts for unclassified Helm releases, and a `kustomization.yaml` for the Helm chart. |
 | `pbom kustomize DIR` | Regenerate `DIR/kustomization.yaml` after adding or removing files. |
-| `pbom discover [--env E \| --context C] [-o yaml\|json]` | Discover components. `-o yaml` output can be saved and used as an `inventoryFile`. |
+| `pbom discover [--env E \| --context C] [-o yaml\|json]` | Discover components. `-o yaml` output can be saved and used as an `inventoryFile`, or applied as an `Inventory` resource. |
 | `pbom matrix [-o json]` | Component × environment versions, with drift and upstream markers. |
 | `pbom drift [--exit-code]` | Components that differ from each environment's target release. Exits 2 on drift with `--exit-code`. |
 | `pbom updates [--why] [-o json]` | Upgrade recommendations from upstream releases, with the reasoning. |
@@ -65,12 +65,13 @@ upstream checks and the HTTP API. For the concepts behind them, start with the
 | `pbom release diff FROM TO [--all]` | Compare two releases. |
 | `pbom catalog` | Known component definitions. |
 | `pbom serve [--addr] [--refresh-interval] [--config-check-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default and reloads configuration files when they change (checked every 15s). |
+| `pbom serve --config-source=crd [--crd-namespace N] [--crd-context C] [--platform-name P]` | Serve the `pbom.dev` custom resources in a namespace instead of files, applying changes as they happen. The Helm chart runs this; with `--crd-context` it also runs from a workstation. |
 | `pbom version` | Print the version. |
 
 Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`),
-`--releases-dir` and `--components-dir` (override the platform file; the Helm
-chart uses them to point at its mounts) and
-`--no-upstream`.
+`--releases-dir` and `--components-dir` (override the platform file) and
+`--no-upstream`. `pbom init` and `pbom serve` also take `--landscape-url`; see
+[CNCF landscape](#cncf-landscape).
 
 Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit when fetching
 upstream releases, or pass `--no-upstream` to work offline.
@@ -92,11 +93,17 @@ Declared documents (`Platform`, `PlatformRelease`, `Component`) live in Git and
 are reviewed like code. An `Inventory` is observed output: editing it does not
 classify anything, so to name an unclassified tool write a `Component`.
 
-With the Helm chart, these documents are files in ConfigMaps applied with
-`kubectl apply -k` or any CD tool, or the chart's `platform`, `components` and
-`releases` values; see
+With the Helm chart, `Platform`, `PlatformRelease`, `Component` and exported
+`Inventory` documents are Kubernetes custom resources (CRDs installed by the
+chart), applied with `kubectl apply -k` or any CD tool, or rendered from the
+chart's `platform`, `components` and `releases` values; see
 [getting started](getting-started.md#4-describe-your-platform-in-yaml).
-`pbom serve` reloads them when they change.
+`pbom serve --config-source=crd` watches them and applies changes without a
+restart. In a `Platform` resource, use `readme` instead of `readmeFile` and
+`inventory` (the name of an `Inventory` resource) instead of `inventoryFile`,
+and set the display name with the `pbom.dev/display-name` annotation instead
+of `metadata.displayName`. Without the chart, the CLI and `pbom serve` read
+the same documents from files.
 
 ### Platform
 
@@ -147,7 +154,7 @@ Each environment uses one source:
 | The cluster `pbom` runs in, with its own service account | `inCluster: true` |
 | A kubeconfig context | `kubeContext`, optionally `kubeconfig` |
 | A service-account token, such as a mounted token Secret | `server` (`https://`), `tokenFile`, optionally `caFile` |
-| An exported inventory | `inventoryFile` |
+| An exported inventory | `inventoryFile` (files), or `inventory` naming an `Inventory` resource (Helm chart) |
 
 See [multi-cluster setup](multi-cluster.md) for running one `pbom` for
 several clusters.
@@ -217,10 +224,13 @@ spec:
 `pbom discover -o yaml` writes an `Inventory`: what one environment was found
 to be running, with the evidence for each component. Point an environment's
 `inventoryFile` at a saved inventory to use it instead of a live cluster, for
-example for clusters the machine running `pbom` cannot reach:
+example for clusters the machine running `pbom` cannot reach. With the Helm
+chart, `kubectl apply` the export and set the environment's `inventory` to its
+name, which is the `--env` value:
 
 ```shell
 pbom discover --env prod -o yaml > inventories/prod.yaml
+kubectl apply -n platform-bom -f inventories/prod.yaml   # Helm chart only
 ```
 
 ## How discovery works
@@ -250,10 +260,37 @@ definition are still reported and placed in the tree:
 | A Crossplane Configuration | A **Platform API** |
 | A Function named `<configuration>_<function>` | Nested under that configuration |
 | Any other Provider or Function | Nested under Crossplane |
-| A Helm release | Under *Other*, unless `hideUnclassified` is set |
+| A Helm release named after a CNCF project | That project's name and category, from the CNCF landscape |
+| Any other Helm release | Under *Other*, unless `hideUnclassified` is set |
 
 Adding a definition for one of these gives it a proper name, category and
 upstream update checks.
+
+### CNCF landscape
+
+Helm releases the catalog does not know are matched by chart name against the
+230 graduated, incubating and sandbox projects of the
+[CNCF landscape](https://landscape.cncf.io), such as `volcano`, `spiderpool` or
+`chaos-mesh`, and placed in the matching category. Your own `Component`
+definitions and the built-in catalog always take precedence.
+
+A snapshot of the landscape is built into `pbom`, so this works without network
+access. `pbom serve` and `pbom init` also try to download the current landscape
+at startup from `--landscape-url` (or `PBOM_LANDSCAPE_URL`; default
+`https://raw.githubusercontent.com/cncf/landscape/master/landscape.yml`). If the
+download fails, or the file no longer has the expected format, they log a
+warning and keep using the snapshot. Point the flag at an internal mirror, or
+set it to `""` to use only the snapshot. Maintainers refresh the snapshot with
+`make landscape`.
+
+### Drafted description and offerings
+
+When a `Platform` has no `description` or no `offerings`, the UI and
+`GET /api/platform` draft them from what discovery found: one offering per
+category of recognised components, and a one-line description. The UI marks
+them as drafted. Setting `spec.description` or `spec.offerings` replaces the
+draft; nothing is ever written back. `pbom init` writes the same drafts into
+`platform.yaml`, with comments that explain each field.
 
 ## Upstream updates
 

@@ -192,6 +192,7 @@ footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1.
 .hero h1 { font-size: 2.6rem; line-height: 1.1; margin: 0.9rem 0 0.5rem; }
 .tagline { font-size: 1.25rem; color: var(--ink-2); margin: 0 0 0.75rem; }
 .lead { color: var(--ink-2); font-size: 1.02rem; }
+.draft-note { font-size: 0.85rem; margin: -0.25rem 0 0.75rem; }
 .release-badge {
   display: inline-flex; align-items: center; gap: 0.4rem;
   padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;

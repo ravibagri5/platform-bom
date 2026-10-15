@@ -50,6 +50,7 @@ export interface PlatformResponse {
   platform: Platform
   readme?: string
   currentRelease?: PlatformRelease
+  drafted?: ('description' | 'offerings')[]
 }
 
 export type Freshness = 'unknown' | 'latest' | 'patch-available' | 'minor-behind' | 'major-behind' | 'unsupported'

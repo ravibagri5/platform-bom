@@ -19,22 +19,23 @@ version or explain the platform they run, from the tools they already use?*
   [platform-bom Roadmap](https://github.com/users/ravibagri5/projects/2) board.
   See [docs/community.md](docs/community.md#planning).
 
-## Next: secure access, then the foundation for integrations
+## Next: authorization, then the foundation for integrations
 
-PBOM is moving from a private tool to something a whole organisation opens, so
-**M12 — Secure access and multi-cluster identity** comes first, targeted for
-end of November 2026:
+PBOM is moving from a private tool to something a whole organisation opens.
+`v1.0.0` made the platform Kubernetes-native: `Platform`, `PlatformRelease`,
+`Component` and `Inventory` are custom resources. Most of **M12 — Secure
+access and multi-cluster identity** shipped in `v0.6.0` to `v0.9.0`; one item
+remains, targeted for end of November 2026:
 
-1. [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in
-   for the web UI and API
-2. [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
+1. [#40](https://github.com/ravibagri5/platform-bom/issues/40) Authorization:
    who can see which environments
-3. [#42](https://github.com/ravibagri5/platform-bom/issues/42) Workload
-   identity for discovering AKS, EKS and GKE clusters
-4. [#43](https://github.com/ravibagri5/platform-bom/issues/43) Cross-cluster
-   credentials per environment: service-account tokens and kubeconfig Secrets
-5. [#41](https://github.com/ravibagri5/platform-bom/issues/41) Dark and light
-   theme
+
+Done: [#39](https://github.com/ravibagri5/platform-bom/issues/39) OIDC sign-in,
+[#42](https://github.com/ravibagri5/platform-bom/issues/42) workload identity
+for AKS, EKS and GKE,
+[#43](https://github.com/ravibagri5/platform-bom/issues/43) cross-cluster
+credentials and [#41](https://github.com/ravibagri5/platform-bom/issues/41)
+dark theme.
 
 Every integration needs a stable contract, so the versioned API follows.
 In priority order:
@@ -121,8 +122,10 @@ catalog, the CLI, the JSON API and the web UI.
 - [#21](https://github.com/ravibagri5/platform-bom/issues/21) Crossplane
   provider or function
 - [#22](https://github.com/ravibagri5/platform-bom/issues/22) Platform and
-  PlatformRelease as custom resources
-- [#23](https://github.com/ravibagri5/platform-bom/issues/23) Helm chart
+  PlatformRelease as custom resources: done in `v1.0.0`, together with
+  `Component` and `Inventory`
+- [#23](https://github.com/ravibagri5/platform-bom/issues/23) Helm chart:
+  done in `v0.3.0`
 
 ### M9 — Developer interfaces
 

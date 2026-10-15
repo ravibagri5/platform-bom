@@ -1,0 +1,36 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: components.pbom.dev
+spec:
+  group: pbom.dev
+  scope: Namespaced
+  names:
+    plural: components
+    singular: component
+    kind: Component
+    shortNames: [pbcomponent]
+    categories: [pbom]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Category
+          type: string
+          jsonPath: .spec.category
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+              enum: [Component]
+            metadata:
+              type: object
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true

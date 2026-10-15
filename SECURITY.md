@@ -45,9 +45,25 @@ is a vulnerability.
 
 ### Discovery is read-only
 
-`pbom` only performs `get` and `list` requests against a cluster. There is no
-create, update, patch or delete call in the codebase. Any way to make `pbom`
-change cluster state is a high severity bug and we want to hear about it.
+`pbom` only performs `get`, `list` and `watch` requests against a cluster.
+There is no create, update, patch or delete call in the codebase. Any way to
+make `pbom` change cluster state is a high severity bug and we want to hear
+about it.
+
+### PBOM resources decide what is read
+
+With the Helm chart, `pbom` follows the `Platform` resource in its namespace:
+its environments say which clusters to discover and with which mounted
+credentials. Grant create and update on `pbom.dev` resources in that namespace
+only to the people or CD tool that manage the platform, as you would for its
+configuration files.
+
+### CNCF landscape download
+
+At startup `pbom serve` and `pbom init` download the CNCF `landscape.yml`
+(`--landscape-url`), capped at 32 MiB. It only supplies names and categories
+for Helm charts the catalog does not know; a failed or malformed download
+falls back to the built-in snapshot. Set the URL to `""` to make no request.
 
 ### `pbom` acts as you
 

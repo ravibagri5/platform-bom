@@ -25,7 +25,7 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
   if (platform.error) return <ErrorBox error={platform.error} />
   if (!platform.data) return <Loading what="platform" />
 
-  const { platform: p, readme, currentRelease } = platform.data
+  const { platform: p, readme, currentRelease, drafted } = platform.data
   const m = matrix.data
   const displayName = (name: string) => m?.rows.find((r) => r.component === name)?.displayName ?? name
 
@@ -42,6 +42,11 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
           <h1>{p.metadata.displayName ?? p.metadata.name}</h1>
           {p.spec.tagline && <p className="tagline">{p.spec.tagline}</p>}
           {p.spec.description && <p className="lead">{p.spec.description}</p>}
+          {drafted?.includes('description') && (
+            <p className="muted draft-note">
+              Drafted from discovery. Set <code>spec.description</code> in the platform to replace it.
+            </p>
+          )}
           <div className="hero-meta">
             {p.spec.owners?.map((o) => (
               <span key={o.name} className="owner">
@@ -67,7 +72,15 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
             <h2>What the platform provides</h2>
             <a href="#/offerings">Explore offerings →</a>
           </div>
-          <p className="section-lead">Capabilities offered to application teams.</p>
+          <p className="section-lead">
+            Capabilities offered to application teams.
+            {drafted?.includes('offerings') && (
+              <span className="muted">
+                {' '}
+                Drafted from discovered components; set <code>spec.offerings</code> in the platform to replace them.
+              </span>
+            )}
+          </p>
           <div className="offering-groups">
             {groupBy(p.spec.offerings, (o) => o.category ?? 'other').map(([cat, items]) => (
               <a key={cat} href="#/offerings" className="card offering-group">

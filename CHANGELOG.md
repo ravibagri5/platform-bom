@@ -5,11 +5,79 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The resource model (`Platform`, `PlatformRelease`, `Component`, `Inventory`)
-and the CLI are the public API. While the API is `v1alpha1`, minor releases may
-change it; every such change is listed under **Changed** with a migration note.
+The resource model (`Platform`, `PlatformRelease`, `Component`, `Inventory`),
+the CLI and the Helm chart values are the public API. Since 1.0.0 they change
+incompatibly only in a major release. The resources are still named
+`pbom.dev/v1alpha1`; moving them to `v1` will come with a conversion path.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-10-15
+
+The first major release. The platform model is unchanged; what is new is how
+it gets into the cluster. `Platform`, `PlatformRelease`, `Component` and
+`Inventory` are now Kubernetes custom resources that PBOM watches, and a fresh
+install describes itself before you write any YAML.
+
+### Upgrading from 0.x
+
+Helm installs CRDs only on a first install, so apply them before upgrading:
+
+```sh
+helm show crds oci://ghcr.io/ravibagri5/charts/platform-bom --version 1.0.0 | kubectl apply --server-side -f -
+```
+
+- **Chart values only** (`platform`, `releases`, `components`): run
+  `helm upgrade ... --version 1.0.0 --reset-then-reuse-values`. The values now
+  render custom resources; `metadata.displayName` keeps working.
+- **Your own ConfigMaps** (`configMaps.create=false`, from `pbom init`):
+  1. Install `pbom` 1.0.0 and run `pbom kustomize pbom-config`.
+  2. In `platform.yaml`, move `metadata.displayName: X` to
+     `metadata.annotations: {pbom.dev/display-name: X}`, replace
+     `inventoryFile: F` with `inventory: <metadata.name in F>` and
+     `readmeFile` with an inline `readme`.
+  3. `helm upgrade ... --version 1.0.0 --reset-then-reuse-values --set
+     crdResources.create=false --set platform.metadata.name=<name>`, then
+     `kubectl apply -k pbom-config`.
+  4. Delete the old `pbom-platform`, `pbom-releases` and `pbom-components`
+     ConfigMaps.
+
+### Added
+
+- `Platform`, `PlatformRelease`, `Component` and `Inventory` are Kubernetes
+  custom resources (`pbom.dev/v1alpha1`, namespaced). The Helm chart installs
+  the CRDs and runs `pbom serve --config-source=crd`, which watches them in its
+  namespace and applies changes within seconds; invalid changes are logged and
+  the previous configuration keeps serving. `kubectl get pbom` lists them.
+- An environment's `inventory` names an `Inventory` resource, such as the
+  output of `pbom discover --env E -o yaml` applied with `kubectl`. Live
+  inventories stay in memory; PBOM never writes resources.
+- `pbom serve` flags `--config-source`, `--crd-namespace`, `--crd-context`
+  and `--platform-name`, and a `/readyz` endpoint. With `--crd-context`, CRD
+  mode also runs outside the cluster, against a kubeconfig context.
+- Helm releases of the 230 CNCF graduated, incubating and sandbox projects
+  that the built-in catalog does not know are named and categorised from the
+  CNCF landscape. A snapshot is built in; `pbom serve` and `pbom init` refresh
+  it from `--landscape-url` (chart value `landscapeURL`) and keep the snapshot
+  when the download or format check fails.
+- A `Platform` without `description` or `offerings` gets them drafted from
+  discovery in the UI and API, marked as drafted, until you set your own.
+- `pbom init` writes a commented `platform.yaml` with a drafted description,
+  offering descriptions per category and commented-out examples for owners,
+  links, guarantees and a planned offering.
+- `make kind-e2e` tests the local image and chart on a throwaway kind cluster.
+
+### Changed
+
+- Helm chart: `configMaps.*` values are replaced by `crdResources.create`,
+  and the chart installs four CRDs and a namespaced Role to watch them.
+  Installing needs permission to create CustomResourceDefinitions.
+- `pbom init` and `pbom kustomize` write a kustomization that applies every
+  YAML file in the directory as a custom resource. `pbom init` puts the display
+  name in the `pbom.dev/display-name` annotation, which file-based
+  configuration also accepts. A `Platform` resource refuses `readmeFile` and
+  `inventoryFile`; use `readme` and `inventory`.
+- The plain kustomize base in `deploy/` still reads files.
 
 ## [0.9.0] - 2026-10-13
 
@@ -232,7 +300,8 @@ The first release. Release candidate: `v0.1.0-rc.1`.
   README, usage and deployment guides in `docs/`, and a roadmap organised as
   milestones M0 to M11.
 
-[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ravibagri5/platform-bom/compare/v0.9.0...v1.0.0
 [0.5.0]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ravibagri5/platform-bom/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ravibagri5/platform-bom/releases/tag/v0.3.0

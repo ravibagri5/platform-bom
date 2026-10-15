@@ -56,7 +56,12 @@ jobs:
             echo "::error::values.schema.json must reject unknown keys"
             exit 1
           fi
-          helm template pbom charts/platform-bom --set configMaps.create=false | grep -q 'name: pbom-platform$'
+          helm template pbom charts/platform-bom --set crdResources.create=false > /tmp/nocr.yaml
+          if grep -q 'kind: Platform$' /tmp/nocr.yaml; then
+            echo "::error::crdResources.create=false must not render a Platform"
+            exit 1
+          fi
+          helm template pbom charts/platform-bom | grep -q -- '--config-source=crd'
           helm template pbom charts/platform-bom --set kubeconfigSecret.name=pbom-kubeconfig | grep -q 'secretName: pbom-kubeconfig$'
           if helm template pbom charts/platform-bom | grep -q 'mountPath: /kubeconfig'; then
             echo "::error::kubeconfig must only be mounted when kubeconfigSecret.name is set"

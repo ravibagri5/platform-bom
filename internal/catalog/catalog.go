@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/ravibagri5/platform-bom/internal/api"
+	"github.com/ravibagri5/platform-bom/internal/landscape"
 )
 
 //go:embed components/*.yaml
@@ -65,6 +66,12 @@ type Catalog struct {
 // Definitions in extraDir override builtin ones with the same name. A missing
 // extraDir adds nothing, so an empty components directory need not exist.
 func Load(extraDir string) (*Catalog, error) {
+	return LoadWithComponents(extraDir, nil)
+}
+
+// LoadWithComponents returns the builtin catalog merged with file and object
+// definitions. Object definitions override file and builtin entries.
+func LoadWithComponents(extraDir string, components []*api.Component) (*Catalog, error) {
 	c := &Catalog{byName: map[string]*api.Component{}}
 	if err := c.loadFS(builtin, "components"); err != nil {
 		return nil, fmt.Errorf("builtin catalog: %w", err)
@@ -73,6 +80,22 @@ func Load(extraDir string) (*Catalog, error) {
 		if err := c.loadFS(os.DirFS(extraDir), "."); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("catalog %s: %w", extraDir, err)
 		}
+	}
+	for _, comp := range components {
+		if comp == nil || comp.Kind != api.KindComponent {
+			return nil, fmt.Errorf("expected kind %s", api.KindComponent)
+		}
+		if comp.Metadata.Name == "" {
+			return nil, fmt.Errorf("component without metadata.name")
+		}
+		if comp.Spec.DisplayName == "" {
+			comp.Spec.DisplayName = comp.Metadata.Name
+		}
+		if comp.Spec.Category == "" {
+			comp.Spec.Category = "other"
+		}
+		comp.Spec.Category = NormalizeCategory(comp.Spec.Category)
+		c.byName[comp.Metadata.Name] = comp
 	}
 	for n := range c.byName {
 		c.names = append(c.names, n)
@@ -145,10 +168,16 @@ func (c *Catalog) List() []*api.Component {
 	return out
 }
 
-// Get returns a component by name.
+// Get returns a component by name. Names the catalog does not define fall back
+// to CNCF landscape projects.
 func (c *Catalog) Get(name string) (*api.Component, bool) {
-	comp, ok := c.byName[name]
-	return comp, ok
+	if comp, ok := c.byName[name]; ok {
+		return comp, true
+	}
+	if p := landscape.Get(name); p != nil {
+		return landscape.Component(p), true
+	}
+	return nil, false
 }
 
 // Kubernetes returns the component that represents the cluster itself.
@@ -166,9 +195,16 @@ func (c *Catalog) MatchImage(repo string) *api.Component {
 	return c.match(repo, func(d api.Discovery) []string { return d.Images })
 }
 
-// MatchHelmChart returns the component whose chart patterns match chart.
+// MatchHelmChart returns the component whose chart patterns match chart, or
+// else the CNCF landscape project the chart is named after.
 func (c *Catalog) MatchHelmChart(chart string) *api.Component {
-	return c.match(chart, func(d api.Discovery) []string { return d.HelmCharts })
+	if comp := c.match(chart, func(d api.Discovery) []string { return d.HelmCharts }); comp != nil {
+		return comp
+	}
+	if p := landscape.Match(chart); p != nil {
+		return landscape.Component(p)
+	}
+	return nil
 }
 
 // MatchCrossplanePackage returns the component whose package patterns match repo.

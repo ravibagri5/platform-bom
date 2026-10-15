@@ -28,7 +28,12 @@ type Metadata struct {
 	Name        string            `json:"name"`
 	DisplayName string            `json:"displayName,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
+
+// DisplayNameAnnotation sets metadata.displayName on custom resources, which
+// cannot carry extra metadata fields.
+const DisplayNameAnnotation = "pbom.dev/display-name"
 
 // Platform describes an internal platform as a product.
 type Platform struct {
@@ -107,6 +112,8 @@ type Environment struct {
 	CAFile    string `json:"caFile,omitempty"`
 	// InventoryFile loads a previously exported Inventory instead of a live cluster.
 	InventoryFile string `json:"inventoryFile,omitempty"`
+	// Inventory names an Inventory resource in PBOM's namespace (custom resources only).
+	Inventory string `json:"inventory,omitempty"`
 	// TargetRelease is the PlatformRelease this environment should be running.
 	TargetRelease string `json:"targetRelease,omitempty"`
 }

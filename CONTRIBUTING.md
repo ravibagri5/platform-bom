@@ -65,6 +65,7 @@ make test       # run the unit tests
 make lint       # run golangci-lint
 make check      # everything CI runs: verify, vet, lint, test
 make run        # serve the example platform on http://127.0.0.1:8080
+make kind-e2e   # build the image and test the chart on a throwaway kind cluster
 ```
 
 For UI work, run the Go server and the Vite dev server side by side. Vite
@@ -137,8 +138,9 @@ file. Add a case to `TestMatching` for the image or package you expect to match.
 - Discovery is **read-only** and stays that way. Only `get` and `list` calls,
   never a write. See [GOVERNANCE.md](GOVERNANCE.md#principles).
 - Do not add a Go or npm dependency without discussing it in an issue first.
-- Keep the resource model backwards compatible within `v1alpha1` where you can,
-  and call out anything that is not in the pull request.
+- Keep the resource model backwards compatible within `v1alpha1`. Since
+  `v1.0.0`, an incompatible change needs a major release; call it out in the
+  pull request.
 
 ## Testing
 

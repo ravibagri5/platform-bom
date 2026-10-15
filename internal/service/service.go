@@ -40,13 +40,24 @@ type Options struct {
 	ComponentsDir string
 }
 
+// Resources are the desired-state objects read from the Kubernetes API.
+type Resources struct {
+	Platform    *api.Platform
+	Releases    []api.PlatformRelease
+	Components  []*api.Component
+	Inventories []*api.Inventory
+}
+
 // Service is the platform-bom application core.
 type Service struct {
-	Platform *api.Platform
-	Catalog  *catalog.Catalog
-	baseDir  string
-	upstream *upstream.Client
-	ttl      time.Duration
+	Platform            *api.Platform
+	Catalog             *catalog.Catalog
+	baseDir             string
+	upstream            *upstream.Client
+	ttl                 time.Duration
+	resourcesReleases   []api.PlatformRelease
+	useResourceReleases bool
+	inventories         map[string]*api.Inventory
 
 	refreshMu sync.Mutex
 	mu        sync.RWMutex
@@ -70,20 +81,36 @@ func LoadPlatform(path string) (*api.Platform, error) {
 	if p.Kind != api.KindPlatform {
 		return nil, fmt.Errorf("%s: expected kind %s, got %q", path, api.KindPlatform, p.Kind)
 	}
+	if err := validatePlatform(p); err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
+	return p, nil
+}
+
+func validatePlatform(p *api.Platform) error {
+	if p == nil {
+		return errors.New("platform is required")
+	}
+	if p.Kind != api.KindPlatform {
+		return fmt.Errorf("expected kind %s, got %q", api.KindPlatform, p.Kind)
+	}
 	if p.Metadata.Name == "" {
-		return nil, fmt.Errorf("%s: metadata.name is required", path)
+		return errors.New("metadata.name is required")
+	}
+	if p.Metadata.DisplayName == "" {
+		p.Metadata.DisplayName = p.Metadata.Annotations[api.DisplayNameAnnotation]
 	}
 	seen := map[string]bool{}
 	for _, e := range p.Spec.Environments {
 		if !envNameRE.MatchString(e.Name) {
-			return nil, fmt.Errorf("%s: invalid environment name %q", path, e.Name)
+			return fmt.Errorf("invalid environment name %q", e.Name)
 		}
 		if seen[e.Name] {
-			return nil, fmt.Errorf("%s: duplicate environment %q", path, e.Name)
+			return fmt.Errorf("duplicate environment %q", e.Name)
 		}
 		seen[e.Name] = true
 		if err := validateTokenSource(e); err != nil {
-			return nil, fmt.Errorf("%s: environment %q: %w", path, e.Name, err)
+			return fmt.Errorf("environment %q: %w", e.Name, err)
 		}
 	}
 	if p.Spec.ReleasesDir == "" {
@@ -92,7 +119,7 @@ func LoadPlatform(path string) (*api.Platform, error) {
 	for i := range p.Spec.Offerings {
 		p.Spec.Offerings[i].Category = catalog.NormalizeCategory(p.Spec.Offerings[i].Category)
 	}
-	return p, nil
+	return nil
 }
 
 func validateTokenSource(e api.Environment) error {
@@ -105,8 +132,8 @@ func validateTokenSource(e api.Environment) error {
 		return errors.New("server must be an https:// URL")
 	case e.TokenFile == "":
 		return errors.New("server needs tokenFile")
-	case e.InCluster || e.Kubeconfig != "" || e.KubeContext != "" || e.InventoryFile != "":
-		return errors.New("server cannot be combined with inCluster, kubeconfig, kubeContext or inventoryFile")
+	case e.InCluster || e.Kubeconfig != "" || e.KubeContext != "" || e.InventoryFile != "" || e.Inventory != "":
+		return errors.New("server cannot be combined with inCluster, kubeconfig, kubeContext, inventoryFile or inventory")
 	}
 	return nil
 }
@@ -117,19 +144,66 @@ func New(path string, opts Options) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newService(p, filepath.Dir(path), opts, nil)
+}
+
+// NewFromResources creates a service from the namespaced PBOM custom resources.
+func NewFromResources(resources Resources, opts Options) (*Service, error) {
+	if err := validatePlatform(resources.Platform); err != nil {
+		return nil, err
+	}
+	// Pod files are not part of the configuration, so file references are refused.
+	if resources.Platform.Spec.ReadmeFile != "" {
+		return nil, errors.New("readmeFile is not supported in a Platform resource; use readme")
+	}
+	inventories := map[string]*api.Inventory{}
+	for _, inv := range resources.Inventories {
+		inventories[inv.Metadata.Name] = inv
+	}
+	for _, e := range resources.Platform.Spec.Environments {
+		if e.InventoryFile != "" {
+			return nil, fmt.Errorf("environment %q: inventoryFile is not supported in a Platform resource; use inventory", e.Name)
+		}
+	}
+	for i := range resources.Releases {
+		r := &resources.Releases[i]
+		if r.Kind != api.KindRelease {
+			return nil, fmt.Errorf("release %q: expected kind %s, got %q", r.Metadata.Name, api.KindRelease, r.Kind)
+		}
+		if r.Metadata.Name == "" {
+			return nil, errors.New("release metadata.name is required")
+		}
+		if r.Spec.Version == "" {
+			r.Spec.Version = r.Metadata.Name
+		}
+	}
+	release.Sort(resources.Releases)
+	s, err := newService(resources.Platform, "", opts, resources.Components)
+	if err != nil {
+		return nil, err
+	}
+	s.resourcesReleases = resources.Releases
+	s.useResourceReleases = true
+	s.inventories = inventories
+	return s, nil
+}
+
+func newService(p *api.Platform, baseDir string, opts Options, components []*api.Component) (*Service, error) {
 	if opts.ReleasesDir != "" {
 		p.Spec.ReleasesDir = opts.ReleasesDir
 	}
 	if opts.ComponentsDir != "" {
 		p.Spec.ComponentsDir = opts.ComponentsDir
 	}
-	s := &Service{Platform: p, baseDir: filepath.Dir(path), ttl: opts.CacheTTL}
+	s := &Service{Platform: p, baseDir: baseDir, ttl: opts.CacheTTL}
 	if s.ttl == 0 {
 		s.ttl = 5 * time.Minute
 	}
-	if s.Catalog, err = catalog.Load(s.resolve(p.Spec.ComponentsDir)); err != nil {
+	catalogData, err := catalog.LoadWithComponents(s.resolve(p.Spec.ComponentsDir), components)
+	if err != nil {
 		return nil, err
 	}
+	s.Catalog = catalogData
 	if !opts.NoUpstream {
 		s.upstream = upstream.NewClient()
 	}
@@ -147,7 +221,12 @@ func (s *Service) resolve(p string) string {
 func (s *Service) ReleasesDir() string { return s.resolve(s.Platform.Spec.ReleasesDir) }
 
 // Releases loads releases from disk, newest first.
-func (s *Service) Releases() ([]api.PlatformRelease, error) { return release.Load(s.ReleasesDir()) }
+func (s *Service) Releases() ([]api.PlatformRelease, error) {
+	if s.useResourceReleases {
+		return append([]api.PlatformRelease(nil), s.resourcesReleases...), nil
+	}
+	return release.Load(s.ReleasesDir())
+}
 
 // Readme returns the platform README markdown.
 func (s *Service) Readme() (string, error) {
@@ -172,6 +251,13 @@ func (s *Service) Environment(name string) (*api.Environment, error) {
 func (s *Service) DiscoverEnvironment(ctx context.Context, env *api.Environment) (*api.Inventory, error) {
 	if env.InventoryFile != "" {
 		return LoadInventory(s.resolve(env.InventoryFile), env.Name)
+	}
+	if env.Inventory != "" {
+		inv, ok := s.inventories[env.Inventory]
+		if !ok {
+			return nil, fmt.Errorf("inventory %q not found", env.Inventory)
+		}
+		return forEnvironment(inv, env.Name), nil
 	}
 	var cfg *rest.Config
 	var err error
@@ -209,11 +295,30 @@ func LoadInventory(path, env string) (*api.Inventory, error) {
 	if inv.Kind != api.KindInventory {
 		return nil, fmt.Errorf("%s: expected kind %s", path, api.KindInventory)
 	}
+	return forEnvironment(inv, env), nil
+}
+
+// forEnvironment returns a copy of an exported inventory attributed to env.
+func forEnvironment(src *api.Inventory, env string) *api.Inventory {
+	inv := *src
 	inv.Environment = env
+	inv.Components = append([]api.DiscoveredComponent(nil), src.Components...)
 	for i := range inv.Components {
 		inv.Components[i].Category = catalog.NormalizeCategory(inv.Components[i].Category)
 	}
-	return inv, nil
+	return &inv
+}
+
+// CachedInventories returns the last discovered inventories whatever their
+// age, discovering only when nothing has been discovered yet.
+func (s *Service) CachedInventories(ctx context.Context) map[string]*api.Inventory {
+	s.mu.RLock()
+	invs := s.invs
+	s.mu.RUnlock()
+	if invs != nil {
+		return invs
+	}
+	return s.Inventories(ctx, false)
 }
 
 // Inventories returns inventories for all environments, rediscovering when

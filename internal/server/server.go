@@ -13,6 +13,7 @@ import (
 
 	"github.com/ravibagri5/platform-bom/internal/analysis"
 	"github.com/ravibagri5/platform-bom/internal/api"
+	"github.com/ravibagri5/platform-bom/internal/draft"
 	"github.com/ravibagri5/platform-bom/internal/service"
 )
 
@@ -21,6 +22,7 @@ func New(svc *service.Service, ui fs.FS) http.Handler {
 	h := &handler{svc: svc}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
+	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
 	mux.HandleFunc("GET /api/platform", h.platform)
 	mux.HandleFunc("GET /api/matrix", h.matrix)
 	mux.HandleFunc("GET /api/inventory", h.inventory)
@@ -44,9 +46,11 @@ type platformResponse struct {
 	Platform       *api.Platform        `json:"platform"`
 	Readme         string               `json:"readme,omitempty"`
 	CurrentRelease *api.PlatformRelease `json:"currentRelease,omitempty"`
+	// Drafted lists spec fields filled in from discovery: description, offerings.
+	Drafted []string `json:"drafted,omitempty"`
 }
 
-func (h *handler) platform(w http.ResponseWriter, _ *http.Request) {
+func (h *handler) platform(w http.ResponseWriter, r *http.Request) {
 	readme, err := h.svc.Readme()
 	if err != nil {
 		slog.Warn("cannot read platform readme", "error", err)
@@ -60,7 +64,36 @@ func (h *handler) platform(w http.ResponseWriter, _ *http.Request) {
 	if len(rels) > 0 {
 		resp.CurrentRelease = &rels[0]
 	}
+	if spec := h.svc.Platform.Spec; spec.Description == "" || len(spec.Offerings) == 0 {
+		resp.Platform, resp.Drafted = withDrafts(h.svc.Platform, h.svc.CachedInventories(r.Context()))
+	}
 	writeJSON(w, resp)
+}
+
+// withDrafts returns a copy of p with an empty description and offerings
+// drafted from invs, and the names of the fields it filled in.
+func withDrafts(p *api.Platform, byEnv map[string]*api.Inventory) (*api.Platform, []string) {
+	invs := make([]*api.Inventory, 0, len(byEnv))
+	for _, e := range p.Spec.Environments {
+		if inv := byEnv[e.Name]; inv != nil {
+			invs = append(invs, inv)
+		}
+	}
+	out := *p
+	var drafted []string
+	if len(out.Spec.Offerings) == 0 {
+		if offs := draft.Offerings(invs); len(offs) > 0 {
+			out.Spec.Offerings = offs
+			drafted = append(drafted, "offerings")
+		}
+	}
+	if out.Spec.Description == "" {
+		if desc := draft.Description(invs, out.Spec.Offerings); desc != "" {
+			out.Spec.Description = desc
+			drafted = append(drafted, "description")
+		}
+	}
+	return &out, drafted
 }
 
 func (h *handler) matrix(w http.ResponseWriter, r *http.Request) {

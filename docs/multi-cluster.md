@@ -54,7 +54,7 @@ flowchart LR
         direction TB
         pbom["<b>PBOM</b><br/>UI, API and discovery"]:::pbom
         kubeconfig[("Secret<br/>pbom-kubeconfig")]:::secret
-        config[("ConfigMaps<br/>platform and releases")]:::config
+        config[("Custom resources<br/>platform and releases")]:::config
         kubeconfig -.-> pbom
         config -.-> pbom
     end
@@ -203,7 +203,7 @@ flowchart LR
     prod -- "read-only" --> job
     job -- "commit" --> files
     files --> cd
-    cd -- "ConfigMap" --> pbom
+    cd -- "custom resources" --> pbom
     user -- "browser" --> pbom
 
     classDef person fill:#ffffff,stroke:#334155,color:#0f172a
@@ -222,27 +222,29 @@ flowchart LR
    pbom discover --context prod-admin --env prod -o yaml > pbom-config/prod.inventory.yaml
    ```
 
-2. **Reference the files** in `platform.yaml`:
+2. **Reference them** in `platform.yaml` by name, which is the `--env` value:
 
    ```yaml
      environments:
        - name: prod
-         inventoryFile: prod.inventory.yaml
+         inventory: prod
          targetRelease: "1.1.0"
    ```
 
 3. **Apply** as in [getting started](getting-started.md#5-apply-the-yaml).
-   `pbom kustomize pbom-config` adds the inventory files to the platform
-   ConfigMap:
+   `pbom kustomize pbom-config` adds the inventory files as `Inventory`
+   resources:
 
    ```sh
    pbom kustomize pbom-config
    kubectl apply -k pbom-config
    ```
 
-PBOM reloads changed inventories without a restart. The data is only as recent
-as the last export, so run step 1 on a schedule or after every deployment. A
-ConfigMap holds at most 1 MiB, which is enough for many inventories.
+PBOM picks up a changed inventory within seconds, without a restart. The data
+is only as recent as the last export, so run step 1 on a schedule or after
+every deployment. A Kubernetes object holds at most about 1.5 MiB, which is
+enough for many inventories. The pipeline only needs permission to apply
+`inventories.pbom.dev` in PBOM's namespace.
 
 PBOM does not include the export job. Use any scheduler that can run `pbom`
 with access to the cluster, such as a CI pipeline.

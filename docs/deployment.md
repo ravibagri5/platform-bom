@@ -100,6 +100,11 @@ release cache in `~/Library/Caches/pbom` on macOS or `~/.cache/pbom` on Linux.
 - **The UI binds to `127.0.0.1`.** By default `pbom serve` has no sign-in;
   keep it local, or turn on [authentication](authentication.md) if you change
   `--addr`.
+- **Serve custom resources from your workstation.** With the CRDs installed
+  and your resources applied to a cluster, `pbom serve --config-source=crd
+  --crd-context <context> --crd-namespace platform-bom` watches them through
+  your kubeconfig, without deploying an image. Environments then need
+  `kubeContext` instead of `inCluster: true`.
 
 ### From source
 
@@ -147,6 +152,10 @@ chart name and versions from them, but the permission is broad. Leave it out if
 that is not acceptable; Helm discovery is then skipped with a warning. See
 [SECURITY.md](../SECURITY.md) for the full threat model.
 
+The Helm chart adds a namespaced Role so that `pbom serve` can `get`, `list`
+and `watch` its own `pbom.dev` resources (`platforms`, `platformreleases`,
+`components`, `inventories`). The CLI does not need it.
+
 ## Running in a container
 
 ```shell
@@ -167,7 +176,10 @@ By default the UI has no sign-in. It binds to `127.0.0.1`; turn on
 
 ## Running in a cluster
 
-[deploy/](../deploy) is a kustomize base that runs `pbom serve` in its own
+The [Helm chart](getting-started.md) is the recommended way: it installs the
+`pbom.dev` custom resources and watches them. [deploy/](../deploy) is a plain
+kustomize base that instead reads the platform and releases from ConfigMaps,
+for clusters where you cannot install CRDs. It runs `pbom serve` in its own
 namespace with a read-only ClusterRole. The pod runs as non-root with a
 read-only root filesystem and no capabilities, and the namespace enforces the
 `restricted` Pod Security Standard.
@@ -227,7 +239,9 @@ The image contains no credential plugins such as `kubelogin` or
 service account bound to the same read-only ClusterRole in each target cluster.
 [hack/remote-kubeconfig.sh](../hack/remote-kubeconfig.sh) creates both.
 Where that is not possible, run `pbom discover -o yaml` in a job that can reach
-the cluster and use the result as an `inventoryFile`.
+the cluster and use the result as an `inventoryFile`, or with the Helm chart,
+apply it as an `Inventory` resource; see
+[exported inventories](multi-cluster.md#c-exported-inventories).
 
 ### Trying it on kind
 

@@ -167,6 +167,7 @@ pull requests, and `git log` becomes the platform's changelog.
 | Task | Command |
 | --- | --- |
 | Logs | `kubectl -n platform-bom logs deploy/pbom-platform-bom` |
+| Metrics, alerts and dashboard | `--set metrics.enabled=true --set metrics.serviceMonitor.enabled=true` and more; see [Monitoring](../charts/platform-bom/README.md#monitoring) |
 | Upgrade PBOM | Helm never upgrades CRDs, so apply them first: `helm show crds oci://ghcr.io/ravibagri5/charts/platform-bom \| kubectl apply --server-side -f -`, then re-run the `helm upgrade` from step 2 or 5. From 0.x, follow the migration in the [changelog](../CHANGELOG.md#100---2026-10-15) |
 | Upstream checks without rate limits | `kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<token>`, then `helm upgrade ... --reset-then-reuse-values --set githubTokenSecret.name=pbom-github` |
 | Share the UI | Turn on [sign-in](authentication.md) with your identity provider, then enable the [Ingress](../charts/platform-bom/README.md#optional-ingress-and-tls) |

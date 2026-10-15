@@ -12,6 +12,28 @@ incompatibly only in a major release. The resources are still named
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-15
+
+### Added
+
+- Prometheus metrics at `/metrics` on a separate port (`--metrics-addr`;
+  chart `metrics.enabled`, port 9090, off by default): environment
+  compliance, component status and freshness against the declared target,
+  running versions, discovery duration and errors, upstream lookups by source,
+  configuration reloads, HTTP traffic, build info, Go and process metrics.
+  Scrapes never start discovery. Closes #9.
+- Helm chart: optional ServiceMonitor, PrometheusRule with six alerts, and a
+  Grafana dashboard as a sidecar-ready ConfigMap
+  (`charts/platform-bom/dashboards/platform-bom.json`).
+- `pbom serve --log-format text|json` and `--log-level`. API request logs
+  include the status code, and server errors are logged at warn. Failed
+  discoveries are logged.
+
+### Changed
+
+- The Helm chart logs JSON by default (`logFormat: json`); set
+  `logFormat=text` for the previous format.
+
 ## [1.1.0] - 2026-10-15
 
 ### Added
@@ -320,7 +342,8 @@ The first release. Release candidate: `v0.1.0-rc.1`.
   README, usage and deployment guides in `docs/`, and a roadmap organised as
   milestones M0 to M11.
 
-[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/ravibagri5/platform-bom/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ravibagri5/platform-bom/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ravibagri5/platform-bom/compare/v0.9.0...v1.0.0
 [0.5.0]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...v0.5.0

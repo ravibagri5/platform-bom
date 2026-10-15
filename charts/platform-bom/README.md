@@ -40,6 +40,11 @@ include the Helm release name; cluster-scoped RBAC also includes the namespace.
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
 | `landscapeURL` | CNCF `landscape.yml` on GitHub | Names and categorises Helm releases of CNCF projects outside the catalog; on download failure the built-in snapshot is used; `""` uses only the snapshot |
+| `logFormat` / `logLevel` | `json` / `info` | Log format (`text` or `json`) and level (`debug`, `info`, `warn`, `error`) |
+| `metrics.enabled` / `metrics.port` | `false` / `9090` | Prometheus metrics at `/metrics` on a separate port and Service port named `metrics`, outside sign-in |
+| `metrics.serviceMonitor.enabled` / `.interval` / `.labels` | `false` / `1m` / `{}` | ServiceMonitor for the Prometheus Operator; set `labels` to what your Prometheus selects |
+| `metrics.prometheusRule.enabled` / `.labels` | `false` / `{}` | Alert rules; see [Monitoring](#monitoring) |
+| `metrics.grafanaDashboard.enabled` / `.labels` / `.annotations` | `false` / `grafana_dashboard: "1"` / `{}` | ConfigMap with the Grafana dashboard for the Grafana sidecar |
 | `auth.mode` | `none` | `none`, `header` (authenticating proxy) or `oidc` (OpenID Connect sign-in); see [authentication](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md) |
 | `auth.header.name` | `X-Forwarded-User` | Header with the user name, in `header` mode |
 | `auth.header.trustedProxies` | `[]` | CIDRs the proxy connects from; other clients are refused |
@@ -127,6 +132,40 @@ appropriate controller rewrite rules.
 **TLS is not authentication.** Without `auth.mode`, anyone who reaches the
 Ingress can open the UI. Use `oidc` sign-in, an authenticating proxy with
 `header` mode, or an internal ingress controller.
+
+## Monitoring
+
+With `metrics.enabled=true`, PBOM serves Prometheus metrics on port `9090`; the metrics are
+listed in [usage.md](https://github.com/ravibagri5/platform-bom/blob/main/docs/usage.md#monitoring-and-logging).
+With [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack),
+turn on metrics, scraping, alerts and the dashboard, using the label your Prometheus
+selects (`release: <kube-prometheus-stack release name>` by default):
+
+```sh
+helm upgrade pbom oci://ghcr.io/ravibagri5/charts/platform-bom -n platform-bom --reset-then-reuse-values \
+  --set metrics.enabled=true \
+  --set metrics.serviceMonitor.enabled=true --set metrics.serviceMonitor.labels.release=kube-prometheus-stack \
+  --set metrics.prometheusRule.enabled=true --set metrics.prometheusRule.labels.release=kube-prometheus-stack \
+  --set metrics.grafanaDashboard.enabled=true
+```
+
+The Grafana sidecar loads ConfigMaps labelled `grafana_dashboard: "1"` from
+every namespace it watches. Without the sidecar, import
+[dashboards/platform-bom.json](https://github.com/ravibagri5/platform-bom/blob/main/charts/platform-bom/dashboards/platform-bom.json)
+in Grafana. Without the Prometheus Operator, scrape the `metrics` port of the
+Service directly.
+
+| Alert | Fires when | Severity |
+| --- | --- | --- |
+| `PlatformBOMDown` | Prometheus cannot scrape PBOM for 10 minutes | warning |
+| `PlatformBOMEnvironmentOffTarget` | An environment has not run its target release for an hour | warning |
+| `PlatformBOMUnsupportedVersion` | A running version has been out of upstream support for an hour | warning |
+| `PlatformBOMDiscoveryFailing` | Discovery of an environment keeps failing for 30 minutes | warning |
+| `PlatformBOMConfigurationInvalid` | A rejected configuration change is still pending after 10 minutes | warning |
+| `PlatformBOMUpstreamRateLimited` | The GitHub API limit was reached in the last hour | info |
+
+Logs are JSON on stderr, ready for Loki, Elasticsearch or a cloud logging
+agent; `--set logFormat=text` makes them human-readable.
 
 ## Extra volumes and init containers
 

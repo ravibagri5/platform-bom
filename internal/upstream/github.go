@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ravibagri5/platform-bom/internal/api"
+	"github.com/ravibagri5/platform-bom/internal/metrics"
 	"github.com/ravibagri5/platform-bom/internal/version"
 )
 
@@ -193,14 +194,23 @@ func (c *Client) fetch(ctx context.Context, slug string) ([]Release, error) {
 	c.mu.Unlock()
 	if !limited {
 		releases, err := c.fetchAPI(ctx, slug)
-		if !errors.Is(err, ErrRateLimited) {
-			return releases, err
+		switch {
+		case err == nil:
+			metrics.UpstreamRequest(metrics.SourceAPI, metrics.ResultOK)
+			return releases, nil
+		case errors.Is(err, ErrRateLimited):
+			metrics.UpstreamRequest(metrics.SourceAPI, metrics.ResultRateLimited)
+		default:
+			metrics.UpstreamRequest(metrics.SourceAPI, metrics.ResultError)
+			return nil, err
 		}
 	}
 	releases, err := c.fetchFeed(ctx, slug)
 	if err != nil {
+		metrics.UpstreamRequest(metrics.SourceFeed, metrics.ResultError)
 		return nil, fmt.Errorf("%s: %w; the releases feed failed too: %w", slug, ErrRateLimited, err)
 	}
+	metrics.UpstreamRequest(metrics.SourceFeed, metrics.ResultOK)
 	return releases, nil
 }
 

@@ -1,0 +1,22 @@
+{{- $metrics := default dict .Values.metrics }}
+{{- $sm := default dict $metrics.serviceMonitor }}
+{{- if and $metrics.enabled $sm.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "platform-bom.fullname" . }}
+  labels:
+    {{- include "platform-bom.labels" . | nindent 4 }}
+    {{- with $sm.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: platform-bom
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ $sm.interval | default "1m" }}
+{{- end }}

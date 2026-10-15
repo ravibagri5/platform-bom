@@ -13,3 +13,8 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
+    {{- if (default dict .Values.metrics).enabled }}
+    - name: metrics
+      port: {{ .Values.metrics.port }}
+      targetPort: metrics
+    {{- end }}

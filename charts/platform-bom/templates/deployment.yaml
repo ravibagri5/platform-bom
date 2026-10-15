@@ -6,6 +6,7 @@
 {{- $oidc := default dict $auth.oidc }}
 {{- $clientSecret := default dict $oidc.clientSecret }}
 {{- $sessionSecret := default dict $auth.sessionSecret }}
+{{- $metrics := default dict .Values.metrics }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -55,6 +56,11 @@ spec:
             - {{ printf "--platform-name=%s" .Values.platform.metadata.name | quote }}
             - {{ printf "--refresh-interval=%v" .Values.refreshInterval | quote }}
             - {{ printf "--landscape-url=%s" (.Values.landscapeURL | default "") | quote }}
+            - {{ printf "--log-format=%s" (.Values.logFormat | default "json") | quote }}
+            - {{ printf "--log-level=%s" (.Values.logLevel | default "info") | quote }}
+            {{- if $metrics.enabled }}
+            - {{ printf "--metrics-addr=0.0.0.0:%v" $metrics.port | quote }}
+            {{- end }}
             - {{ printf "--auth=%s" $authMode | quote }}
             {{- if eq $authMode "header" }}
             - {{ printf "--auth-header=%s" (default "X-Forwarded-User" $authHeader.name) | quote }}
@@ -113,6 +119,10 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+            {{- if $metrics.enabled }}
+            - name: metrics
+              containerPort: {{ $metrics.port }}
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /readyz

@@ -64,7 +64,7 @@ upstream checks and the HTTP API. For the concepts behind them, start with the
 | `pbom release create NAME --from-env ENV [--context C]` | Cut a release from what an environment is running; `--context` discovers through a kube context instead, for example for an `inCluster` environment. Updates a `kustomization.yaml` written by `pbom init`. |
 | `pbom release diff FROM TO [--all]` | Compare two releases. |
 | `pbom catalog` | Known component definitions. |
-| `pbom serve [--addr] [--refresh-interval] [--config-check-interval]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default and reloads configuration files when they change (checked every 15s). |
+| `pbom serve [--addr] [--refresh-interval] [--config-check-interval] [--metrics-addr] [--log-format] [--log-level]` | Web UI and JSON API. Listens on `127.0.0.1:8080` by default and reloads configuration files when they change (checked every 15s). See [monitoring and logging](#monitoring-and-logging). |
 | `pbom serve --config-source=crd [--crd-namespace N] [--crd-context C] [--platform-name P]` | Serve the `pbom.dev` custom resources in a namespace instead of files, applying changes as they happen. The Helm chart runs this; with `--crd-context` it also runs from a workstation. |
 | `pbom version` | Print the version. |
 
@@ -370,6 +370,55 @@ The UI follows the operating system's light or dark setting. The selector in
 the top bar overrides it with **Light** or **Dark**; the choice is remembered
 in the browser.
 
+## Monitoring and logging
+
+### Metrics
+
+`pbom serve --metrics-addr 0.0.0.0:9090` serves Prometheus metrics at
+`/metrics` on their own port, outside sign-in. In the Helm chart, set
+`metrics.enabled=true`; see [Monitoring](../charts/platform-bom/README.md#monitoring) for the
+ServiceMonitor, alert rules and Grafana dashboard. Scrapes read the results of
+the last discovery and never start one, so they are cheap and do not call
+GitHub.
+
+| Metric | Labels | Meaning |
+| --- | --- | --- |
+| `pbom_environment_compliant` | `environment`, `target_release`, `running_release` | 1 when the environment runs its declared target release, else 0 |
+| `pbom_component_status` | `environment`, `component`, `status` | `aligned`, `drift`, `missing`, `untracked`, `present` or `absent` against the target |
+| `pbom_component_freshness` | `environment`, `component`, `freshness` | `latest`, `patch-available`, `minor-behind`, `major-behind`, `unsupported` or `unknown` |
+| `pbom_component_info` | `environment`, `component`, `version`, `category` | Every running version |
+| `pbom_component_upstream_info` | `component`, `latest` | Newest upstream release |
+| `pbom_platform_info` | `platform`, `current_release` | The platform served |
+| `pbom_discovery_duration_seconds` | `environment` | Duration of the last discovery |
+| `pbom_discovery_last_success_timestamp_seconds` | `environment` | Time of the last successful discovery |
+| `pbom_discovery_errors_total` | `environment` | Failed discoveries |
+| `pbom_upstream_requests_total` | `source` (`api`, `feed`), `result` (`ok`, `error`, `rate_limited`) | Upstream release lookups |
+| `pbom_config_last_reload_successful`, `pbom_config_reloads_total` | `result` | Whether configuration changes were accepted |
+| `pbom_http_requests_total`, `pbom_http_request_duration_seconds` | `method`, `code` | UI and API traffic |
+| `pbom_build_info` | `version`, `goversion` | The running version |
+
+Go runtime (`go_*`) and process (`process_*`) metrics are included. Values
+with a label are 1 ("info" style), so `count` and `sum` by label give the
+numbers. Series are bounded by components × environments. The platform
+metrics use only what you declared, never drafts, so alerts fire on your own
+targets. The metrics show component versions: keep the port inside the cluster.
+
+### Logs
+
+`pbom serve` logs to stderr with `--log-format text` (default) or `json`, and
+`--log-level debug|info|warn|error` (`--debug` is `--log-level debug`). The
+Helm chart uses `json` (`logFormat`, `logLevel`). Each line has a `msg` and
+key-value fields such as `environment` and `error`:
+
+| Message | Level | When |
+| --- | --- | --- |
+| `serving platform`, `serving metrics` | info | Startup, with the version and addresses |
+| `reconciled PBOM resources`, `configuration reloaded` | info | A configuration change was applied |
+| `PBOM resources are invalid; keeping the previous configuration` | warn | A change was rejected; the reason is in `error` |
+| `discovery failed` | warn | An environment could not be read |
+| `cannot refresh the CNCF landscape; using the built-in snapshot` | warn | The landscape download failed |
+| `request` | debug, or warn for 5xx | One API request, with status and duration |
+
 ## HTTP API
 
 The API is read-only JSON, and the web UI is built entirely on it. It is not
@@ -385,4 +434,7 @@ yet versioned; expect changes before v1.
 | `GET /api/diff?from=A&to=B` | Release diff |
 | `GET /api/catalog` | Component definitions |
 | `GET /api/snapshot?env=E&name=V[&download=1]` | What an environment runs now, as `PlatformRelease` YAML to apply |
-| `GET /healthz` | Liveness |
+| `GET /healthz`, `GET /readyz` | Liveness; readiness (not ready until a `Platform` is loaded) |
+
+Prometheus metrics are served on a separate port; see
+[monitoring and logging](#monitoring-and-logging).

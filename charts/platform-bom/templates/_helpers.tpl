@@ -21,32 +21,26 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- printf "%s-%s" .Release.Namespace (include "platform-bom.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{/* Releases installed by an older chart and upgraded with --reuse-values have no configMaps values. */}}
-{{- define "platform-bom.createConfigMaps" -}}
-{{- $cm := default dict .Values.configMaps -}}
-{{- if or (not (hasKey $cm "create")) $cm.create -}}true{{- end -}}
+{{- define "platform-bom.customResource" -}}
+{{- $resource := .resource -}}
+{{- $metadata := required "custom resource metadata is required" $resource.metadata -}}
+{{- $annotations := default dict $metadata.annotations -}}
+{{- if $metadata.displayName -}}
+{{- $_ := set $annotations "pbom.dev/display-name" $metadata.displayName -}}
 {{- end -}}
-
-{{- define "platform-bom.configMapName" -}}
-{{- if include "platform-bom.createConfigMaps" .root -}}
-{{- printf "%s-%s" (include "platform-bom.fullname" .root) .kind -}}
-{{- else -}}
-{{- $cm := default dict .root.Values.configMaps -}}
-{{- default (printf "pbom-%s" .kind) (index $cm .kind) -}}
-{{- end -}}
-{{- end -}}
-
-{{/* ConfigMap data from a map of file name to document (a map) or raw file content (a string). */}}
-{{- define "platform-bom.files" -}}
-{{- range $name, $doc := .files }}
-{{- if not (regexMatch "^[A-Za-z0-9][A-Za-z0-9._-]*\\.ya?ml$" $name) }}
-{{- fail (printf "%s key %q must be a file name ending in .yaml or .yml" $.value $name) }}
-{{- end }}
-{{ $name | quote }}: |
-  {{- if kindIs "string" $doc }}
-  {{- $doc | nindent 2 }}
-  {{- else }}
-  {{- toYaml $doc | nindent 2 }}
+apiVersion: pbom.dev/v1alpha1
+kind: {{ required "custom resource kind is required" $resource.kind }}
+metadata:
+  name: {{ required "custom resource metadata.name is required" $metadata.name | quote }}
+  namespace: {{ .root.Release.Namespace | quote }}
+  {{- with $metadata.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-{{- end }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- toYaml (required "custom resource spec is required" $resource.spec) | nindent 2 }}
 {{- end -}}

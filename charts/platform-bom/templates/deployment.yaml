@@ -26,8 +26,6 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ include "platform-bom.serviceAccountName" . }}
       {{- with .Values.imagePullSecrets }}
@@ -52,10 +50,11 @@ spec:
           args:
             - serve
             - --addr=0.0.0.0:8080
-            - --config=/config/pbom.yaml
-            - --releases-dir=/releases
-            - --components-dir=/components
+            - --config-source=crd
+            - --crd-namespace=$(POD_NAMESPACE)
+            - {{ printf "--platform-name=%s" .Values.platform.metadata.name | quote }}
             - {{ printf "--refresh-interval=%v" .Values.refreshInterval | quote }}
+            - {{ printf "--landscape-url=%s" (.Values.landscapeURL | default "") | quote }}
             - {{ printf "--auth=%s" $authMode | quote }}
             {{- if eq $authMode "header" }}
             - {{ printf "--auth-header=%s" (default "X-Forwarded-User" $authHeader.name) | quote }}
@@ -84,6 +83,10 @@ spec:
             {{- end }}
             {{- end }}
           env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: XDG_CACHE_HOME
               value: /cache
             {{- if and (eq $authMode "oidc") $clientSecret.name }}
@@ -112,7 +115,7 @@ spec:
               containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /readyz
               port: http
             periodSeconds: 10
           livenessProbe:
@@ -128,15 +131,6 @@ spec:
             capabilities:
               drop: [ALL]
           volumeMounts:
-            - name: platform
-              mountPath: /config
-              readOnly: true
-            - name: releases
-              mountPath: /releases
-              readOnly: true
-            - name: components
-              mountPath: /components
-              readOnly: true
             - name: cache
               mountPath: /cache
             {{- if $kubeconfigSecret }}
@@ -148,17 +142,6 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        - name: platform
-          configMap:
-            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "platform") }}
-        - name: releases
-          configMap:
-            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "releases") }}
-            optional: true
-        - name: components
-          configMap:
-            name: {{ include "platform-bom.configMapName" (dict "root" . "kind" "components") }}
-            optional: true
         - name: cache
           emptyDir:
             sizeLimit: 64Mi

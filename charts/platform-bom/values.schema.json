@@ -119,6 +119,7 @@
         { "type": "string", "pattern": "^(0|([0-9]+(\\.[0-9]+)?(ns|us|µs|ms|s|m|h))+)$" }
       ]
     },
+    "landscapeURL": { "type": "string", "pattern": "^(https?://.+)?$" },
     "githubTokenSecret": {
       "type": "object",
       "additionalProperties": false,
@@ -157,7 +158,7 @@
           "name": {
             "allOf": [
               { "$ref": "#/definitions/nonEmptyString" },
-              { "not": { "enum": ["platform", "releases", "components", "cache", "kubeconfig"] } }
+              { "not": { "enum": ["cache", "kubeconfig"] } }
             ]
           }
         }
@@ -230,14 +231,13 @@
       }
     },
     "configMaps": {
+      "description": "Removed in favour of crdResources; ignored so upgrades with reused values keep working.",
+      "type": "object"
+    },
+    "crdResources": {
       "type": "object",
       "additionalProperties": false,
-      "properties": {
-        "create": { "type": "boolean" },
-        "platform": { "type": "string" },
-        "releases": { "type": "string" },
-        "components": { "type": "string" }
-      }
+      "properties": { "create": { "type": "boolean" } }
     },
     "platform": {
       "description": "The PBOM Platform document. Fields are checked in full by pbom at startup.",
@@ -259,6 +259,7 @@
                   "kubeconfig": { "type": "string" },
                   "kubeContext": { "type": "string" },
                   "inventoryFile": { "type": "string" },
+                  "inventory": { "type": "string" },
                   "server": { "type": "string", "pattern": "^https://" },
                   "tokenFile": { "type": "string" },
                   "caFile": { "type": "string" },

@@ -65,6 +65,12 @@ export default function OfferingsPage({ platform }: { platform?: PlatformRespons
         }
       />
       {matrix.error && <ErrorBox error={matrix.error} />}
+      {platform.drafted?.includes('offerings') && (
+        <p className="muted draft-note">
+          These offerings were drafted from the discovered components, one per category. Set{' '}
+          <code>spec.offerings</code> in the platform to describe your own.
+        </p>
+      )}
       {offerings.length === 0 && (
         <div className="card empty-state">
           <h3>No offerings defined</h3>

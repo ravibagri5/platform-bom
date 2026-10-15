@@ -98,7 +98,8 @@ inventory. No platform YAML, declared releases, GitOps controller, Go, Node.js
 or Docker installation is needed on your workstation.
 
 **Prerequisites:** Helm 3.14+ or 4, `kubectl`, a working cluster context, and
-permission to create a namespace, ClusterRole and ClusterRoleBinding. The
+permission to create a namespace, ClusterRole, ClusterRoleBinding and
+CustomResourceDefinitions. The
 cluster must be able to pull the image from GHCR. The default reader includes
 cluster-wide Secret access for Helm metadata; add `--set rbac.helmSecrets=false`
 to skip it.
@@ -116,13 +117,17 @@ Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
 specific release.
 
 Open <http://127.0.0.1:8080>. PBOM discovers this cluster using its read-only
-service account. By default the UI has no sign-in; before sharing it, turn on
+service account. Until you describe the platform yourself, it drafts a
+description and one offering per category from what it finds, and names CNCF
+projects outside its catalog from the CNCF landscape. By default the UI has no
+sign-in; before sharing it, turn on
 [OpenID Connect sign-in or an authenticating proxy](docs/authentication.md).
 
 Next, [describe your platform in YAML](docs/getting-started.md#4-describe-your-platform-in-yaml):
 a `Platform` with offerings and environments, `Component` files for tools PBOM
-does not know, and `PlatformRelease` baselines. Apply them with
-`kubectl apply -k`, then keep them in Git and let any CD tool apply them. The
+does not know, and `PlatformRelease` baselines. They are Kubernetes custom
+resources: apply them with `kubectl apply -k`, keep them in Git and let any CD
+tool apply them, and PBOM picks up changes within seconds. The
 [getting-started guide](docs/getting-started.md) walks through every step.
 
 ## Try it locally
@@ -180,5 +185,6 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | [Security](SECURITY.md) | Threat model and vulnerability reporting |
 
 Platform BOM proposes a platform bill of materials; it is not an industry
-standard. The resource schema is `v1alpha1` and may change. Licensed under
+standard. Since `v1.0.0`, incompatible changes to the CLI, chart values and
+resources (`pbom.dev/v1alpha1`) come only in a major release. Licensed under
 [Apache 2.0](LICENSE).

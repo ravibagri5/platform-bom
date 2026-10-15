@@ -18,6 +18,8 @@ import (
 
 	"github.com/ravibagri5/platform-bom/internal/auth"
 	"github.com/ravibagri5/platform-bom/internal/catalog"
+	"github.com/ravibagri5/platform-bom/internal/landscape"
+	"github.com/ravibagri5/platform-bom/internal/operator"
 	"github.com/ravibagri5/platform-bom/internal/server"
 	"github.com/ravibagri5/platform-bom/internal/service"
 	"github.com/ravibagri5/platform-bom/internal/ui"
@@ -26,6 +28,7 @@ import (
 func newServeCmd(g *globals) *cobra.Command {
 	var addr string
 	var interval, configInterval time.Duration
+	var configSource, namespace, platformName, landscapeURL, crdContext string
 	var debug bool
 	var authCfg auth.Config
 	var trustedProxies []string
@@ -59,30 +62,61 @@ bytes; without it, users sign in again after a restart).`,
 				return err
 			}
 
-			svc, err := g.service()
-			if err != nil {
-				return err
-			}
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
 			var current atomic.Pointer[service.Service]
-			var handler atomic.Value
+			var handler atomic.Pointer[serveHandler]
+			handler.Store(&serveHandler{http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/healthz" {
+					_, _ = w.Write([]byte("ok"))
+					return
+				}
+				http.Error(w, "PBOM resources are not ready", http.StatusServiceUnavailable)
+			})})
+			errCh := make(chan error, 1)
 			use := func(s *service.Service) {
 				current.Store(s)
-				handler.Store(server.New(s, ui.FS()))
+				handler.Store(&serveHandler{server.New(s, ui.FS())})
+				go func() { _, _ = s.Input(ctx, false) }()
 			}
-			use(svc)
-			if configInterval > 0 {
-				go watchConfig(ctx, g, configInterval, func(s *service.Service) {
-					use(s)
-					go func() { _, _ = s.Input(ctx, false) }()
-				})
+			switch configSource {
+			case "file":
+				svc, err := g.service()
+				if err != nil {
+					return err
+				}
+				use(svc)
+				if configInterval > 0 {
+					go watchConfig(ctx, g, configInterval, use)
+				}
+			case "crd":
+				if namespace == "" {
+					return errors.New("--crd-namespace or POD_NAMESPACE is required with --config-source=crd")
+				}
+				go func() {
+					if err := operator.Run(ctx, operator.Options{
+						Namespace: namespace, PlatformName: platformName, Context: crdContext,
+						Service: service.Options{NoUpstream: g.noUpstream},
+					}, use); err != nil && ctx.Err() == nil {
+						errCh <- err
+					}
+				}()
+			default:
+				return fmt.Errorf("unknown config source %q (expected file or crd)", configSource)
+			}
+
+			if landscapeURL != "" {
+				go func() {
+					before := landscape.Source()
+					refreshLandscape(ctx, landscapeURL)
+					if svc := current.Load(); svc != nil && landscape.Source() != before {
+						_, _ = svc.Input(ctx, true)
+					}
+				}()
 			}
 
 			go func() {
-				// Warm the caches so the first page load is fast.
-				_, _ = svc.Input(ctx, false)
 				if interval <= 0 {
 					return
 				}
@@ -93,7 +127,9 @@ bytes; without it, users sign in again after a restart).`,
 					case <-ctx.Done():
 						return
 					case <-tick.C:
-						_, _ = current.Load().Input(ctx, true)
+						if svc := current.Load(); svc != nil {
+							_, _ = svc.Input(ctx, true)
+						}
 					}
 				}
 			}()
@@ -101,15 +137,14 @@ bytes; without it, users sign in again after a restart).`,
 			srv := &http.Server{
 				Addr: addr,
 				Handler: authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					handler.Load().(http.Handler).ServeHTTP(w, r)
+					handler.Load().handler.ServeHTTP(w, r)
 				})),
 				ReadHeaderTimeout: 10 * time.Second,
 				WriteTimeout:      5 * time.Minute,
 				IdleTimeout:       2 * time.Minute,
 			}
-			errCh := make(chan error, 1)
 			go func() { errCh <- srv.ListenAndServe() }()
-			slog.Info("serving platform", "platform", svc.Platform.Metadata.Name, "url", "http://"+strings.Replace(addr, "0.0.0.0", "localhost", 1))
+			slog.Info("serving platform", "configSource", configSource, "url", "http://"+strings.Replace(addr, "0.0.0.0", "localhost", 1))
 
 			select {
 			case err := <-errCh:
@@ -125,6 +160,11 @@ bytes; without it, users sign in again after a restart).`,
 		},
 	}
 	cmd.Flags().StringVar(&addr, "addr", "127.0.0.1:8080", "listen address")
+	cmd.Flags().StringVar(&configSource, "config-source", "file", "configuration source: file or crd")
+	cmd.Flags().StringVar(&namespace, "crd-namespace", envOr("POD_NAMESPACE", ""), "namespace containing PBOM custom resources")
+	cmd.Flags().StringVar(&crdContext, "crd-context", "", "kubeconfig context of the cluster holding PBOM custom resources (default: current context, or in-cluster)")
+	cmd.Flags().StringVar(&platformName, "platform-name", "", "Platform resource to serve (required when the namespace contains multiple Platforms)")
+	addLandscapeFlag(cmd, &landscapeURL)
 	cmd.Flags().DurationVar(&interval, "refresh-interval", 10*time.Minute, "background rediscovery interval (0 disables)")
 	cmd.Flags().DurationVar(&configInterval, "config-check-interval", 15*time.Second, "how often to check configuration files for changes and reload (0 disables)")
 	cmd.Flags().BoolVar(&debug, "debug", false, "enable debug logging")
@@ -141,6 +181,8 @@ bytes; without it, users sign in again after a restart).`,
 	cmd.Flags().DurationVar(&authCfg.SessionDuration, "session-duration", 12*time.Hour, "how long a sign-in lasts")
 	return cmd
 }
+
+type serveHandler struct{ handler http.Handler }
 
 func newCatalogCmd(g *globals) *cobra.Command {
 	var output, dir string

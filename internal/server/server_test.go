@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -119,6 +121,41 @@ func TestSPA(t *testing.T) {
 	}
 	if rec := get(h, "/index.html"); rec.Header().Get("Cache-Control") != "" {
 		t.Errorf("index.html must not be cached immutably: %q", rec.Header().Get("Cache-Control"))
+	}
+}
+
+func TestPlatformDrafts(t *testing.T) {
+	inv, err := filepath.Abs("../../examples/acme/inventories/prod.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "pbom.yaml")
+	doc := "apiVersion: pbom.dev/v1alpha1\nkind: Platform\nmetadata:\n  name: bare\nspec:\n  environments:\n    - name: prod\n      inventoryFile: " + inv + "\n"
+	if err := os.WriteFile(path, []byte(doc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	svc, err := service.New(path, service.Options{NoUpstream: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp platformResponse
+	if err := json.Unmarshal(get(New(svc, fstest.MapFS{}), "/api/platform").Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(resp.Drafted, ",") != "offerings,description" || len(resp.Platform.Spec.Offerings) == 0 ||
+		!strings.Contains(resp.Platform.Spec.Description, "Kubernetes") {
+		t.Fatalf("drafted %v: %+v", resp.Drafted, resp.Platform.Spec)
+	}
+	if svc.Platform.Spec.Description != "" || len(svc.Platform.Spec.Offerings) != 0 {
+		t.Error("drafting modified the configured platform")
+	}
+
+	resp = platformResponse{}
+	if err := json.Unmarshal(get(newTestServer(t), "/api/platform").Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Drafted) != 0 || !strings.HasPrefix(resp.Platform.Spec.Description, "A Kubernetes-based internal developer platform") {
+		t.Errorf("acme platform was drafted: %v", resp.Drafted)
 	}
 }
 

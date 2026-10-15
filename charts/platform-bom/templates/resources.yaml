@@ -1,0 +1,32 @@
+{{- $cr := default dict .Values.crdResources }}
+{{- if or (not (hasKey $cr "create")) $cr.create }}
+{{- include "platform-bom.customResource" (dict "root" $ "resource" .Values.platform) }}
+{{- range $name, $document := .Values.releases }}
+{{- if kindIs "string" $document }}
+{{- range $raw := regexSplit "(?m)^---\\s*$" $document -1 }}
+{{- $resource := fromYaml $raw }}
+{{- if $resource }}
+---
+{{ include "platform-bom.customResource" (dict "root" $ "resource" $resource) }}
+{{- end }}
+{{- end }}
+{{- else }}
+---
+{{ include "platform-bom.customResource" (dict "root" $ "resource" $document) }}
+{{- end }}
+{{- end }}
+{{- range $name, $document := .Values.components }}
+{{- if kindIs "string" $document }}
+{{- range $raw := regexSplit "(?m)^---\\s*$" $document -1 }}
+{{- $resource := fromYaml $raw }}
+{{- if $resource }}
+---
+{{ include "platform-bom.customResource" (dict "root" $ "resource" $resource) }}
+{{- end }}
+{{- end }}
+{{- else }}
+---
+{{ include "platform-bom.customResource" (dict "root" $ "resource" $document) }}
+{{- end }}
+{{- end }}
+{{- end }}

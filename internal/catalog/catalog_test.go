@@ -77,6 +77,8 @@ func TestMatching(t *testing.T) {
 		"opentelemetry-collector":          "opentelemetry-collector",
 		"argo-events":                      "argo-events",
 		"backstage":                        "backstage",
+		"argo-cd":                          "argocd",
+		"spiderpool":                       "spiderpool",
 	}
 	for chart, want := range charts {
 		if got := c.MatchHelmChart(chart); got == nil || got.Metadata.Name != want {
@@ -98,6 +100,12 @@ func TestMatching(t *testing.T) {
 	}
 	if got := c.MatchCrossplanePackage("xpkg.upbound.io/upbound/provider-kubernetes"); got == nil || got.Metadata.Name != "provider-kubernetes" {
 		t.Errorf("upbound provider-kubernetes = %v", got)
+	}
+	if got, ok := c.Get("spiderpool"); !ok || got.Spec.Category != "networking" {
+		t.Errorf("Get(spiderpool) = %v, %t", got, ok)
+	}
+	if len(c.List()) > 200 {
+		t.Errorf("List() includes landscape projects: %d components", len(c.List()))
 	}
 }
 

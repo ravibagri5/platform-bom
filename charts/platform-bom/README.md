@@ -13,9 +13,10 @@ Helm installs the latest chart by default. Add `--version X.Y.Z` to pin a
 specific release.
 
 The defaults discover the current cluster without custom YAML or a declared
-release. No CRDs are installed. Resource names include the Helm release name;
-cluster-scoped RBAC also includes the namespace. ConfigMap changes roll the
-pod using a configuration checksum.
+release. The chart installs four namespaced CRDs in the `pbom.dev` group
+(`Platform`, `PlatformRelease`, `Component`, `Inventory`) and PBOM watches those resources
+in its own namespace, applying changes without a restart. Resource names
+include the Helm release name; cluster-scoped RBAC also includes the namespace.
 
 | Value | Default | Purpose |
 | --- | --- | --- |
@@ -38,6 +39,7 @@ pod using a configuration checksum.
 | `refreshInterval` | `10m` | Discovery refresh interval |
 | `githubTokenSecret.name` | Empty | Existing Secret containing an optional GitHub token |
 | `githubTokenSecret.key` | `token` | Key in that Secret |
+| `landscapeURL` | CNCF `landscape.yml` on GitHub | Names and categorises Helm releases of CNCF projects outside the catalog; on download failure the built-in snapshot is used; `""` uses only the snapshot |
 | `auth.mode` | `none` | `none`, `header` (authenticating proxy) or `oidc` (OpenID Connect sign-in); see [authentication](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md) |
 | `auth.header.name` | `X-Forwarded-User` | Header with the user name, in `header` mode |
 | `auth.header.trustedProxies` | `[]` | CIDRs the proxy connects from; other clients are refused |
@@ -52,11 +54,10 @@ pod using a configuration checksum.
 | `extraInitContainers` | `[]` | Init containers that run before PBOM starts |
 | `extraVolumes` | `[]` | Additional pod volumes; `platform`, `releases`, `components`, `cache` and `kubeconfig` are reserved |
 | `extraVolumeMounts` | `[]` | Additional mounts in the PBOM container |
-| `configMaps.create` | `true` | Render configuration from `platform`, `releases` and `components`; `false` mounts ConfigMaps you apply yourself |
-| `configMaps.platform` / `.releases` / `.components` | `pbom-platform` / `pbom-releases` / `pbom-components` | Names of your ConfigMaps when `configMaps.create=false`; releases and components may be absent |
-| `platform` | Single in-cluster environment | PBOM `Platform` document, not a Kubernetes CRD; releases and components are read from the mounted ConfigMaps |
-| `releases` | `{}` | Map of file names to `PlatformRelease` documents or raw file content (`--set-file`) |
-| `components` | `{}` | Map of file names to `Component` documents or raw file content; override or extend the built-in catalog |
+| `crdResources.create` | `true` | Render `platform`, `releases` and `components` as custom resources; `false` when you apply them yourself (`kubectl apply -k`, any CD tool) |
+| `platform` | Single in-cluster environment | The `Platform` resource; its `metadata.name` is the one PBOM serves. Put a display name in `metadata.displayName`; the chart turns it into the `pbom.dev/display-name` annotation |
+| `releases` | `{}` | Map of file names to `PlatformRelease` resources or raw file content (`--set-file`) |
+| `components` | `{}` | Map of file names to `Component` resources or raw file content; override or extend the built-in catalog |
 | `resources` | 50m CPU / 128Mi requested, 512Mi memory limit | Pod resources |
 
 By default the UI has no sign-in; keep the Service private, or set
@@ -68,10 +69,18 @@ set `rbac.create=false`, `serviceAccount.create=false` and
 does not grant discovery permissions.
 
 File names in `releases` and `components` must end in `.yaml` or `.yml`. To
-keep each document in its own file instead, apply them as ConfigMaps and set
-`configMaps.create=false`; see
+keep each resource in its own file instead, apply them with `kubectl apply -k`
+and set `crdResources.create=false`; see
 [getting started](https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md#4-describe-your-platform-in-yaml).
-Either way, PBOM reloads changed configuration without a restart.
+Either way, PBOM picks up changes within seconds, without a restart. Change
+resources the chart renders through its values only: after a `kubectl edit` or
+`kubectl patch`, `helm upgrade` stops with a field conflict. An
+exported inventory of a cluster PBOM cannot reach is an `Inventory` resource,
+referenced from an environment with `inventory: <name>`.
+
+Helm installs CRDs on first install only and never upgrades or deletes them.
+After a chart upgrade that changes them, apply the new CRDs with
+`helm show crds oci://ghcr.io/ravibagri5/charts/platform-bom | kubectl apply -f -`.
 
 `values.schema.json` validates values on every install, upgrade, `template` and
 `lint`: unknown keys (typos such as `ingres`), wrong types, invalid ingress

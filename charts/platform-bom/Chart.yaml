@@ -2,8 +2,8 @@ apiVersion: v2
 name: platform-bom
 description: PBOM (Platform BOM) - read-only Kubernetes platform inventory with an embedded web UI
 type: application
-version: 0.9.0
-appVersion: "0.9.0"
+version: 1.0.0
+appVersion: "1.0.0"
 home: https://github.com/ravibagri5/platform-bom
 sources:
   - https://github.com/ravibagri5/platform-bom
@@ -23,6 +23,57 @@ maintainers:
 annotations:
   artifacthub.io/category: monitoring-logging
   artifacthub.io/license: Apache-2.0
+  artifacthub.io/crds: |
+    - kind: Platform
+      version: v1alpha1
+      name: platforms.pbom.dev
+      displayName: Platform
+      description: What the platform offers and which release each environment should run.
+    - kind: PlatformRelease
+      version: v1alpha1
+      name: platformreleases.pbom.dev
+      displayName: Platform release
+      description: The component versions and offerings that make up one platform version.
+    - kind: Component
+      version: v1alpha1
+      name: components.pbom.dev
+      displayName: Component
+      description: How to recognise a tool in a cluster and where its releases are published.
+    - kind: Inventory
+      version: v1alpha1
+      name: inventories.pbom.dev
+      displayName: Inventory
+      description: What a cluster PBOM cannot reach was running, exported with pbom discover.
+  artifacthub.io/crdsExamples: |
+    - apiVersion: pbom.dev/v1alpha1
+      kind: Platform
+      metadata:
+        name: my-platform
+        annotations:
+          pbom.dev/display-name: My Platform
+      spec:
+        environments:
+          - name: prod
+            inCluster: true
+            targetRelease: "1.0.0"
+    - apiVersion: pbom.dev/v1alpha1
+      kind: PlatformRelease
+      metadata:
+        name: "1.0.0"
+      spec:
+        version: "1.0.0"
+        components:
+          kubernetes: "1.34"
+          argocd: "3.1"
+  artifacthub.io/changes: |
+    - kind: added
+      description: Platform, PlatformRelease, Component and Inventory as custom resources, watched without restarts
+    - kind: added
+      description: Helm releases of CNCF projects named and categorised from the CNCF landscape, with a built-in snapshot
+    - kind: added
+      description: Description and offerings drafted from discovery until you write your own
+    - kind: changed
+      description: configMaps values replaced by crdResources.create; apply the CRDs before upgrading from 0.x
   artifacthub.io/links: |
     - name: Documentation
       url: https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md

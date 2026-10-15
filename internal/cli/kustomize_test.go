@@ -34,24 +34,11 @@ func TestWriteKustomizationListsPlatformFiles(t *testing.T) {
 	if err := yaml.Unmarshal(data, &k); err != nil {
 		t.Fatal(err)
 	}
-	got := map[string][]string{}
-	for _, g := range k.ConfigMaps {
-		got[g.Name] = g.Files
+	if strings.Join(k.Resources, ",") != "platform.yaml,edge.inventory.yaml,releases/1.0.0.yaml" {
+		t.Errorf("resources = %v", k.Resources)
 	}
-	want := map[string][]string{
-		"pbom-platform": {"pbom.yaml=platform.yaml", "edge.inventory.yaml"},
-		"pbom-releases": {"releases/1.0.0.yaml"},
-	}
-	if len(got) != len(want) {
-		t.Fatalf("generators = %v, want %v", got, want)
-	}
-	for name, files := range want {
-		if strings.Join(got[name], ",") != strings.Join(files, ",") {
-			t.Errorf("%s files = %v, want %v", name, got[name], files)
-		}
-	}
-	if k.Namespace != "platform-bom" || !k.GeneratorOptions["disableNameSuffixHash"] {
-		t.Errorf("namespace/options = %q/%v", k.Namespace, k.GeneratorOptions)
+	if k.Namespace != "platform-bom" {
+		t.Errorf("namespace = %q", k.Namespace)
 	}
 
 	writeFile(t, filepath.Join(dir, "components", "gw.yaml"), "kind: Component\n")
@@ -79,7 +66,7 @@ func TestWriteKustomizationKeepsHandWrittenFiles(t *testing.T) {
 func TestWritePlatformAcceptsAppendedEnvironment(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "platform.yaml")
 	offs := []api.Offering{{Name: "runtime", DisplayName: "Kubernetes workloads", Category: "runtime", Status: "ga", Components: []string{"kubernetes"}}}
-	if err := writePlatform(path, `team "x"`, "prod", "1.0.0", offs); err != nil {
+	if err := writePlatform(path, `team "x"`, "prod", "1.0.0", "A test platform.", offs); err != nil {
 		t.Fatal(err)
 	}
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
@@ -87,13 +74,13 @@ func TestWritePlatformAcceptsAppendedEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The exact snippet getting-started.md tells users to append.
-	_, _ = f.WriteString("    - name: edge\n      inventoryFile: edge.inventory.yaml\n")
+	_, _ = f.WriteString("    - name: edge\n      inventory: edge\n")
 	_ = f.Close()
 	p, err := service.LoadPlatform(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Metadata.Name != `team "x"` || len(p.Spec.Environments) != 2 || p.Spec.Environments[1].InventoryFile != "edge.inventory.yaml" {
+	if p.Metadata.Name != `team "x"` || len(p.Spec.Environments) != 2 || p.Spec.Environments[1].Inventory != "edge" {
 		t.Fatalf("unexpected platform: %+v", p)
 	}
 	if p.Spec.Environments[0].TargetRelease != "1.0.0" || !p.Spec.Environments[0].InCluster || p.Spec.ComponentsDir != "components" {
@@ -125,12 +112,12 @@ func TestInitOfferingsGroupsByCategory(t *testing.T) {
 			t.Errorf("offering %d = %+v, want %s %s", i, got[i], w.name, w.comps)
 		}
 	}
-	if got[2].Description != "Provided by Ingress NGINX, Istio." {
+	if got[2].Description != "Expose services, route traffic and secure the connections between them. Provided by Ingress NGINX and Istio." {
 		t.Errorf("description = %q", got[2].Description)
 	}
 
 	path := filepath.Join(t.TempDir(), "platform.yaml")
-	if err := writePlatform(path, "p", "prod", "1.0.0", got); err != nil {
+	if err := writePlatform(path, "p", "prod", "1.0.0", "", got); err != nil {
 		t.Fatal(err)
 	}
 	p, err := service.LoadPlatform(path)

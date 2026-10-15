@@ -3,7 +3,7 @@ LDFLAGS := -s -w -X github.com/ravibagri5/platform-bom/internal/cli.Version=$(VE
 EXAMPLE ?= examples/acme/pbom.yaml
 GOLANGCI_LINT_VERSION ?= v2.13.2
 
-.PHONY: all help ui build test test-coverage vet fmt tidy lint verify check run dev-ui kind-demo kind-clusters kind-simulation docker clean
+.PHONY: all help ui build test test-coverage landscape vet fmt tidy lint verify check run dev-ui kind-demo kind-clusters kind-simulation kind-e2e docker clean
 
 all: ui build
 
@@ -23,6 +23,9 @@ test: ## Run unit tests
 test-coverage: ## Run tests with coverage and print a summary
 	go test -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out | tail -1
+
+landscape: ## Refresh the built-in CNCF landscape snapshot
+	go generate ./internal/landscape
 
 vet: ## Run go vet
 	go vet ./...
@@ -56,6 +59,9 @@ kind-clusters: ## Create lightweight dev, QA and prod kind clusters
 
 kind-simulation: ## Install PBOM discovery fixtures into the three kind clusters
 	sh examples/kind/simulation/install.sh
+
+kind-e2e: ## Test the local image and chart on a throwaway kind cluster (KEEP=1 keeps it)
+	sh hack/kind-e2e.sh
 
 docker: ## Build the container image
 	docker build -t platform-bom:$(VERSION) --build-arg VERSION=$(VERSION) .

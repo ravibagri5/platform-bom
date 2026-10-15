@@ -72,19 +72,19 @@ Platform BOM is deliberately observational. It does not install or upgrade compo
 
 For example, a platform team can declare that development, staging, and production should run a particular platform release. Discovery then gives the team evidence about the components found in each environment. If production is still on an earlier release, the difference is visible instead of being hidden in a spreadsheet or rediscovered during an incident.
 
-The project includes a Helm chart and a getting-started guide. To try the released `v0.9.0` chart on a cluster you are authorized to inspect:
+The project includes a Helm chart and a getting-started guide. To try the released `v1.0.0` chart on a cluster you are authorized to inspect:
 
 ```sh
 helm upgrade --install pbom oci://ghcr.io/ravibagri5/charts/platform-bom \
-  --version 0.9.0 \
+  --version 1.0.0 \
   --namespace platform-bom --create-namespace --wait
 
 kubectl -n platform-bom port-forward svc/pbom-platform-bom 8080:80
 ```
 
-Then open <http://127.0.0.1:8080>. The default service account is read-only. Before sharing the UI, configure sign-in or an authenticating proxy, as described in the [authentication guide](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md). The [getting-started guide](https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md) walks through describing a platform and its release baselines in YAML.
+Then open <http://127.0.0.1:8080>. Before you write any YAML, PBOM drafts a short platform description and one offering per category from what it discovers, and recognises popular CNCF projects by name. The default service account is read-only. Before sharing the UI, configure sign-in or an authenticating proxy, as described in the [authentication guide](https://github.com/ravibagri5/platform-bom/blob/main/docs/authentication.md). The [getting-started guide](https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md) walks through describing a platform and its release baselines in YAML.
 
-The project is at `v0.9.0` today. It includes multi-environment inventory, component and offering views, release comparison, upstream version information, cloud workload identity for supported managed Kubernetes environments, and OIDC or proxy-based authentication. Those are current capabilities, not a claim that every platform concern is solved.
+The project reached `v1.0.0` on 2026-10-15. It includes multi-environment inventory, component and offering views, release comparison, upstream version information, cloud workload identity for supported managed Kubernetes environments, and OIDC or proxy-based authentication. The platform, its releases and its component definitions are Kubernetes custom resources, so they can live in Git and be applied by the same GitOps tools as everything else. Those are current capabilities, not a claim that every platform concern is solved.
 
 ## What a BOM can and cannot prove
 
@@ -110,7 +110,7 @@ These are ways to make the platform easier to inspect and integrate with existin
 
 Platform engineering is software engineering applied to shared capabilities and developer experience. If we expect platform teams to own products, we should also make it possible to describe those products: what they offer, how they are assembled, which release is intended, and what is actually running.
 
-That is the problem I am exploring with Platform BOM. It is early, the resource model is still evolving, and the PBOM concept is not a standard. I would rather be explicit about those limits than imply the problem is already solved.
+That is the problem I am exploring with Platform BOM. The PBOM concept is not a standard, and the resource API is still `v1alpha1`. I would rather be explicit about those limits than imply the problem is already solved.
 
 If you work on an internal platform, I would be interested in how your team answers these questions today. What do you track? What remains tribal knowledge? Which evidence sources or integrations would make a platform inventory genuinely useful in your workflow?
 

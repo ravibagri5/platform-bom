@@ -28,6 +28,10 @@ refreshInterval: 10m
 githubTokenSecret:
   name: ""
   key: token
+# CNCF landscape used to name and categorise Helm releases the catalog does not
+# know. If it cannot be downloaded, the snapshot built into PBOM is used.
+# Set an internal mirror, or "" to use only the snapshot.
+landscapeURL: https://raw.githubusercontent.com/cncf/landscape/master/landscape.yml
 
 # Who may open the UI and API. none: anyone who can reach the Service.
 # header: the user named in a header set by an authenticating proxy.
@@ -68,20 +72,19 @@ kubeconfigSecret:
 
 # Extend the pod without forking the chart, for example an init container that
 # copies a kubeconfig credential plugin into an emptyDir mounted in the pod.
-# Names platform, releases, components, cache and kubeconfig are used by the chart.
+# Names cache and kubeconfig are used by the chart.
 extraInitContainers: []
 extraVolumes: []
 extraVolumeMounts: []
 
-# false: mount ConfigMaps you apply yourself (kubectl apply -k, any CD tool)
-# instead of rendering them from platform, releases and components below.
-# Changes to them are picked up without a restart.
-configMaps:
+# Render the Platform, PlatformRelease and Component resources below.
+# Set false when those resources are managed separately (for example, by GitOps).
+crdResources:
   create: true
-  platform: pbom-platform
-  releases: pbom-releases
-  components: pbom-components
 
+# The platform PBOM presents. Until you set spec.description and spec.offerings,
+# PBOM drafts them from what it discovers; "pbom init" writes a commented
+# platform.yaml to start from (see docs/getting-started.md).
 platform:
   apiVersion: pbom.dev/v1alpha1
   kind: Platform
@@ -90,6 +93,7 @@ platform:
     displayName: My Platform
   spec:
     environments:
+      # The cluster PBOM runs in, read with its own service account.
       - name: this-cluster
         displayName: This cluster
         inCluster: true

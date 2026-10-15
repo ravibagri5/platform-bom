@@ -24,8 +24,9 @@ produces evidence, the evidence is normalised into an inventory, and the
 inventory is compared with the platform you declared in Git. The CLI, the JSON
 API and the web UI are all consumers of that model, and other tools can be too.
 
-> **Project status.** Early development. `v0.1.0` is the first release. The
-> resource schema is `v1alpha1` and will change. Everything described as
+> **Project status.** Stable since `v1.0.0`: the CLI, the Helm chart values
+> and the resource model change incompatibly only in a major release. The
+> resources are still named `pbom.dev/v1alpha1`. Everything described as
 > *current* below is in this repository today; everything else is marked as
 > roadmap.
 
@@ -237,10 +238,11 @@ inventory and the interfaces to them are the product.
 | --- | --- | --- |
 | Resource model | [internal/api](../internal/api) | `Platform`, `PlatformRelease`, `Component`, `Inventory` |
 | Discovery and evidence | [internal/discovery](../internal/discovery) | Kubernetes evidence sources |
-| Normalization | [internal/catalog](../internal/catalog) | Builtin and user-supplied component definitions |
+| Normalization | [internal/catalog](../internal/catalog), [internal/landscape](../internal/landscape) | Builtin and user-supplied component definitions; CNCF landscape projects for the rest |
 | Upstream data | [internal/upstream](../internal/upstream) | GitHub releases, cached on disk |
-| Analysis | [internal/analysis](../internal/analysis) | Matrix, drift, freshness, recommendations |
+| Analysis | [internal/analysis](../internal/analysis), [internal/draft](../internal/draft) | Matrix, drift, freshness, recommendations; drafted offerings and description |
 | Releases | [internal/release](../internal/release) | Load, create from an environment, diff |
+| Kubernetes resources | [internal/operator](../internal/operator) | Watches the `pbom.dev` custom resources and reloads the model when they change |
 | Interfaces | [internal/cli](../internal/cli), [internal/server](../internal/server) | CLI, JSON API, embedded web UI |
 
 Architectural choices that matter for where the project goes:
@@ -257,9 +259,11 @@ Architectural choices that matter for where the project goes:
   version. The platform, as declared by its team, is the abstraction.
 - **Declared state lives in Git.** Platform and release definitions are plain
   YAML, reviewed in pull requests. `git log releases/` is the platform
-  changelog.
+  changelog. In a cluster they are applied as `pbom.dev` custom resources,
+  which `pbom serve` watches; outside one, the CLI reads the same files.
 - **Read-only by design.** `pbom` observes; it never writes to the systems it
-  discovers.
+  discovers, nor to its own resources. One process watches all four resource
+  kinds and rebuilds one consistent model, instead of a controller per kind.
 
 ## Example platform inventory
 
@@ -471,6 +475,7 @@ feed the inventory, and **consumers** that read from it.
 | Web UI | Consumer | Embedded in the binary |
 | CI | Consumer | `pbom drift --exit-code` fails a job on drift |
 | Kubernetes deployment | Distribution | A hardened kustomize base in [deploy/](../deploy) |
+| Kubernetes custom resources, Helm chart | Consumer, distribution | `Platform`, `PlatformRelease`, `Component` and exported `Inventory` as `pbom.dev/v1alpha1` CRDs, watched by `pbom serve`; installed by the Helm chart |
 
 ### Planned integrations
 
@@ -488,7 +493,6 @@ ecosystem, not as commitments.
 | GitHub Action, GitLab CI component | Consumer | Drift checks with a Markdown job summary; release diffs on pull requests | M7 |
 | Argo CD UI extension, Kargo | Consumer | Platform release status next to the applications and promotion stages that deliver it | M7 |
 | Crossplane function or provider | Consumer | Let compositions use platform information, such as the declared release. Crossplane is one implementation technology among many, not the core of the model. | M8 |
-| Kubernetes custom resources, Helm chart | Consumer, distribution | Platforms and releases as Kubernetes APIs; an alternative to the kustomize base | M8 |
 | Prometheus metrics, kubectl plugin, Go client | Consumer | Alert on drift, run `kubectl pbom`, build on a typed client | M9 |
 | MCP server | Consumer | Let AI assistants query the inventory through a standard interface, e.g. *"What version of Argo CD runs in production?"*, *"What changed between 1.7 and 1.8?"*, *"Which offerings depend on Crossplane?"*. The inventory stays the source of truth. | M10 |
 
@@ -585,9 +589,10 @@ platform capabilities, not listing every cloud resource.
 GitHub Action and a GitLab CI component for drift checks; an Argo CD UI
 extension and Kargo, if they prove worth maintaining.
 
-**M8 — Kubernetes-native integrations.** A Crossplane composition function or
-provider; platforms and releases as Kubernetes custom resources, with an
-operator only if a controller is genuinely needed; a Helm chart.
+**M8 — Kubernetes-native integrations.** Done: a Helm chart, and `Platform`,
+`PlatformRelease`, `Component` and `Inventory` as Kubernetes custom resources
+in `v1.0.0`, watched by `pbom serve` without a separate controller. Remaining:
+a Crossplane composition function or provider.
 
 **M9 — Developer interfaces.** The CLI and a read-only JSON API exist.
 Remaining: a versioned REST API with an OpenAPI document, which the plugins and
@@ -706,8 +711,8 @@ capture screenshots from the running UI to show the latest state.
 **Describe your own platform** and cut a first release from production:
 [Describing your platform](usage.md#describing-your-platform).
 
-**Run it in a cluster** with the read-only kustomize base:
-[Running in a cluster](deployment.md#running-in-a-cluster).
+**Run it in a cluster** with the Helm chart:
+[Getting started](getting-started.md).
 
 Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit for upstream checks,
 or pass `--no-upstream` to work offline.

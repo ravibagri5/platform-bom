@@ -1,6 +1,7 @@
 export interface Metadata {
   name: string
   displayName?: string
+  labels?: Record<string, string>
 }
 
 export interface Offering {
@@ -50,8 +51,10 @@ export interface PlatformResponse {
   platform: Platform
   readme?: string
   currentRelease?: PlatformRelease
-  drafted?: ('description' | 'offerings')[]
+  drafted?: ('description' | 'offerings' | 'release' | 'targets')[]
 }
+
+export const isDrafted = (r?: PlatformRelease) => r?.metadata.labels?.['pbom.dev/drafted'] === 'true'
 
 export type Freshness = 'unknown' | 'latest' | 'patch-available' | 'minor-behind' | 'major-behind' | 'unsupported'
 
@@ -225,4 +228,6 @@ export const api = {
     get<ReleaseDiff>(`/api/diff?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   catalog: () => get<CatalogComponent[]>('/api/catalog'),
   inventory: () => get<Record<string, Inventory>>('/api/inventory'),
+  snapshotURL: (env: string, name: string) =>
+    `/api/snapshot?env=${encodeURIComponent(env)}&name=${encodeURIComponent(name)}`,
 }

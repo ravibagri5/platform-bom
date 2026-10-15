@@ -58,7 +58,11 @@ versions, evidence and the latest upstream release. Helm releases of CNCF
 projects outside the built-in catalog are named and categorised from the
 [CNCF landscape](usage.md#cncf-landscape); others appear as *unclassified*.
 The home page and **Offerings** start with a description and one offering per
-category, drafted from what PBOM found, until you write your own in step 4.
+category, drafted from what PBOM found, and **Releases** with a drafted first
+release of what the cluster runs now, until you write your own in step 4. To
+keep that release, open **Releases**, download it and apply it with
+`kubectl apply -n platform-bom -f 1.0.0.yaml`; later releases work the same
+way. **Updates** lists newer upstream versions and why they matter.
 Latest upstream versions are fetched from GitHub after startup and can take a few
 minutes to fill in, longer without a [GitHub token](#7-operate-it).
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type ComponentChange, type PlatformRelease, type PlatformResponse } from '../api'
+import { api, isDrafted, type ComponentChange, type PlatformRelease, type PlatformResponse } from '../api'
 import { ErrorBox, Loading, Markdown, PageHeader, Pill, formatDate, useAsync } from '../components'
 
 type Label = (name: string) => string
@@ -21,15 +21,16 @@ export default function ReleasesPage({ selected, platform }: { selected?: string
   const offLabel: Label = (n) => offNames.get(n) ?? n
   if (error) return <ErrorBox error={error} />
   if (!releases) return <Loading what="releases" />
+  const envs = (platform?.platform.spec.environments ?? []).map((e) => e.name)
   if (releases.length === 0) {
     return (
       <div>
         <PageHeader title="Releases" />
         <div className="card empty-state">
           <h3>No platform releases yet</h3>
-          <p>Cut your first release from a live environment:</p>
-          <pre>pbom release create v1.0.0 --from-env prod --summary "First platform release"</pre>
+          <p>Nothing has been discovered to draft a first release from. Check the Environments page for errors.</p>
         </div>
+        {envs.length > 0 && <NewRelease envs={envs} suggested="1.0.0" />}
       </div>
     )
   }
@@ -39,6 +40,7 @@ export default function ReleasesPage({ selected, platform }: { selected?: string
   )
   const current = releases[idx]
   const previous = releases[idx + 1]
+  const drafted = isDrafted(releases[0])
 
   return (
     <div>
@@ -46,6 +48,20 @@ export default function ReleasesPage({ selected, platform }: { selected?: string
         title="Releases"
         subtitle="Every platform release is a versioned bundle of components and offerings."
       />
+      {drafted && (
+        <div className="card notice">
+          <strong>v{releases[0].spec.version} is a draft.</strong> PBOM drafted it from what the cluster runs now, so
+          environments have something to be compared with. It is not saved: apply it below to make it your first
+          release, then edit its summary and notes like any other file in Git.
+        </div>
+      )}
+      {envs.length > 0 && (
+        <NewRelease
+          envs={envs}
+          suggested={drafted ? releases[0].metadata.name : nextVersion(releases[0].spec.version)}
+          title={drafted ? 'Save the first release' : 'Create the next release'}
+        />
+      )}
       <div className="releases-layout">
         <aside className="timeline">
           {releases.map((r, i) => (
@@ -57,7 +73,7 @@ export default function ReleasesPage({ selected, platform }: { selected?: string
               <span className="timeline-dot" />
               <div>
                 <div className="timeline-version">
-                  v{r.spec.version} {i === 0 && <Pill tone="good">Current</Pill>}
+                  v{r.spec.version} {i === 0 && (isDrafted(r) ? <Pill tone="muted">Draft</Pill> : <Pill tone="good">Current</Pill>)}
                 </div>
                 <div className="small muted">{formatDate(r.spec.date)}</div>
                 {r.spec.summary && <div className="small">{r.spec.summary}</div>}
@@ -198,5 +214,53 @@ function ReleaseDetail({
         )}
       </section>
     </div>
+  )
+}
+
+function nextVersion(v: string): string {
+  const m = /^v?(\d+)\.(\d+)/.exec(v)
+  return m ? `${m[1]}.${Number(m[2]) + 1}.0` : '1.0.0'
+}
+
+// PBOM never writes releases; it offers a snapshot for the user to apply.
+function NewRelease({ envs, suggested, title = 'Create a release' }: { envs: string[]; suggested: string; title?: string }) {
+  const [env, setEnv] = useState(envs[0])
+  const [name, setName] = useState(suggested)
+  useEffect(() => setName(suggested), [suggested])
+  const url = api.snapshotURL(env, name)
+  return (
+    <section className="card">
+      <h3>{title}</h3>
+      <p className="small muted">
+        A release is a snapshot of the component versions an environment runs. Pick the environment and a version,
+        then apply it as a <code>PlatformRelease</code> resource and keep the file in Git.
+      </p>
+      <div className="form-row">
+        <label>
+          Environment{' '}
+          <select value={env} onChange={(e) => setEnv(e.target.value)}>
+            {envs.map((e) => (
+              <option key={e}>{e}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Version <input value={name} onChange={(e) => setName(e.target.value.trim())} />
+        </label>
+        <a className="btn" href={url + '&download=1'}>
+          Download {name}.yaml
+        </a>
+      </div>
+      <pre>{`kubectl apply -n platform-bom -f ${name}.yaml
+# or in one step, when sign-in is off:
+curl -fsS "${window.location.origin}${url}" | kubectl apply -n platform-bom -f -`}</pre>
+      <p className="small muted">
+        Use the namespace PBOM runs in. With a directory from <code>pbom init</code>, run{' '}
+        <code>
+          pbom -c pbom-config/platform.yaml release create {name} --from-env {env} --context &lt;context&gt;
+        </code>{' '}
+        and <code>kubectl apply -k pbom-config</code> instead.
+      </p>
+    </section>
   )
 }

@@ -40,6 +40,41 @@ func TestReleasesFiltersAndSorts(t *testing.T) {
 	}
 }
 
+func TestReleasesFallBackToFeedWhenRateLimited(t *testing.T) {
+	apiCalls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/argoproj/argo-cd/releases", "/repos/kyverno/kyverno/releases":
+			apiCalls++
+			w.Header().Set("X-RateLimit-Remaining", "0")
+			w.WriteHeader(http.StatusForbidden)
+		case "/argoproj/argo-cd/releases.atom", "/kyverno/kyverno/releases.atom":
+			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><updated>2026-10-15T14:58:49Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/argoproj/argo-cd/releases/tag/v3.6.0-rc3"/><title>v3.6.0-rc3</title></entry>
+  <entry><updated>2026-10-01T10:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/argoproj/argo-cd/releases/tag/v3.5.2"/><title>v3.5.2</title></entry>
+</feed>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := NewClient()
+	c.BaseURL, c.WebURL, c.CacheDir = srv.URL, srv.URL, ""
+	for _, slug := range []string{"argoproj/argo-cd", "kyverno/kyverno"} {
+		got, err := c.Releases(context.Background(), &api.Upstream{GitHub: slug})
+		if err != nil || len(got) != 1 || got[0].Version != "3.5.2" {
+			t.Fatalf("%s: releases = %+v, %v", slug, got, err)
+		}
+	}
+	if apiCalls != 1 {
+		t.Errorf("API called %d times; once rate limited it must not be retried", apiCalls)
+	}
+}
+
 func TestReleasesRejectsBadSlug(t *testing.T) {
 	if _, err := NewClient().Releases(context.Background(), &api.Upstream{GitHub: "../../etc"}); err == nil {
 		t.Fatal("expected error for invalid slug")

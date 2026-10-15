@@ -61,8 +61,8 @@ the UI: labels created by hand are removed on the next sync.
 
 | Where | What it holds |
 | --- | --- |
-| [ROADMAP.md](../ROADMAP.md) | The direction and the next priorities, linked to issues. Changed by pull request. |
-| Milestones | One per roadmap theme, `M0 — Project foundation` to `M12 — Secure access and multi-cluster identity`, matching the README. Releases are cut from `main` and are not tied to a milestone. |
+| [ROADMAP.md](../ROADMAP.md) | The vision and the priorities (*Now*, *Next*, *Later*, *Then*), linked to issues. Changed by pull request. |
+| Milestones | One per roadmap tier: *Now*, *Next*, *Later*, *Then* and *Exploring*. Themes are `theme/*` labels and the board's Theme field. Releases are cut from `main` and are not tied to a milestone. |
 | **platform-bom Roadmap** project | The board. Every accepted issue is on it, grouped by milestone and theme. |
 
 The project board is owned by the maintainer's GitHub account and linked to

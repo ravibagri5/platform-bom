@@ -179,7 +179,8 @@ limit; `--no-upstream` skips upstream checks. For a cluster-free example, run
 | [Multi-cluster](docs/multi-cluster.md) | One PBOM for dev, QA and prod: management cluster, one of your clusters, or exported inventories |
 | [Authentication](docs/authentication.md) | OpenID Connect sign-in (Entra ID, Okta, Keycloak, Dex, Google) or an authenticating proxy |
 | [Kind simulation](examples/kind/simulation/README.md) | Recreate the screenshot environment and release drift |
-| [Roadmap](ROADMAP.md) | Upcoming work and milestones |
+| [Roadmap](ROADMAP.md) | The vision and what comes next, in priority order |
+| [Wiki: Vision](https://github.com/ravibagri5/platform-bom/wiki/Vision) | The reasoning behind the roadmap |
 | [Community](docs/community.md) | Planning, labels and participation |
 | [Contributing](CONTRIBUTING.md) | Development and contribution guide |
 | [Security](SECURITY.md) | Threat model and vulnerability reporting |

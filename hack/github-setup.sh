@@ -39,21 +39,13 @@ run gh repo edit "$SLUG" \
 run gh api -X PUT "repos/$SLUG/private-vulnerability-reporting" --silent
 
 step "Milestones"
-# title|state|description, matching the README roadmap.
+# title|state|description, matching the tiers in ROADMAP.md.
 milestones=(
-  "M0 — Project foundation|closed|Resource model for platforms, components, offerings, environments and releases; JSON API; release tooling."
-  "M1 — Kubernetes discovery|closed|Cluster version and distribution, images, Helm, API groups and Crossplane packages, with evidence per observation."
-  "M2 — Platform inventory|open|Normalised per-environment inventories, environment comparison and drift; history and push-based inventories."
-  "M3 — Platform releases and PBOM|open|Declared platform and releases, release lint, CycloneDX export, per-environment offering bindings, a consolidated PBOM document."
-  "M4 — Upstream intelligence|open|End-of-life data, security advisories, compatibility rules and upgrade paths, all explainable."
-  "M5 — GitOps and IaC discovery|open|Argo CD, Flux, Terraform/OpenTofu and Pulumi as evidence sources; environments beyond Kubernetes."
-  "M6 — Cloud evidence|open|Correlate AWS, Azure and GCP managed services with the offerings they implement, without becoming a cloud inventory."
-  "M7 — Ecosystem integrations|open|Backstage, Headlamp and k9s plugins, CI integrations for GitHub and GitLab, Argo CD and Kargo."
-  "M8 — Kubernetes-native integrations|open|Crossplane provider or function, platforms and releases as Kubernetes APIs, Helm chart."
-  "M9 — Developer interfaces|open|Versioned REST API with OpenAPI, Prometheus metrics, kubectl plugin, Go client, webhooks."
-  "M10 — MCP server|open|A read-only MCP server so AI assistants can query the platform inventory."
-  "M11 — PBOM specification|open|A versioned PBOM schema with validation, examples, import and export, and OCI distribution."
-  "M12 — Secure access and multi-cluster identity|open|OIDC sign-in and authorization for the UI and API, keyless cloud identity and per-environment credentials for discovering many clusters, and a dark/light theme."
+  "Now — Keep current and keep safe|open|For every cluster, answer can we upgrade and are we affected: end-of-life data, compatibility, removed APIs, upgrade plans, advisories, a signed lifecycle data bundle."
+  "Next — System of record and evidence|open|Fleet history and evidence an auditor accepts: agent mode, signed history, offerings as contracts, ownership, capability health, controls and exceptions, audit reports."
+  "Later — Act and communicate|open|Turn insight into reviewed changes and reach affected teams: upgrade pull requests, MCP server, Backstage, notices, GitOps evidence."
+  "Then — Show value and grow the ecosystem|open|Make the platform team's impact visible and grow the ecosystem: platform KPIs, a shared knowledge base, integrations driven by demand."
+  "Exploring — No commitment|open|Ideas we will decide on with users; no commitment."
 )
 existing=$(gh api "repos/$SLUG/milestones?state=all&per_page=100" --jq '.[].title')
 for m in "${milestones[@]}"; do
@@ -91,7 +83,7 @@ else
   echo "exists: project #$number"
 fi
 run gh project edit "$number" --owner "$OWNER" --visibility PUBLIC \
-  --description "Roadmap and delivery board for platform-bom. Grouped by milestone (M0 to M12) and theme."
+  --description "Roadmap and delivery board for platform-bom. Grouped by roadmap tier (Now, Next, Later, Then, Exploring) and theme."
 run gh project link "$number" --owner "$OWNER" --repo "$SLUG"
 
 if [[ "$SEED_ISSUES" == "1" ]]; then
@@ -109,13 +101,13 @@ if [[ "$SEED_ISSUES" == "1" ]]; then
   step "Seed issues from ROADMAP.md"
   # title|milestone|labels|body
   seeds=(
-    "Discover Argo CD Applications as evidence|M5 — GitOps and IaC discovery|enhancement,area/discovery,theme/discover,priority/high|Read Application resources for target revision, sync status and images, so the matrix can compare the promised release, Git and the running version."
-    "Discover Flux HelmReleases and Kustomizations as evidence|M5 — GitOps and IaC discovery|enhancement,area/discovery,theme/discover,priority/medium|The Flux equivalent of the Argo CD evidence source."
-    "pbom release lint|M3 — Platform releases and PBOM|enhancement,area/release,theme/version,priority/medium|Check a release file against the catalog before it merges: unknown components, versions that do not exist upstream."
-    "End-of-life data from endoflife.date and managed Kubernetes support windows|M4 — Upstream intelligence|enhancement,area/upstream,theme/advise,priority/high|Make \"unsupported\" reflect EKS, AKS and GKE calendars as well as upstream support."
-    "Security advisories for running versions|M4 — Upstream intelligence|enhancement,area/upstream,theme/advise,priority/medium|Show GitHub Security Advisories and OSV entries for the versions each environment runs."
-    "Compatibility rules between components|M4 — Upstream intelligence|proposal,area/catalog,theme/advise,needs design|Declare in the catalog which versions of one component need which versions of another, for example Karpenter and Kubernetes."
-    "Inventory history and what changed this week|M2 — Platform inventory|proposal,area/analysis,theme/history,needs design|Keep discovery snapshots so the UI can show what changed and when each environment moved between releases."
+    "Discover Argo CD Applications as evidence|Later — Act and communicate|enhancement,area/discovery,theme/discover,priority/high|Read Application resources for target revision, sync status and images, so the matrix can compare the promised release, Git and the running version."
+    "Discover Flux HelmReleases and Kustomizations as evidence|Later — Act and communicate|enhancement,area/discovery,theme/discover,priority/medium|The Flux equivalent of the Argo CD evidence source."
+    "pbom release lint|Next — System of record and evidence|enhancement,area/release,theme/version,priority/medium|Check a release file against the catalog before it merges: unknown components, versions that do not exist upstream."
+    "End-of-life data from endoflife.date and managed Kubernetes support windows|Now — Keep current and keep safe|enhancement,area/upstream,theme/advise,priority/high|Make \"unsupported\" reflect EKS, AKS and GKE calendars as well as upstream support."
+    "Security advisories for running versions|Now — Keep current and keep safe|enhancement,area/upstream,theme/advise,priority/medium|Show GitHub Security Advisories and OSV entries for the versions each environment runs."
+    "Compatibility rules between components|Now — Keep current and keep safe|proposal,area/catalog,theme/advise,needs design|Declare in the catalog which versions of one component need which versions of another, for example Karpenter and Kubernetes."
+    "Inventory history and what changed this week|Next — System of record and evidence|proposal,area/analysis,theme/history,needs design|Keep discovery snapshots so the UI can show what changed and when each environment moved between releases."
   )
   open_titles=$(gh issue list --repo "$SLUG" --state all --limit 500 --json title --jq '.[].title')
   for s in "${seeds[@]}"; do

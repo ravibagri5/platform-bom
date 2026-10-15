@@ -138,9 +138,9 @@ offering users depend on.
 
 Today, only components that can be observed through Kubernetes can be verified
 by discovery. An offering implemented through Terraform or Pulumi can be
-declared, but `pbom` has no evidence source for it yet (see
-[M5](#roadmap)). Binding offerings to different implementations per
-environment is also a roadmap item.
+declared, but `pbom` has no evidence source for it yet (exploring, see the
+[roadmap](#roadmap)). Offerings as contracts, with interfaces, consumers and
+per-environment availability, are a *Next* roadmap item.
 
 ## PBOM: a Platform Bill of Materials
 
@@ -342,8 +342,8 @@ offerings:
 ### Conceptual: a consolidated PBOM document
 
 > **Conceptual.** The document below is not implemented and is not a stable
-> schema. It illustrates the direction of
-> [M3 and M11](#roadmap): one portable document combining the
+> schema. It illustrates a direction on the [roadmap](#roadmap): one portable
+> document combining the
 > declared release, its offerings, and optionally the observed state of each
 > environment with evidence.
 
@@ -527,92 +527,22 @@ sources are added, the same file is where their signals will go.
 
 ## Roadmap
 
-A direction, not a schedule. Milestones overlap and may change as we learn
-from users. Each milestone below is a GitHub milestone with its issues, and
-every issue is on the
-[project board](https://github.com/users/ravibagri5/projects/2). Releases are
-cut from `main` whenever enough has landed; see [ROADMAP.md](../ROADMAP.md) for
-what is next.
+A direction, not a schedule; [ROADMAP.md](../ROADMAP.md) has the details and
+the issues. The vision: **PBOM becomes the system of record for the lifecycle
+of an internal platform across a fleet of clusters**, covering what runs
+where, whether it is supported and secure, what to upgrade next, who is
+affected, and the evidence to prove it, without write access to your clusters.
 
-| Milestone | Status |
-| --- | --- |
-| [M0 — Project foundation](https://github.com/ravibagri5/platform-bom/milestone/1) | Done |
-| [M1 — Kubernetes discovery](https://github.com/ravibagri5/platform-bom/milestone/5) | Done |
-| [M2 — Platform inventory](https://github.com/ravibagri5/platform-bom/milestone/4) | Mostly done |
-| [M3 — Platform releases and PBOM](https://github.com/ravibagri5/platform-bom/milestone/6) | In progress |
-| [M4 — Upstream intelligence](https://github.com/ravibagri5/platform-bom/milestone/3) | In progress |
-| [M5 — GitOps and IaC discovery](https://github.com/ravibagri5/platform-bom/milestone/2) | Planned |
-| [M6 — Cloud evidence](https://github.com/ravibagri5/platform-bom/milestone/7) | Exploring |
-| [M7 — Ecosystem integrations](https://github.com/ravibagri5/platform-bom/milestone/8) | Planned |
-| [M8 — Kubernetes-native integrations](https://github.com/ravibagri5/platform-bom/milestone/9) | Exploring |
-| [M9 — Developer interfaces](https://github.com/ravibagri5/platform-bom/milestone/10) | In progress |
-| [M10 — MCP server](https://github.com/ravibagri5/platform-bom/milestone/11) | Planned |
-| [M11 — PBOM specification](https://github.com/ravibagri5/platform-bom/milestone/12) | Exploring |
-| [M12 — Secure access and multi-cluster identity](https://github.com/ravibagri5/platform-bom/milestone/13) | Next (target: November 2026) |
+| Priority | Theme | Examples |
+| --- | --- | --- |
+| Now | Keep current and keep safe | End-of-life data, compatibility, removed APIs, upgrade plans, fleet-wide advisory exposure, a signed lifecycle data bundle |
+| Next | System of record and evidence | Agent mode, signed history, offerings with consumers, capability health, controls and exceptions, audit reports |
+| Later | Act and communicate | Upgrade pull requests, MCP server, Backstage plugin, notices to affected teams, Argo CD and Flux evidence |
+| Then | Show value and grow the ecosystem | Platform KPIs such as patch latency and upgrade lag, a shared knowledge base, more integrations |
 
-**M0 — Project foundation.** Repository and release tooling; the
-resource model for platforms, components, offerings, environments and platform
-releases; the JSON API. *Done.*
-
-**M1 — Kubernetes discovery.** Cluster version and distribution;
-components from container images, Helm releases, served API groups (including
-CRDs) and Crossplane packages; an evidence record for every observation.
-*Done.*
-
-**M2 — Platform inventory.** Normalization through the component
-catalog; per-environment inventories; environment comparison; drift; the
-platform overview. *Done.* Remaining: inventory history and *what changed this
-week*; an in-cluster agent that pushes inventories to a central server for
-clusters it cannot reach.
-
-**M3 — Platform releases and PBOM.** Declared platform, releases cut
-from a live environment, release diffs and the newest release each environment
-satisfies are *done*. Remaining: `pbom release lint`; CycloneDX export of a
-release; binding offerings to implementations per environment.
-
-**M4 — Upstream intelligence.** Upstream releases, release notes,
-support windows and explainable recommendations are *done*. Remaining:
-end-of-life data from [endoflife.date](https://endoflife.date) and managed
-Kubernetes providers; security advisories; compatibility metadata between
-components; upgrade paths.
-
-**M5 — GitOps and IaC discovery.** Argo CD `Application` and Flux
-`HelmRelease`/`Kustomization` evidence; Terraform/OpenTofu state and Pulumi
-stacks; environments that are not only Kubernetes clusters. Helm is already
-covered by M1.
-
-**M6 — Cloud evidence.** AWS, Azure and GCP evidence, correlated with
-the offerings they implement. Deliberately narrow: this is about recognising
-platform capabilities, not listing every cloud resource.
-
-**M7 — Ecosystem integrations.** Plugins for Backstage, Headlamp and k9s; a
-GitHub Action and a GitLab CI component for drift checks; an Argo CD UI
-extension and Kargo, if they prove worth maintaining.
-
-**M8 — Kubernetes-native integrations.** Done: a Helm chart, and `Platform`,
-`PlatformRelease`, `Component` and `Inventory` as Kubernetes custom resources
-in `v1.0.0`, watched by `pbom serve` without a separate controller. Remaining:
-a Crossplane composition function or provider.
-
-**M9 — Developer interfaces.** The CLI and a read-only JSON API exist.
-Remaining: a versioned REST API with an OpenAPI document, which the plugins and
-the MCP server build on; Prometheus metrics; a kubectl plugin through krew; a
-Go client; webhooks or events when drift or upstream state changes.
-
-**M10 — MCP server.** A read-only MCP server exposing the inventory, over stdio
-and HTTP: query component versions, offerings and releases, compare
-environments and releases, and query upstream information.
-
-**M11 — PBOM specification.** If the concept proves useful beyond this
-project: a versioned PBOM schema with validation, examples, import and export,
-publishing releases as OCI artifacts, and a community process for evolving it.
-
-**M12 — Secure access and multi-cluster identity.** OIDC sign-in and
-role-based, per-environment authorization for the UI and API, including
-service-account tokens for API clients; keyless discovery of AKS, EKS and GKE
-clusters with workload identity; per-environment kubeconfig or service-account token
-credentials for other clusters; a dark theme. Discovery credentials and inbound
-user access are separate concerns.
+GitHub milestones match these tiers on the
+[project board](https://github.com/users/ravibagri5/projects/2); releases are
+cut from `main` whenever enough has landed.
 
 ## Principles and non-goals
 

@@ -75,6 +75,17 @@ jobs:
           fi
           helm template pbom charts/platform-bom --set-json 'serviceAccount.annotations={"azure.workload.identity/client-id":"id"}' --set-json 'podLabels={"azure.workload.identity/use":"true"}' > /tmp/wi.yaml
           grep -q 'azure.workload.identity/client-id: id' /tmp/wi.yaml && grep -q 'azure.workload.identity/use: "true"' /tmp/wi.yaml
+          if helm template pbom charts/platform-bom | grep -q -- '--metrics-addr'; then
+            echo "::error::metrics must be off by default"
+            exit 1
+          fi
+          helm template pbom charts/platform-bom --set metrics.enabled=true --set metrics.serviceMonitor.enabled=true --set metrics.prometheusRule.enabled=true --set metrics.grafanaDashboard.enabled=true > /tmp/mon.yaml
+          grep -q 'kind: ServiceMonitor' /tmp/mon.yaml && grep -q 'kind: PrometheusRule' /tmp/mon.yaml && grep -q 'platform-bom.json' /tmp/mon.yaml && grep -q -- '--metrics-addr=0.0.0.0:9090' /tmp/mon.yaml
+          if helm template pbom charts/platform-bom --set metrics.serviceMonitor.enabled=true | grep -q 'kind: ServiceMonitor'; then
+            echo "::error::no ServiceMonitor without metrics"
+            exit 1
+          fi
+          python3 -m json.tool charts/platform-bom/dashboards/platform-bom.json > /dev/null
           helm template pbom charts/platform-bom --set-json 'auth={"mode":"oidc","oidc":{"issuer":"https://idp.example.com","clientId":"pbom","redirectURL":"https://pbom.example.com/auth/callback","clientSecret":{"name":"pbom-oidc"}},"sessionSecret":{"name":"pbom-oidc"}}' > /tmp/auth.yaml
           grep -q -- '--oidc-issuer=https://idp.example.com' /tmp/auth.yaml && grep -q 'PBOM_SESSION_SECRET' /tmp/auth.yaml
           if helm template pbom charts/platform-bom --set auth.mode=oidc > /dev/null 2>&1; then

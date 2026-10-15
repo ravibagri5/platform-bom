@@ -1,0 +1,65 @@
+{{- $metrics := default dict .Values.metrics }}
+{{- $rule := default dict $metrics.prometheusRule }}
+{{- if and $metrics.enabled $rule.enabled }}
+{{- $sel := printf "namespace=%q, job=%q" .Release.Namespace (include "platform-bom.fullname" .) }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "platform-bom.fullname" . }}
+  labels:
+    {{- include "platform-bom.labels" . | nindent 4 }}
+    {{- with $rule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: platform-bom
+      rules:
+        - alert: PlatformBOMDown
+          expr: up{ {{- $sel -}} } == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: PBOM is not being scraped
+            description: Prometheus cannot scrape PBOM in {{ .Release.Namespace }}; platform drift and update alerts are blind.
+        - alert: PlatformBOMEnvironmentOffTarget
+          expr: pbom_environment_compliant{ {{- $sel -}} } == 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{`{{ $labels.environment }}`}} does not run its target release"
+            description: "{{`{{ $labels.environment }}`}} should run release {{`{{ $labels.target_release }}`}}; see the Environments page in PBOM for the drifting components."
+        - alert: PlatformBOMUnsupportedVersion
+          expr: pbom_component_freshness{ {{- $sel }}, freshness="unsupported"} == 1
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{`{{ $labels.component }}`}} in {{`{{ $labels.environment }}`}} is out of upstream support"
+            description: See the Updates page in PBOM for the supported versions and upgrade path.
+        - alert: PlatformBOMDiscoveryFailing
+          expr: increase(pbom_discovery_errors_total{ {{- $sel -}} }[30m]) > 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PBOM cannot discover {{`{{ $labels.environment }}`}}"
+            description: Discovery of {{`{{ $labels.environment }}`}} has been failing for 30 minutes; the PBOM log has the reason. Its inventory is out of date.
+        - alert: PlatformBOMConfigurationInvalid
+          expr: pbom_config_last_reload_successful{ {{- $sel -}} } == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: PBOM configuration is invalid
+            description: The last change to the PBOM resources or files was rejected and the previous configuration keeps serving; the PBOM log has the reason.
+        - alert: PlatformBOMUpstreamRateLimited
+          expr: increase(pbom_upstream_requests_total{ {{- $sel }}, source="api", result="rate_limited"}[1h]) > 0
+          labels:
+            severity: info
+          annotations:
+            summary: PBOM reached the GitHub API rate limit
+            description: Upstream versions come from release feeds with less detail. Set githubTokenSecret for complete data.
+{{- end }}

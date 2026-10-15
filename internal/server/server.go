@@ -247,9 +247,25 @@ func securityHeaders(next http.Handler) http.Handler {
 func logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next.ServeHTTP(w, r)
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			slog.Debug("request", "method", r.Method, "path", r.URL.Path, "duration", time.Since(start))
+		sw := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(sw, r)
+		if !strings.HasPrefix(r.URL.Path, "/api/") {
+			return
 		}
+		level := slog.LevelDebug
+		if sw.status >= http.StatusInternalServerError {
+			level = slog.LevelWarn
+		}
+		slog.Log(r.Context(), level, "request", "method", r.Method, "path", r.URL.Path, "status", sw.status, "duration", time.Since(start))
 	})
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(code int) {
+	w.status = code
+	w.ResponseWriter.WriteHeader(code)
 }

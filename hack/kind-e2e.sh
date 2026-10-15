@@ -1,6 +1,6 @@
 #!/bin/sh
 # End-to-end check of the local chart and image on a throwaway kind cluster:
-# CRDs, live reconciliation, Inventory resources, drafts and CNCF classification.
+# CRDs, live reconciliation, Inventory resources, drafts, CNCF classification and metrics.
 # Usage: sh hack/kind-e2e.sh        (KEEP=1 keeps the cluster; UPGRADE_FROM=0.9.0 also tests upgrading from that chart)
 set -eu
 
@@ -14,6 +14,7 @@ failed=0
 
 cleanup() {
   [ -n "${pf:-}" ] && kill "$pf" 2>/dev/null || true
+  [ -n "${mpf:-}" ] && kill "$mpf" 2>/dev/null || true
   rm -rf "$tmp"
   if [ "${KEEP:-}" = 1 ]; then
     echo "Cluster kept: kubectl --context kind-$cluster -n $ns get pbom"
@@ -64,7 +65,7 @@ helm upgrade --install kured "$tmp/kured" -n kube-system --wait >/dev/null
 echo "==> Installing PBOM from the local chart"
 helm upgrade --install pbom "$root/charts/platform-bom" -n "$ns" --create-namespace \
   --set image.repository=platform-bom --set image.tag=e2e --set image.pullPolicy=Never \
-  --wait --timeout 3m >/dev/null
+  --set metrics.enabled=true --wait --timeout 3m >/dev/null
 kubectl -n "$ns" port-forward svc/pbom-platform-bom "$port:80" >/dev/null 2>&1 &
 pf=$!
 
@@ -73,11 +74,20 @@ check "four pbom.dev CRDs installed" sh -c "[ \$(kubectl get crd -o name | grep 
 check "Platform resource created by the chart" kubectl -n "$ns" get platform my-platform
 eventually "readyz" api_has /readyz ok
 eventually "kured classified from the CNCF landscape" api_has /api/inventory '"name":"kured"[^}]*"known":true'
-eventually "description and offerings drafted" api_has /api/platform '"drafted":\["offerings","description"\]'
+eventually "description, offerings, release and targets drafted" api_has /api/platform '"drafted":\["offerings","description","release","targets"\]'
+
+kubectl -n "$ns" port-forward svc/pbom-platform-bom 19090:9090 >/dev/null 2>&1 &
+mpf=$!
+metrics_have() { curl -fsS http://127.0.0.1:19090/metrics | grep -q -- "$1"; }
+eventually "metrics: platform" metrics_have 'pbom_platform_info{current_release="",platform="my-platform"} 1'
+eventually "metrics: discovery" metrics_have 'pbom_discovery_last_success_timestamp_seconds{environment="this-cluster"}'
+check "metrics: components, ignoring drafted targets" metrics_have 'pbom_component_status{component="kured",environment="this-cluster",status="present"} 1'
+check "metrics: not on the UI port" sh -c "! curl -fsS http://127.0.0.1:$port/metrics | grep -q pbom_build_info"
+check "logs are JSON" logs_have '"msg":"serving metrics"'
 
 kubectl -n "$ns" patch platform my-platform --type merge -p '{"spec":{"description":"Edited by e2e"}}' >/dev/null
 eventually "edited description served without restart" api_has /api/platform '"description":"Edited by e2e"'
-check "edited description no longer drafted" api_has /api/platform '"drafted":\["offerings"\]'
+check "edited description no longer drafted" api_has /api/platform '"drafted":\["offerings","release","targets"\]'
 
 sed 's/^  name: prod$/  name: edge-export/' "$root/examples/acme/inventories/prod.yaml" | kubectl -n "$ns" apply -f - >/dev/null
 kubectl -n "$ns" patch platform my-platform --type json \

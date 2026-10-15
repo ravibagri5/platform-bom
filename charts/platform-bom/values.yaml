@@ -33,6 +33,33 @@ githubTokenSecret:
 # Set an internal mirror, or "" to use only the snapshot.
 landscapeURL: https://raw.githubusercontent.com/cncf/landscape/master/landscape.yml
 
+# Logs go to stderr. json suits log collectors such as Loki, Elasticsearch or
+# Cloud Logging; levels are debug, info, warn and error.
+logFormat: json
+logLevel: info
+
+# Prometheus metrics at /metrics on their own port, outside sign-in. They show
+# component versions to anyone who can reach the port.
+metrics:
+  enabled: false
+  port: 9090
+  # Requires the Prometheus Operator (monitoring.coreos.com CRDs).
+  serviceMonitor:
+    enabled: false
+    interval: 1m
+    # Labels your Prometheus selects, such as release: kube-prometheus-stack.
+    labels: {}
+  # Alerts on drift, unsupported versions, failing discovery and invalid configuration.
+  prometheusRule:
+    enabled: false
+    labels: {}
+  # A ConfigMap with the Grafana dashboard, for the Grafana sidecar to load.
+  grafanaDashboard:
+    enabled: false
+    labels:
+      grafana_dashboard: "1"
+    annotations: {}
+
 # Who may open the UI and API. none: anyone who can reach the Service.
 # header: the user named in a header set by an authenticating proxy.
 # oidc: sign-in with an OpenID Connect provider such as Entra ID, Okta,

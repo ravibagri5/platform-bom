@@ -58,6 +58,15 @@ credentials. Grant create and update on `pbom.dev` resources in that namespace
 only to the people or CD tool that manage the platform, as you would for its
 configuration files.
 
+### Metrics port
+
+`pbom serve --metrics-addr` (Helm chart `metrics.enabled`, off by default, port 9090)
+serves Prometheus metrics without authentication, separate from the UI so
+sign-in does not block scraping. They include component names and versions per
+environment, but no credentials, Helm values or Secret data. Keep the port
+reachable only from inside the cluster, for example with a NetworkPolicy
+that admits your Prometheus.
+
 ### CNCF landscape download
 
 At startup `pbom serve` and `pbom init` download the CNCF `landscape.yml`

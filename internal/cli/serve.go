@@ -16,9 +16,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ravibagri5/platform-bom/internal/analysis"
 	"github.com/ravibagri5/platform-bom/internal/auth"
 	"github.com/ravibagri5/platform-bom/internal/catalog"
 	"github.com/ravibagri5/platform-bom/internal/landscape"
+	"github.com/ravibagri5/platform-bom/internal/metrics"
 	"github.com/ravibagri5/platform-bom/internal/operator"
 	"github.com/ravibagri5/platform-bom/internal/server"
 	"github.com/ravibagri5/platform-bom/internal/service"
@@ -29,6 +31,7 @@ func newServeCmd(g *globals) *cobra.Command {
 	var addr string
 	var interval, configInterval time.Duration
 	var configSource, namespace, platformName, landscapeURL, crdContext string
+	var metricsAddr, logFormat, logLevel string
 	var debug bool
 	var authCfg auth.Config
 	var trustedProxies []string
@@ -42,11 +45,13 @@ secret is read from PBOM_OIDC_CLIENT_SECRET (leave it unset for a public
 client) and the session encryption key from PBOM_SESSION_SECRET (at least 32
 bytes; without it, users sign in again after a restart).`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			level := slog.LevelInfo
 			if debug {
-				level = slog.LevelDebug
+				logLevel = "debug"
 			}
-			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
+			if err := setupLogging(logFormat, logLevel); err != nil {
+				return err
+			}
+			metrics.SetBuildInfo(Version)
 
 			for _, p := range trustedProxies {
 				prefix, err := netip.ParsePrefix(p)
@@ -78,6 +83,7 @@ bytes; without it, users sign in again after a restart).`,
 			use := func(s *service.Service) {
 				current.Store(s)
 				handler.Store(&serveHandler{server.New(s, ui.FS())})
+				metrics.ConfigReload(true)
 				go func() { _, _ = s.Input(ctx, false) }()
 			}
 			switch configSource {
@@ -136,15 +142,31 @@ bytes; without it, users sign in again after a restart).`,
 
 			srv := &http.Server{
 				Addr: addr,
-				Handler: authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				Handler: metrics.InstrumentHTTP(authenticate(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					handler.Load().handler.ServeHTTP(w, r)
-				})),
+				}))),
 				ReadHeaderTimeout: 10 * time.Second,
 				WriteTimeout:      5 * time.Minute,
 				IdleTimeout:       2 * time.Minute,
 			}
 			go func() { errCh <- srv.ListenAndServe() }()
-			slog.Info("serving platform", "configSource", configSource, "url", "http://"+strings.Replace(addr, "0.0.0.0", "localhost", 1))
+			slog.Info("serving platform", "version", Version, "configSource", configSource, "url", "http://"+strings.Replace(addr, "0.0.0.0", "localhost", 1))
+
+			// Metrics get their own listener: outside sign-in, and firewalled separately.
+			var metricsSrv *http.Server
+			if metricsAddr != "" {
+				metrics.Registry.MustRegister(server.PlatformCollector{Input: func() (analysis.Input, bool) {
+					if s := current.Load(); s != nil {
+						return s.CachedInput()
+					}
+					return analysis.Input{}, false
+				}})
+				mux := http.NewServeMux()
+				mux.Handle("GET /metrics", metrics.Handler())
+				metricsSrv = &http.Server{Addr: metricsAddr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+				go func() { errCh <- metricsSrv.ListenAndServe() }()
+				slog.Info("serving metrics", "url", "http://"+strings.Replace(metricsAddr, "0.0.0.0", "localhost", 1)+"/metrics")
+			}
 
 			select {
 			case err := <-errCh:
@@ -155,6 +177,9 @@ bytes; without it, users sign in again after a restart).`,
 			case <-ctx.Done():
 				shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
+				if metricsSrv != nil {
+					_ = metricsSrv.Shutdown(shutdown)
+				}
 				return srv.Shutdown(shutdown)
 			}
 		},
@@ -167,7 +192,10 @@ bytes; without it, users sign in again after a restart).`,
 	addLandscapeFlag(cmd, &landscapeURL)
 	cmd.Flags().DurationVar(&interval, "refresh-interval", 10*time.Minute, "background rediscovery interval (0 disables)")
 	cmd.Flags().DurationVar(&configInterval, "config-check-interval", 15*time.Second, "how often to check configuration files for changes and reload (0 disables)")
-	cmd.Flags().BoolVar(&debug, "debug", false, "enable debug logging")
+	cmd.Flags().BoolVar(&debug, "debug", false, "enable debug logging (same as --log-level debug)")
+	cmd.Flags().StringVar(&logFormat, "log-format", "text", "log format: text or json")
+	cmd.Flags().StringVar(&logLevel, "log-level", "info", "log level: debug, info, warn or error")
+	cmd.Flags().StringVar(&metricsAddr, "metrics-addr", "", "listen address for Prometheus metrics at /metrics, such as 0.0.0.0:9090 (empty disables)")
 	cmd.Flags().StringVar(&authCfg.Mode, "auth", auth.ModeNone, "authentication: none, header (authenticating proxy) or oidc")
 	cmd.Flags().StringVar(&authCfg.Header, "auth-header", "X-Forwarded-User", "header with the user name from the authenticating proxy (--auth header)")
 	cmd.Flags().StringSliceVar(&trustedProxies, "auth-trusted-proxies", nil, "CIDRs the authenticating proxy connects from; other clients are refused (--auth header)")
@@ -183,6 +211,24 @@ bytes; without it, users sign in again after a restart).`,
 }
 
 type serveHandler struct{ handler http.Handler }
+
+// setupLogging sends structured logs to stderr; json suits log collectors.
+func setupLogging(format, level string) error {
+	var lvl slog.Level
+	if err := lvl.UnmarshalText([]byte(level)); err != nil {
+		return fmt.Errorf("--log-level: %w", err)
+	}
+	opts := &slog.HandlerOptions{Level: lvl}
+	switch format {
+	case "text":
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, opts)))
+	case "json":
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, opts)))
+	default:
+		return fmt.Errorf("--log-format: unknown format %q (expected text or json)", format)
+	}
+	return nil
+}
 
 func newCatalogCmd(g *globals) *cobra.Command {
 	var output, dir string

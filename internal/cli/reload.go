@@ -11,6 +11,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/ravibagri5/platform-bom/internal/metrics"
 	"github.com/ravibagri5/platform-bom/internal/service"
 )
 
@@ -96,6 +97,7 @@ func watchConfig(ctx context.Context, g *globals, every time.Duration, swap func
 		last = fp
 		svc, err := g.service()
 		if err != nil {
+			metrics.ConfigReload(false)
 			slog.Warn("configuration changed but is invalid; still serving the previous configuration", "error", err)
 			continue
 		}

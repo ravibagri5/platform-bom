@@ -16,6 +16,7 @@ import (
 
 	"github.com/ravibagri5/platform-bom/internal/api"
 	"github.com/ravibagri5/platform-bom/internal/discovery"
+	"github.com/ravibagri5/platform-bom/internal/metrics"
 	"github.com/ravibagri5/platform-bom/internal/service"
 )
 
@@ -104,6 +105,7 @@ func runWithClient(ctx context.Context, client dynamic.Interface, opts Options, 
 		return nil
 	}
 	if err := build(); err != nil {
+		metrics.ConfigReload(false)
 		slog.Warn("PBOM resources are not ready; waiting for a valid configuration", "error", err)
 	}
 	for {
@@ -112,6 +114,7 @@ func runWithClient(ctx context.Context, client dynamic.Interface, opts Options, 
 			return nil
 		case <-changes:
 			if err := build(); err != nil {
+				metrics.ConfigReload(false)
 				slog.Warn("PBOM resources are invalid; keeping the previous configuration", "error", err)
 			}
 		}

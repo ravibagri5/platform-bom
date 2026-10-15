@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,6 +21,7 @@ import (
 	"github.com/ravibagri5/platform-bom/internal/api"
 	"github.com/ravibagri5/platform-bom/internal/catalog"
 	"github.com/ravibagri5/platform-bom/internal/discovery"
+	"github.com/ravibagri5/platform-bom/internal/metrics"
 	"github.com/ravibagri5/platform-bom/internal/release"
 	"github.com/ravibagri5/platform-bom/internal/upstream"
 )
@@ -321,6 +323,24 @@ func (s *Service) CachedInventories(ctx context.Context) map[string]*api.Invento
 	return s.Inventories(ctx, false)
 }
 
+// CachedInput is the analysis input from the last discovery and upstream
+// fetch, without starting either; ok is false before the first discovery.
+func (s *Service) CachedInput() (analysis.Input, bool) {
+	rels, err := s.Releases()
+	if err != nil {
+		return analysis.Input{}, false
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.invs == nil {
+		return analysis.Input{}, false
+	}
+	return analysis.Input{
+		Platform: s.Platform, Catalog: s.Catalog, Releases: rels,
+		Inventories: s.invs, Upstream: s.ups, UpstreamErrors: s.upsErrs,
+	}, true
+}
+
 // Inventories returns inventories for all environments, rediscovering when
 // the cache is stale or refresh is set. Unreachable environments are
 // returned with errors rather than failing the whole call.
@@ -351,8 +371,11 @@ func (s *Service) Inventories(ctx context.Context, refresh bool) map[string]*api
 			defer wg.Done()
 			ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 			defer cancel()
+			start := time.Now()
 			inv, err := s.DiscoverEnvironment(ctx, env)
+			metrics.ObserveDiscovery(env.Name, time.Since(start), err)
 			if err != nil {
+				slog.Warn("discovery failed", "environment", env.Name, "error", err)
 				inv = &api.Inventory{
 					TypeMeta:    api.TypeMeta{APIVersion: api.APIVersion, Kind: api.KindInventory},
 					Metadata:    api.Metadata{Name: env.Name},

@@ -2,8 +2,8 @@ apiVersion: v2
 name: platform-bom
 description: PBOM (Platform BOM) - read-only Kubernetes platform inventory with an embedded web UI
 type: application
-version: 1.0.0
-appVersion: "1.0.0"
+version: 1.1.0
+appVersion: "1.1.0"
 home: https://github.com/ravibagri5/platform-bom
 sources:
   - https://github.com/ravibagri5/platform-bom
@@ -67,13 +67,13 @@ annotations:
           argocd: "3.1"
   artifacthub.io/changes: |
     - kind: added
-      description: Platform, PlatformRelease, Component and Inventory as custom resources, watched without restarts
+      description: A first release drafted from what the cluster runs, and environments compared with the newest release
     - kind: added
-      description: Helm releases of CNCF projects named and categorised from the CNCF landscape, with a built-in snapshot
-    - kind: added
-      description: Description and offerings drafted from discovery until you write your own
+      description: Releases page snapshots any environment as a release to apply
+    - kind: fixed
+      description: Upstream versions fall back to public release feeds when GitHub's anonymous API limit runs out
     - kind: changed
-      description: configMaps values replaced by crdResources.create; apply the CRDs before upgrading from 0.x
+      description: Updates is in the top navigation
   artifacthub.io/links: |
     - name: Documentation
       url: https://github.com/ravibagri5/platform-bom/blob/main/docs/getting-started.md

@@ -12,6 +12,26 @@ incompatibly only in a major release. The resources are still named
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-15
+
+### Added
+
+- A platform without releases gets a drafted release `1.0.0` of what a
+  production environment (or the first one) runs now, and environments
+  without `targetRelease` are compared with the newest release, so drift
+  shows from the first install. The UI marks both as drafted; the CLI and
+  `pbom drift` never use drafts.
+- The Releases page snapshots any environment as a release to download or
+  pipe into `kubectl apply`, from the new `GET /api/snapshot` endpoint.
+- Updates is in the top navigation.
+
+### Fixed
+
+- Upstream versions disappeared once GitHub's anonymous limit of 60 API
+  requests an hour ran out. PBOM now reads the public releases feed instead
+  until the limit resets, and the Updates page explains how to add a token.
+- Drafted offerings now count everywhere, including the platform summary.
+
 ## [1.0.0] - 2026-10-15
 
 The first major release. The platform model is unchanged; what is new is how
@@ -300,7 +320,8 @@ The first release. Release candidate: `v0.1.0-rc.1`.
   README, usage and deployment guides in `docs/`, and a roadmap organised as
   milestones M0 to M11.
 
-[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ravibagri5/platform-bom/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ravibagri5/platform-bom/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ravibagri5/platform-bom/compare/v0.9.0...v1.0.0
 [0.5.0]: https://github.com/ravibagri5/platform-bom/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ravibagri5/platform-bom/compare/v0.3.0...v0.4.0

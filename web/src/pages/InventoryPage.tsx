@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react'
-import { api, type Cell, type Row } from '../api'
+import { api, type Cell, type PlatformResponse, type Row } from '../api'
 import {
   CategoryIcon,
   ErrorBox,
@@ -63,7 +63,7 @@ function childSummary(children: TNode[]) {
     .join(' · ')
 }
 
-export default function InventoryPage() {
+export default function InventoryPage({ platform }: { platform?: PlatformResponse }) {
   const { data: m, error, loading, reload } = useAsync((refresh) => api.matrix(refresh))
   const [issuesOnly, setIssuesOnly] = useState(false)
   const [query, setQuery] = useState('')
@@ -135,6 +135,14 @@ export default function InventoryPage() {
         }
         actions={<RefreshButton onClick={reload} loading={loading} />}
       />
+      {platform?.drafted?.includes('targets') && (
+        <p className="muted draft-note">
+          Environments without a <code>targetRelease</code> are compared with the newest release
+          {platform.currentRelease && <> ({vname(platform.currentRelease.metadata.name)})</>}
+          {platform.drafted.includes('release') && <>, drafted from what the cluster runs now</>}. Set{' '}
+          <code>targetRelease</code> per environment in the platform to choose.
+        </p>
+      )}
 
       <div className="envs">
         {m.environments.map((e) => (

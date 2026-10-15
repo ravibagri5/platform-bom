@@ -20,12 +20,10 @@ export default function UpdatesPage() {
 
   const actionable = data.filter((u) => u.freshness !== 'latest' && u.freshness !== 'unknown')
   const shown = showAll ? data : actionable
+  const rateLimited = data.some((u) => u.error?.includes('rate limit'))
 
   return (
     <div>
-      <a className="small" href="#/components">
-        ← Components
-      </a>
       <PageHeader
         title="Component updates"
         subtitle={
@@ -43,6 +41,15 @@ export default function UpdatesPage() {
           </>
         }
       />
+      {rateLimited && (
+        <div className="card notice">
+          <strong>GitHub's rate limit was reached</strong> and its public release feeds could not fill the gap for
+          every component. Anonymous requests allow 60 per hour; a token allows 5,000. With the Helm chart:
+          <pre>{`kubectl -n platform-bom create secret generic pbom-github --from-literal=token=<github-token>
+helm upgrade pbom oci://ghcr.io/ravibagri5/charts/platform-bom -n platform-bom --reset-then-reuse-values --set githubTokenSecret.name=pbom-github`}</pre>
+          With the CLI, set <code>GITHUB_TOKEN</code>. A token without any scopes is enough.
+        </div>
+      )}
       <div className="updates">
         {shown.map((u) => (
           <UpdateCard key={u.component} u={u} />

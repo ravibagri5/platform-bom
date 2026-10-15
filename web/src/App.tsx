@@ -14,10 +14,11 @@ const nav = [
   { path: 'offerings', label: 'Offerings' },
   { path: 'releases', label: 'Releases' },
   { path: 'environments', label: 'Environments' },
+  { path: 'updates', label: 'Updates' },
 ]
 
 // Old paths and sub-pages mapped to their top-level concept.
-const aliases: Record<string, string> = { catalog: 'components', updates: 'components', inventory: 'environments' }
+const aliases: Record<string, string> = { catalog: 'components', inventory: 'environments' }
 
 function useHashRoute() {
   const read = () => window.location.hash.replace(/^#\/?/, '').split('/').filter(Boolean)
@@ -89,7 +90,7 @@ export default function App() {
         {page === 'updates' && <UpdatesPage />}
         {page === 'offerings' && <OfferingsPage platform={platform.data} />}
         {page === 'releases' && <ReleasesPage selected={route[1]} platform={platform.data} />}
-        {(page === 'environments' || page === 'inventory') && <InventoryPage />}
+        {(page === 'environments' || page === 'inventory') && <InventoryPage platform={platform.data} />}
       </main>
       <footer>
         Platform BOM · the platform as a versioned product

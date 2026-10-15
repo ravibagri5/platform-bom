@@ -8,12 +8,16 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/yaml"
 
 	"github.com/ravibagri5/platform-bom/internal/analysis"
 	"github.com/ravibagri5/platform-bom/internal/api"
 	"github.com/ravibagri5/platform-bom/internal/draft"
+	"github.com/ravibagri5/platform-bom/internal/release"
 	"github.com/ravibagri5/platform-bom/internal/service"
 )
 
@@ -31,6 +35,7 @@ func New(svc *service.Service, ui fs.FS) http.Handler {
 	mux.HandleFunc("GET /api/releases/{name}", h.release)
 	mux.HandleFunc("GET /api/diff", h.diff)
 	mux.HandleFunc("GET /api/catalog", h.catalog)
+	mux.HandleFunc("GET /api/snapshot", h.snapshot)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusNotFound, "not found")
 	})
@@ -46,8 +51,20 @@ type platformResponse struct {
 	Platform       *api.Platform        `json:"platform"`
 	Readme         string               `json:"readme,omitempty"`
 	CurrentRelease *api.PlatformRelease `json:"currentRelease,omitempty"`
-	// Drafted lists spec fields filled in from discovery: description, offerings.
+	// Drafted lists what was filled in from discovery: description,
+	// offerings, release and targets.
 	Drafted []string `json:"drafted,omitempty"`
+}
+
+// drafted returns the platform and releases with what they leave empty
+// drafted from the last discovery, which runs once if none has yet.
+func (h *handler) drafted(r *http.Request) (*api.Platform, []api.PlatformRelease, []string, error) {
+	rels, err := h.svc.Releases()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	p, rels, drafted := draft.Apply(h.svc.Platform, rels, h.svc.CachedInventories(r.Context()))
+	return p, rels, drafted, nil
 }
 
 func (h *handler) platform(w http.ResponseWriter, r *http.Request) {
@@ -55,49 +72,30 @@ func (h *handler) platform(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Warn("cannot read platform readme", "error", err)
 	}
-	rels, err := h.svc.Releases()
+	p, rels, drafted, err := h.drafted(r)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	resp := platformResponse{Platform: h.svc.Platform, Readme: readme}
+	resp := platformResponse{Platform: p, Readme: readme, Drafted: drafted}
 	if len(rels) > 0 {
 		resp.CurrentRelease = &rels[0]
-	}
-	if spec := h.svc.Platform.Spec; spec.Description == "" || len(spec.Offerings) == 0 {
-		resp.Platform, resp.Drafted = withDrafts(h.svc.Platform, h.svc.CachedInventories(r.Context()))
 	}
 	writeJSON(w, resp)
 }
 
-// withDrafts returns a copy of p with an empty description and offerings
-// drafted from invs, and the names of the fields it filled in.
-func withDrafts(p *api.Platform, byEnv map[string]*api.Inventory) (*api.Platform, []string) {
-	invs := make([]*api.Inventory, 0, len(byEnv))
-	for _, e := range p.Spec.Environments {
-		if inv := byEnv[e.Name]; inv != nil {
-			invs = append(invs, inv)
-		}
+// input is the analysis input with drafts applied.
+func (h *handler) input(r *http.Request) (analysis.Input, error) {
+	in, err := h.svc.Input(r.Context(), refresh(r))
+	if err != nil {
+		return in, err
 	}
-	out := *p
-	var drafted []string
-	if len(out.Spec.Offerings) == 0 {
-		if offs := draft.Offerings(invs); len(offs) > 0 {
-			out.Spec.Offerings = offs
-			drafted = append(drafted, "offerings")
-		}
-	}
-	if out.Spec.Description == "" {
-		if desc := draft.Description(invs, out.Spec.Offerings); desc != "" {
-			out.Spec.Description = desc
-			drafted = append(drafted, "description")
-		}
-	}
-	return &out, drafted
+	in.Platform, in.Releases, _ = draft.Apply(in.Platform, in.Releases, in.Inventories)
+	return in, nil
 }
 
 func (h *handler) matrix(w http.ResponseWriter, r *http.Request) {
-	in, err := h.svc.Input(r.Context(), refresh(r))
+	in, err := h.input(r)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -110,7 +108,7 @@ func (h *handler) inventory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) updates(w http.ResponseWriter, r *http.Request) {
-	in, err := h.svc.Input(r.Context(), refresh(r))
+	in, err := h.input(r)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -118,8 +116,8 @@ func (h *handler) updates(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, analysis.BuildUpdates(in))
 }
 
-func (h *handler) releases(w http.ResponseWriter, _ *http.Request) {
-	rels, err := h.svc.Releases()
+func (h *handler) releases(w http.ResponseWriter, r *http.Request) {
+	_, rels, _, err := h.drafted(r)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -131,7 +129,7 @@ func (h *handler) releases(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *handler) release(w http.ResponseWriter, r *http.Request) {
-	rels, err := h.svc.Releases()
+	_, rels, _, err := h.drafted(r)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -160,6 +158,44 @@ func (h *handler) diff(w http.ResponseWriter, r *http.Request) {
 func (h *handler) catalog(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, h.svc.Catalog.List())
 }
+
+// snapshot returns what an environment runs now as a PlatformRelease in YAML,
+// for the user to apply; PBOM itself never writes it.
+func (h *handler) snapshot(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	name, env := q.Get("name"), q.Get("env")
+	if !release.ValidName(name) || !k8sNameRE.MatchString(name) {
+		writeError(w, http.StatusBadRequest, "name must be a release version such as 1.1.0")
+		return
+	}
+	p, _, _, err := h.drafted(r)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	inv := h.svc.CachedInventories(r.Context())[env]
+	if inv == nil {
+		writeError(w, http.StatusNotFound, "unknown environment")
+		return
+	}
+	if len(inv.Components) == 0 {
+		writeError(w, http.StatusConflict, "nothing was discovered in this environment")
+		return
+	}
+	data, err := yaml.Marshal(draft.Release(name, env, inv, p.Spec.Offerings))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/yaml")
+	if q.Get("download") != "" {
+		w.Header().Set("Content-Disposition", `attachment; filename="`+name+`.yaml"`)
+	}
+	_, _ = w.Write(data) //nolint:gosec // YAML of a validated release, served as application/yaml with nosniff
+}
+
+// k8sNameRE is a valid Kubernetes object name, which a release is in CRD mode.
+var k8sNameRE = regexp.MustCompile(`^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`)
 
 func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")

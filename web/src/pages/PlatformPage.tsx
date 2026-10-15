@@ -109,6 +109,12 @@ export default function PlatformPage({ platform }: { platform: Async<PlatformRes
               <h2>Latest release · v{currentRelease.spec.version}</h2>
               <a href="#/releases">All releases →</a>
             </div>
+            {drafted?.includes('release') && (
+              <p className="muted draft-note">
+                Drafted from what the cluster runs now and not saved yet; save it on the{' '}
+                <a href="#/releases">Releases</a> page.
+              </p>
+            )}
             {currentRelease.spec.summary && <p>{currentRelease.spec.summary}</p>}
             {currentRelease.spec.highlights && (
               <ul className="highlights">

@@ -5,6 +5,7 @@ package upstream
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,12 +46,14 @@ type Release struct {
 type Client struct {
 	HTTP     *http.Client
 	BaseURL  string
+	WebURL   string
 	Token    string
 	CacheDir string
 	TTL      time.Duration
 
-	mu  sync.Mutex
-	mem map[string]cacheEntry
+	mu           sync.Mutex
+	mem          map[string]cacheEntry
+	limitedUntil time.Time
 }
 
 type cacheEntry struct {
@@ -62,6 +66,7 @@ func NewClient() *Client {
 	c := &Client{
 		HTTP:    &http.Client{Timeout: 20 * time.Second},
 		BaseURL: "https://api.github.com",
+		WebURL:  "https://github.com",
 		Token:   os.Getenv("GITHUB_TOKEN"),
 		TTL:     6 * time.Hour,
 		mem:     map[string]cacheEntry{},
@@ -177,7 +182,72 @@ type ghRelease struct {
 	PublishedAt time.Time `json:"published_at"`
 }
 
+// ErrRateLimited reports that the GitHub API refused more requests.
+var ErrRateLimited = errors.New("GitHub API rate limit reached")
+
+// fetch reads the releases API, or the public releases feed while the API is
+// rate limited. The feed has no API limit but lists only recent releases.
 func (c *Client) fetch(ctx context.Context, slug string) ([]Release, error) {
+	c.mu.Lock()
+	limited := time.Now().Before(c.limitedUntil)
+	c.mu.Unlock()
+	if !limited {
+		releases, err := c.fetchAPI(ctx, slug)
+		if !errors.Is(err, ErrRateLimited) {
+			return releases, err
+		}
+	}
+	releases, err := c.fetchFeed(ctx, slug)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w; the releases feed failed too: %w", slug, ErrRateLimited, err)
+	}
+	return releases, nil
+}
+
+type atomFeed struct {
+	Entries []struct {
+		Updated time.Time `xml:"updated"`
+		Title   string    `xml:"title"`
+		Link    struct {
+			Href string `xml:"href,attr"`
+		} `xml:"link"`
+	} `xml:"entry"`
+}
+
+func (c *Client) fetchFeed(ctx context.Context, slug string) ([]Release, error) {
+	owner, repo, _ := strings.Cut(slug, "/")
+	u := fmt.Sprintf("%s/%s/%s/releases.atom", c.WebURL, url.PathEscape(owner), url.PathEscape(repo))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("releases feed returned %s", resp.Status)
+	}
+	var feed atomFeed
+	if err := xml.NewDecoder(io.LimitReader(resp.Body, 16<<20)).Decode(&feed); err != nil {
+		return nil, fmt.Errorf("releases feed: %w", err)
+	}
+	out := make([]Release, 0, len(feed.Entries))
+	for _, e := range feed.Entries {
+		_, tag, ok := strings.Cut(e.Link.Href, "/releases/tag/")
+		if !ok {
+			continue
+		}
+		if t, err := url.PathUnescape(tag); err == nil {
+			tag = t
+		}
+		out = append(out, Release{Tag: tag, Name: e.Title, URL: e.Link.Href, PublishedAt: e.Updated})
+	}
+	return out, nil
+}
+
+func (c *Client) fetchAPI(ctx context.Context, slug string) ([]Release, error) {
 	owner, repo, _ := strings.Cut(slug, "/")
 	var out []Release
 	for page := 1; page <= pagesToFetch; page++ {
@@ -195,6 +265,13 @@ func (c *Client) fetch(ctx context.Context, slug string) ([]Release, error) {
 		resp, err := c.HTTP.Do(req)
 		if err != nil {
 			return nil, err
+		}
+		if rateLimited(resp) {
+			_ = resp.Body.Close()
+			c.mu.Lock()
+			c.limitedUntil = rateLimitReset(resp)
+			c.mu.Unlock()
+			return nil, ErrRateLimited
 		}
 		var batch []ghRelease
 		err = decodeResponse(resp, &batch)
@@ -220,6 +297,18 @@ func (c *Client) fetch(ctx context.Context, slug string) ([]Release, error) {
 		}
 	}
 	return out, nil
+}
+
+func rateLimited(resp *http.Response) bool {
+	return resp.StatusCode == http.StatusTooManyRequests ||
+		(resp.StatusCode == http.StatusForbidden && resp.Header.Get("X-RateLimit-Remaining") == "0")
+}
+
+func rateLimitReset(resp *http.Response) time.Time {
+	if s, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); err == nil {
+		return time.Unix(s, 0)
+	}
+	return time.Now().Add(time.Hour)
 }
 
 func decodeResponse(resp *http.Response, v any) error {

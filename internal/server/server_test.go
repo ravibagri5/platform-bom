@@ -139,15 +139,36 @@ func TestPlatformDrafts(t *testing.T) {
 		t.Fatal(err)
 	}
 	var resp platformResponse
-	if err := json.Unmarshal(get(New(svc, fstest.MapFS{}), "/api/platform").Body.Bytes(), &resp); err != nil {
+	h := New(svc, fstest.MapFS{})
+	if err := json.Unmarshal(get(h, "/api/platform").Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(resp.Drafted, ",") != "offerings,description" || len(resp.Platform.Spec.Offerings) == 0 ||
-		!strings.Contains(resp.Platform.Spec.Description, "Kubernetes") {
+	if strings.Join(resp.Drafted, ",") != "offerings,description,release,targets" || len(resp.Platform.Spec.Offerings) == 0 ||
+		!strings.Contains(resp.Platform.Spec.Description, "Kubernetes") || resp.CurrentRelease == nil {
 		t.Fatalf("drafted %v: %+v", resp.Drafted, resp.Platform.Spec)
 	}
 	if svc.Platform.Spec.Description != "" || len(svc.Platform.Spec.Offerings) != 0 {
 		t.Error("drafting modified the configured platform")
+	}
+	for path, want := range map[string]string{
+		"/api/releases":                     `"pbom.dev/drafted":"true"`,
+		"/api/matrix":                       `"releases":1`,
+		"/api/snapshot?env=prod&name=1.1.0": "kind: PlatformRelease",
+	} {
+		if body := get(h, path).Body.String(); !strings.Contains(body, want) {
+			t.Errorf("GET %s = %.300s, want %s", path, body, want)
+		}
+	}
+	if !strings.Contains(get(h, "/api/matrix").Body.String(), `"offerings":`) || strings.Contains(get(h, "/api/matrix").Body.String(), `"offerings":0`) {
+		t.Error("matrix summary does not count drafted offerings")
+	}
+	for path, code := range map[string]int{
+		"/api/snapshot?env=prod&name=..%2Fx": http.StatusBadRequest,
+		"/api/snapshot?env=nope&name=1.1.0":  http.StatusNotFound,
+	} {
+		if rec := get(h, path); rec.Code != code {
+			t.Errorf("GET %s = %d, want %d", path, rec.Code, code)
+		}
 	}
 
 	resp = platformResponse{}

@@ -73,8 +73,9 @@ Global flags: `-c, --config` (default `pbom.yaml`, or `$PBOM_CONFIG`),
 `--no-upstream`. `pbom init` and `pbom serve` also take `--landscape-url`; see
 [CNCF landscape](#cncf-landscape).
 
-Set `GITHUB_TOKEN` to avoid GitHub's anonymous rate limit when fetching
-upstream releases, or pass `--no-upstream` to work offline.
+Set `GITHUB_TOKEN` for complete upstream release data (without it, `pbom`
+falls back to public release feeds once GitHub's anonymous API limit runs
+out), or pass `--no-upstream` to work offline.
 
 ## Configuration
 
@@ -283,19 +284,34 @@ warning and keep using the snapshot. Point the flag at an internal mirror, or
 set it to `""` to use only the snapshot. Maintainers refresh the snapshot with
 `make landscape`.
 
-### Drafted description and offerings
+### Drafts from discovery
 
-When a `Platform` has no `description` or no `offerings`, the UI and
-`GET /api/platform` draft them from what discovery found: one offering per
-category of recognised components, and a one-line description. The UI marks
-them as drafted. Setting `spec.description` or `spec.offerings` replaces the
-draft; nothing is ever written back. `pbom init` writes the same drafts into
+`pbom serve` fills in what a `Platform` leaves empty from what discovery
+found, and the UI marks each draft:
+
+| Left empty | Drafted |
+| --- | --- |
+| `description` | One line on the Kubernetes version, environments and offerings |
+| `offerings` | One offering per category of recognised components |
+| No `PlatformRelease` at all | Release `1.0.0`: what a production environment, or the first one, runs now |
+| An environment's `targetRelease` | The newest release, so drift is shown from the start |
+
+Nothing is ever written back. Setting the field, or applying a release,
+replaces the draft. The **Releases** page turns any environment into a
+release you can save: pick the environment and version, then download the
+YAML or pipe it into `kubectl apply`. It comes from
+`GET /api/snapshot?env=E&name=V`. The CLI and `pbom drift` never use drafts,
+so CI checks only what you declared. `pbom init` writes the same drafts into
 `platform.yaml`, with comments that explain each field.
 
 ## Upstream updates
 
 For every component with an `upstream`, `pbom` fetches GitHub releases (cached
-on disk for six hours) and compares them with what each environment runs:
+on disk for six hours) and compares them with what each environment runs.
+Without a token GitHub allows 60 API requests an hour; when that runs out,
+`pbom` reads each project's public releases feed instead, which has no API
+limit but lists only the 10 newest releases. Set `GITHUB_TOKEN` (chart value
+`githubTokenSecret`) for complete data.
 
 ```text
 $ pbom updates --why
@@ -336,15 +352,16 @@ jobs:
 
 ## The web UI
 
-`pbom serve` embeds a single-page UI with five views:
+`pbom serve` embeds a single-page UI with six views:
 
 | View | Shows |
 | --- | --- |
 | **Platform** | The product page: tagline, current release, offerings, guarantees, where it runs and your README |
-| **Components** | Everything the platform is made of, grouped by capability, with providers and functions nested under Crossplane and embedded functions under their configuration. Links to **Updates**, the upgrade recommendations with upstream release notes |
+| **Components** | Everything the platform is made of, grouped by capability, with providers and functions nested under Crossplane and embedded functions under their configuration |
 | **Offerings** | The capabilities you promise, their maturity and the components behind them |
-| **Releases** | A timeline of platform releases with notes, bill of materials and diffs |
+| **Releases** | A timeline of platform releases with notes, bill of materials and diffs, and a snapshot of any environment to save as the next release |
 | **Environments** | Component × environment matrix with drift, colour-coded kinds and collapsible groups |
+| **Updates** | Upgrade recommendations with upstream release notes and the reasons behind them |
 
 The UI never changes a cluster. **Rediscover** re-reads the clusters on demand;
 otherwise the server rediscovers on `--refresh-interval` (default 10 minutes).
@@ -367,4 +384,5 @@ yet versioned; expect changes before v1.
 | `GET /api/releases`, `/api/releases/{name}` | Platform releases |
 | `GET /api/diff?from=A&to=B` | Release diff |
 | `GET /api/catalog` | Component definitions |
+| `GET /api/snapshot?env=E&name=V[&download=1]` | What an environment runs now, as `PlatformRelease` YAML to apply |
 | `GET /healthz` | Liveness |

@@ -193,6 +193,10 @@ footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1.
 .tagline { font-size: 1.25rem; color: var(--ink-2); margin: 0 0 0.75rem; }
 .lead { color: var(--ink-2); font-size: 1.02rem; }
 .draft-note { font-size: 0.85rem; margin: -0.25rem 0 0.75rem; }
+.notice { border-left: 4px solid var(--accent); margin-bottom: 1rem; }
+.notice pre { margin: 0.6rem 0; white-space: pre-wrap; word-break: break-all; }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin: 0.75rem 0; }
+.form-row input { font: inherit; padding: 0.2rem 0.4rem; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 7rem; }
 .release-badge {
   display: inline-flex; align-items: center; gap: 0.4rem;
   padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
